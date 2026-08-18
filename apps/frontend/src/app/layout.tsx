@@ -12,7 +12,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="vi" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <MainNav />
-        <div className="flex-1">{children}</div>
+        <div className="flex-2">{children}</div>
       </body>
     </html>
   );
