@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { AppDataSource } from "../../data-source";
 import { MediaAssetEntity } from "../../database/entities/media-asset.entity";
+import { AppError } from "../../common/errors/app-error";
 
 type SaveIconInput = {
   fileName: string;
@@ -16,7 +17,11 @@ const supabaseStorageBucket = process.env.SUPABASE_STORAGE_BUCKET || "job-platfo
 
 const getSupabaseClient = () => {
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    throw new AppError(
+      500,
+      "SUPABASE_CONFIG_MISSING",
+      "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+    );
   }
 
   return createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -38,7 +43,9 @@ export const mediaService = {
       });
 
     if (uploadResult.error) {
-      throw new Error(`Supabase upload failed: ${uploadResult.error.message}`);
+      throw new AppError(502, "SUPABASE_UPLOAD_FAILED", "Supabase upload failed", {
+        cause: uploadResult.error.message,
+      });
     }
 
     const publicUrlResult = supabase.storage

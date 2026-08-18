@@ -22,12 +22,11 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
 
 console.log("Storage test:");
-console.log("  bucket:", bucket);
-console.log("  s3 endpoint:", process.env.SUPABASE_STORAGE_S3_ENDPOINT || "(not set)");
+console.log("bucket:", bucket);
+console.log("s3 endpoint:", process.env.SUPABASE_STORAGE_S3_ENDPOINT || "(not set)");
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-// 1x1 transparent PNG (base64)
 const transparentPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X3gAAAABJRU5ErkJggg==";
 
@@ -53,7 +52,6 @@ async function main() {
   console.log("Upload OK");
   console.log("  publicUrl:", publicUrl);
 
-  // Verify that we can reach the URL (works if bucket is public)
   const resp = await fetch(publicUrl, { method: "GET" });
   console.log("  publicUrl GET status:", resp.status);
 
