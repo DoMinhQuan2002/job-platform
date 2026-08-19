@@ -126,13 +126,5 @@ npm run build:backend
 
 Nguyên tắc: bảng có owner chính, nhóm khác được dùng FK nhưng không tự ý đổi schema bảng owner khi chưa thống nhất.
 
-## 8) Luồng làm việc đề xuất cho team
-
-1. Chốt Database V1 (ERD + specification + migration)
-2. Mỗi nhóm code module của mình trong thư mục đã chia
-3. PR nhỏ, review chéo liên nhóm khi có FK/quan hệ
-4. Merge sau khi leader xác nhận
-
 ---
 
-Nếu cần, mình sẽ làm bước tiếp: tạo sẵn skeleton file cho từng module backend (`controller/service/dto/entity/route`) và skeleton page cho từng khu vực frontend để team vào code ngay.
