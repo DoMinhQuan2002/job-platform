@@ -6,3 +6,4 @@ dist
 !.env.example
 .next
 coverage
+docker-compose.yml
