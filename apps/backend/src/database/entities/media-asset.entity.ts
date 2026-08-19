@@ -5,24 +5,24 @@ export class MediaAssetEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ name: "file_name", type: "varchar", length: 255 })
   fileName!: string;
 
-  @Column({ type: "varchar", length: 120 })
+  @Column({ name: "mime_type", type: "varchar", length: 120 })
   mimeType!: string;
 
   @Column({ type: "bigint" })
   size!: number;
 
-  @Column({ type: "varchar", length: 50, default: "company_icon" })
+  @Column({ name: "asset_type", type: "varchar", length: 50, default: "company_icon" })
   assetType!: string;
 
-  @Column({ type: "text" })
+  @Column({ name: "storage_path", type: "text" })
   storagePath!: string;
 
-  @Column({ type: "text", nullable: true })
+  @Column({ name: "public_url", type: "text", nullable: true })
   publicUrl!: string | null;
 
-  @CreateDateColumn({ type: "timestamptz" })
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 }
