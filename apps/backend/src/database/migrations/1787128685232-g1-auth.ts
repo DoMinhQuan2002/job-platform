@@ -90,6 +90,12 @@ export class G1Auth1787128685232 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    void queryRunner;
+    await queryRunner.query(`DROP TABLE "user_oauth_accounts"`);
+    await queryRunner.query(`DROP TABLE "sessions"`);
+    await queryRunner.query(`DROP TABLE "role_permissions"`);
+    await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TABLE "permissions"`);
+    await queryRunner.query(`DROP TABLE "roles"`);
+    await queryRunner.query(`DROP TYPE "status_user"`);
   }
 }
