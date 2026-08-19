@@ -1,0 +1,14 @@
+export enum ApplicationStatus {
+  APPLIED = "APPLIED",
+  VIEWED = "VIEWED",
+  INTERVIEW = "INTERVIEW",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+}
+
+export enum SkillLevel {
+  BEGINNER = "BEGINNER",
+  INTERMEDIATE = "INTERMEDIATE",
+  ADVANCED = "ADVANCED",
+  EXPERT = "EXPERT",
+}
