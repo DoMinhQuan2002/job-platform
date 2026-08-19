@@ -6,11 +6,13 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
 
 @Entity({ name: "resumes" })
+@Unique(["id", "candidateId"])
 export class ResumeEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
@@ -21,7 +23,7 @@ export class ResumeEntity {
   @Column({ name: "file_name", type: "varchar", length: 255 })
   fileName!: string;
 
-  @Column({ name: "file_url", type: "varchar", length: 500 })
+  @Column({ name: "file_url", type: "text" })
   fileUrl!: string;
 
   @Column({ name: "file_size", type: "bigint" })
@@ -42,7 +44,6 @@ export class ResumeEntity {
   @DeleteDateColumn({ name: "deleted_at", type: "timestamptz", nullable: true })
   deletedAt!: Date | null;
 
-  /* Relations */
   @ManyToOne(() => CandidateProfileEntity, (candidate) => candidate.resumes, {
     onDelete: "CASCADE",
   })

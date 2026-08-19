@@ -9,26 +9,26 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
-import { SkillEntity } from "./skill.entity";
-import { SkillLevel } from "../../common/constants";
+import { LanguageEntity } from "./language.entity";
+import { LanguageLevel } from "../../common/constants";
 
-@Entity({ name: "candidate_skills" })
-@Unique(["candidateId", "skillId"])
-export class CandidateSkillEntity {
+@Entity({ name: "candidate_languages" })
+@Unique(["candidateId", "languageId"])
+export class CandidateLanguageEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
 
   @Column({ name: "candidate_id", type: "bigint" })
   candidateId!: string;
 
-  @Column({ name: "skill_id", type: "bigint" })
-  skillId!: string;
+  @Column({ name: "language_id", type: "bigint" })
+  languageId!: string;
 
   @Column({
     type: "enum",
-    enum: SkillLevel,
+    enum: LanguageLevel,
   })
-  level!: SkillLevel;
+  level!: LanguageLevel;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
@@ -37,13 +37,13 @@ export class CandidateSkillEntity {
   updatedAt!: Date;
 
   /* Relations */
-  @ManyToOne(() => CandidateProfileEntity, (candidate) => candidate.candidateSkills, {
+  @ManyToOne(() => CandidateProfileEntity, (candidate) => candidate.candidateLanguages, {
     onDelete: "CASCADE",
   })
   @JoinColumn({ name: "candidate_id" })
   candidate!: CandidateProfileEntity;
 
-  @ManyToOne(() => SkillEntity, { onDelete: "RESTRICT" })
-  @JoinColumn({ name: "skill_id" })
-  skill!: SkillEntity;
+  @ManyToOne(() => LanguageEntity, { onDelete: "RESTRICT" })
+  @JoinColumn({ name: "language_id" })
+  language!: LanguageEntity;
 }

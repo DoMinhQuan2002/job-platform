@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
@@ -12,6 +13,7 @@ import { ResumeEntity } from "./resume.entity";
 import { ApplicationStatus } from "../../common/constants";
 
 @Entity({ name: "applications" })
+@Unique(["candidateId", "jobId"])
 export class ApplicationEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
@@ -24,6 +26,9 @@ export class ApplicationEntity {
 
   @Column({ name: "resume_id", type: "bigint" })
   resumeId!: string;
+
+  @Column({ name: "resume_snapshot_url", type: "text" })
+  resumeSnapshotUrl!: string;
 
   @Column({
     type: "enum",
@@ -46,13 +51,15 @@ export class ApplicationEntity {
     () => CandidateProfileEntity,
     (candidate) => candidate.applications,
     {
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
     },
   )
   @JoinColumn({ name: "candidate_id" })
   candidate!: CandidateProfileEntity;
 
-  @ManyToOne(() => ResumeEntity)
+  @ManyToOne(() => ResumeEntity, {
+    onDelete: "RESTRICT",
+  })
   @JoinColumn({ name: "resume_id" })
   resume!: ResumeEntity;
 }

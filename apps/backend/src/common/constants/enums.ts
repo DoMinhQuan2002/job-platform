@@ -4,6 +4,7 @@ export enum ApplicationStatus {
   INTERVIEW = "INTERVIEW",
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
+  WITHDRAWN = "WITHDRAWN",
 }
 
 export enum SkillLevel {
@@ -11,4 +12,11 @@ export enum SkillLevel {
   INTERMEDIATE = "INTERMEDIATE",
   ADVANCED = "ADVANCED",
   EXPERT = "EXPERT",
+}
+
+export enum LanguageLevel {
+  BEGINNER = "BEGINNER",
+  INTERMEDIATE = "INTERMEDIATE",
+  ADVANCED = "ADVANCED",
+  NATIVE = "NATIVE",
 }

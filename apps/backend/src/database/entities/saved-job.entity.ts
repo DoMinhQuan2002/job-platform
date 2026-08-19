@@ -5,10 +5,12 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
 
 @Entity({ name: "saved_jobs" })
+@Unique(["candidateId", "jobId"])
 export class SavedJobEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
