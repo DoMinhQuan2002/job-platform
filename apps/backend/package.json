@@ -14,7 +14,8 @@
     "migration:create": "npm run typeorm -- migration:create src/database/migrations/%npm_config_name%",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "migration:show": "npm run typeorm -- migration:show"
+    "migration:show": "npm run typeorm -- migration:show",
+    "db:seed:locations": "powershell -ExecutionPolicy Bypass -File scripts/import-vietnamese-locations.ps1"
   },
   "keywords": [],
   "author": "",
