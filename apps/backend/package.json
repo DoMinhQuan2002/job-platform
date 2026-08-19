@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test:storage": "npm run build && node dist/scripts/test-storage.js",
+    "test:redis": "tsx src/scripts/test-redis.ts",
     "typeorm": "npx tsx ./node_modules/typeorm/cli.js -d src/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate src/database/migrations/%npm_config_name%",
     "migration:create": "npm run typeorm -- migration:create src/database/migrations/%npm_config_name%",
@@ -21,6 +22,7 @@
   "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "@upstash/redis": "^1.38.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pg": "^8.23.0",
