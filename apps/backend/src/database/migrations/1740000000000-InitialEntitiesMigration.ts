@@ -21,7 +21,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 3. Create candidate_profiles table
     await queryRunner.query(
       `CREATE TABLE "candidate_profiles" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "user_id" bigint NOT NULL,
         "bio" text,
         "career_objective" text,
@@ -35,7 +35,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 4. Create resumes table
     await queryRunner.query(
       `CREATE TABLE "resumes" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "file_name" character varying(255) NOT NULL,
         "file_url" text NOT NULL,
@@ -58,7 +58,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 5. Create educations table
     await queryRunner.query(
       `CREATE TABLE "educations" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "school" character varying(255) NOT NULL,
         "major" character varying(255),
@@ -78,7 +78,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 6. Create work_experiences table
     await queryRunner.query(
       `CREATE TABLE "work_experiences" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "company_name" character varying(255) NOT NULL,
         "position" character varying(255) NOT NULL,
@@ -97,7 +97,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 7. Create certificates table
     await queryRunner.query(
       `CREATE TABLE "certificates" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "name" character varying(255) NOT NULL,
         "issuer" character varying(255),
@@ -115,7 +115,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 8. Create skills table
     await queryRunner.query(
       `CREATE TABLE "skills" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "name" character varying(100) NOT NULL,
         "description" text,
         "status" character varying(30) NOT NULL DEFAULT 'ACTIVE',
@@ -133,7 +133,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 9. Create candidate_skills table
     await queryRunner.query(
       `CREATE TABLE "candidate_skills" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "skill_id" bigint NOT NULL,
         "level" "public"."candidate_skills_level_enum" NOT NULL,
@@ -147,7 +147,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 10. Create languages table
     await queryRunner.query(
       `CREATE TABLE "languages" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "name" character varying(100) NOT NULL,
         "code" character varying(10),
         "status" character varying(30) NOT NULL DEFAULT 'ACTIVE',
@@ -168,7 +168,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 11. Create candidate_languages table
     await queryRunner.query(
       `CREATE TABLE "candidate_languages" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "language_id" bigint NOT NULL,
         "level" "public"."candidate_languages_level_enum" NOT NULL,
@@ -182,7 +182,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 12. Create applications table
     await queryRunner.query(
       `CREATE TABLE "applications" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "job_id" bigint NOT NULL,
         "resume_id" bigint NOT NULL,
@@ -199,7 +199,7 @@ export class InitialEntitiesMigration1740000000000 implements MigrationInterface
     // 13. Create saved_jobs table
     await queryRunner.query(
       `CREATE TABLE "saved_jobs" (
-        "id" BIGSERIAL NOT NULL,
+        "id" bigint GENERATED ALWAYS AS IDENTITY,
         "candidate_id" bigint NOT NULL,
         "job_id" bigint NOT NULL,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

@@ -27,7 +27,7 @@ export class ApplicationEntity {
   @Column({ name: "resume_id", type: "bigint" })
   resumeId!: string;
 
-  @Column({ name: "resume_snapshot_url", type: "text" })
+  @Column({ name: "resume_snapshot_url", type: "text", nullable: false })
   resumeSnapshotUrl!: string;
 
   @Column({
@@ -37,7 +37,11 @@ export class ApplicationEntity {
   })
   status!: ApplicationStatus;
 
-  @Column({ name: "applied_at", type: "timestamptz", default: () => "CURRENT_TIMESTAMP" })
+  @Column({
+    name: "applied_at",
+    type: "timestamptz",
+    default: () => "CURRENT_TIMESTAMP",
+  })
   appliedAt!: Date;
 
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })

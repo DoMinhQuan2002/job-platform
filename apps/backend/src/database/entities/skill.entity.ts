@@ -5,14 +5,25 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { SkillCategory } from "../../common/constants";
 
 @Entity({ name: "skills" })
 export class SkillEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
 
-  @Column({ type: "varchar", length: 100, unique: true })
+  @Column({ type: "varchar", length: 100 })
   name!: string;
+
+  @Column({
+    type: "varchar",
+    length: 30,
+    default: SkillCategory.SKILL,
+  })
+  category!: SkillCategory;
+
+  @Column({ type: "varchar", length: 10, nullable: true })
+  code!: string | null;
 
   @Column({ type: "text", nullable: true })
   description!: string | null;

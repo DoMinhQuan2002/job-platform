@@ -4,19 +4,16 @@
   "version": "1.0.0",
   "workspaces": [
     "apps/frontend",
+    "apps/frontend-admin",
     "apps/backend"
   ],
   "scripts": {
     "dev:frontend": "npm run dev -w frontend",
+    "dev:frontend-admin": "npm run dev -w frontend-admin",
     "dev:backend": "npm run dev -w backend",
     "build:frontend": "npm run build -w frontend",
-    "build:backend": "npm run build -w backend"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
-    "multer": "^2.2.0"
-  },
-  "devDependencies": {
-    "@types/multer": "^2.2.0"
+    "build:frontend-admin": "npm run build -w frontend-admin",
+    "build:backend": "npm run build -w backend",
+    "test:backend": "npm run test -w backend"
   }
 }
