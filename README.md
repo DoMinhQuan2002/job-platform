@@ -1,7 +1,8 @@
 # Job Platform - Monorepo FE/BE
 
 Repo này đã tách rõ:
-- `apps/frontend`: Next.js + Tailwind CSS + shadcn/ui
+- `apps/frontend`: Next.js public + candidate + recruiter (Tailwind CSS + shadcn/ui)
+- `apps/frontend-admin`: Next.js admin, app riêng để không ship code quản trị lên site public
 - `apps/backend`: Express.js + TypeORM + PostgreSQL
 
 Mục tiêu: dev clone về là chạy nhanh, chia nhóm làm song song, ít đụng code nhau.
@@ -19,15 +20,27 @@ Từ thư mục gốc `job-platform`:
 ```bash
 npm install
 npm run dev:frontend
+npm run dev:frontend-admin
 npm run dev:backend
 ```
 
+- Frontend public: http://localhost:3000
+- Frontend admin: http://localhost:3001
+
 ## 3) Cách chạy theo từng app (nếu muốn tách riêng FE/BE)
 
-### Frontend
+### Frontend (public / candidate / recruiter)
 
 ```bash
 cd apps/frontend
+npm install
+npm run dev
+```
+
+### Frontend admin
+
+```bash
+cd apps/frontend-admin
 npm install
 npm run dev
 ```
@@ -59,10 +72,11 @@ cp apps/backend/.env.example apps/backend/.env
 - `SUPABASE_SERVICE_ROLE_KEY` (key server-side, không đưa lên frontend)
 - `SUPABASE_STORAGE_BUCKET` (ví dụ `job-platform-assets`)
 
-### Frontend
+### Frontend (cả `frontend` và `frontend-admin`)
 
 ```bash
 cp apps/frontend/.env.example apps/frontend/.env
+cp apps/frontend-admin/.env.example apps/frontend-admin/.env
 ```
 
 Điền:
@@ -74,17 +88,17 @@ Từ root:
 
 ```bash
 npm run build:frontend
+npm run build:frontend-admin
 npm run build:backend
 ```
 
 ## 6) Cấu trúc thư mục đã chia sẵn theo nghiệp vụ
 
-### Frontend (`apps/frontend/src`)
+### Frontend public (`apps/frontend/src`)
 
 - `app/(public)`: màn public (home, login, register, job list)
 - `app/(candidate)`: màn ứng viên
 - `app/(recruiter)`: màn nhà tuyển dụng
-- `app/(admin)`: màn quản trị
 - `components/ui`: component shadcn/ui dùng chung
 - `components/common`: component dùng chung toàn app
 - `components/layout`: header/sidebar/footer/layout
@@ -92,13 +106,21 @@ npm run build:backend
 - `features/auth`: state/logic gọi API cho auth
 - `features/candidate`: state/logic ứng viên
 - `features/recruiter`: state/logic nhà tuyển dụng
-- `features/admin`: state/logic admin
 - `services`: API client, service gọi backend
 - `store`: global state
 - `hooks`: custom hooks
 - `types`: typings/interfaces
 - `constants`: hằng số và enum FE
 - `utils`: hàm tiện ích
+
+### Frontend admin (`apps/frontend-admin/src`)
+
+Cùng convention với `apps/frontend`, chỉ chứa màn quản trị:
+
+- `app/(admin)`: dashboard / moderation / account / system
+- `app/(public)/auth/login`: đăng nhập admin
+- `features/admin`: state/logic admin
+- `components/*`, `services`, `hooks`, `types`: giống frontend public, code tách hẳn (bundle riêng)
 
 ### Backend (`apps/backend/src`)
 
