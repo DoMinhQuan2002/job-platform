@@ -25,36 +25,36 @@ export type TargetType =
   | "APPLICATION";
 
 @Entity({ name: "notifications" })
-@Index("idx_notifications_user_read", ["user_id", "is_read", "created_at"])
-@Index("idx_notifications_target", ["target_type", "target_id"])
+@Index("idx_notifications_user_read", ["userId", "isRead", "createdAt"])
+@Index("idx_notifications_target", ["targetType", "targetId"])
 export class NotificationEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
 
-  @Column({ type: "bigint" })
-  user_id!: string;
+  @Column({ name: "user_id", type: "bigint" })
+  userId!: string;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ name: "type", type: "varchar", length: 50 })
   type!: NotificationType;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ name: "title", type: "varchar", length: 255 })
   title!: string;
 
-  @Column({ type: "text" })
+  @Column({ name: "content", type: "text" })
   content!: string;
 
-  @Column({ type: "varchar", length: 30, nullable: true })
-  target_type!: TargetType | null;
+  @Column({ name: "target_type", type: "varchar", length: 30, nullable: true })
+  targetType!: TargetType | null;
 
-  @Column({ type: "bigint", nullable: true })
-  target_id!: string | null;
+  @Column({ name: "target_id", type: "bigint", nullable: true })
+  targetId!: string | null;
 
-  @Column({ type: "boolean", default: false })
-  is_read!: boolean;
+  @Column({ name: "is_read", type: "boolean", default: false })
+  isRead!: boolean;
 
-  @Column({ type: "timestamptz", nullable: true })
-  read_at!: Date | null;
+  @Column({ name: "read_at", type: "timestamptz", nullable: true })
+  readAt!: Date | null;
 
-  @CreateDateColumn({ type: "timestamptz" })
-  created_at!: Date;
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  createdAt!: Date;
 }
