@@ -11,8 +11,6 @@ import { CandidateSkillEntity } from "./candidate-skill.entity";
 import { EducationEntity } from "./education.entity";
 import { WorkExperienceEntity } from "./work-experience.entity";
 import { ApplicationEntity } from "./application.entity";
-import { CertificateEntity } from "./certificate.entity";
-import { CandidateLanguageEntity } from "./candidate-language.entity";
 
 @Entity({ name: "candidate_profiles" })
 export class CandidateProfileEntity {
@@ -45,12 +43,6 @@ export class CandidateProfileEntity {
 
   @OneToMany(() => WorkExperienceEntity, (exp) => exp.candidate)
   workExperiences!: WorkExperienceEntity[];
-
-  @OneToMany(() => CertificateEntity, (cert) => cert.candidate)
-  certificates!: CertificateEntity[];
-
-  @OneToMany(() => CandidateLanguageEntity, (lang) => lang.candidate)
-  candidateLanguages!: CandidateLanguageEntity[];
 
   @OneToMany(() => ApplicationEntity, (app) => app.candidate)
   applications!: ApplicationEntity[];

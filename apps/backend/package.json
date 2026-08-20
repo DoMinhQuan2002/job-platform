@@ -28,12 +28,14 @@
     "@upstash/redis": "^1.38.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "multer": "^2.2.0",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.31"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
     "@types/supertest": "^7.2.1",
     "supertest": "^7.2.2",

@@ -12,11 +12,11 @@ export enum SkillLevel {
   INTERMEDIATE = "INTERMEDIATE",
   ADVANCED = "ADVANCED",
   EXPERT = "EXPERT",
+  NATIVE = "NATIVE",
 }
 
-export enum LanguageLevel {
-  BEGINNER = "BEGINNER",
-  INTERMEDIATE = "INTERMEDIATE",
-  ADVANCED = "ADVANCED",
-  NATIVE = "NATIVE",
+export enum SkillCategory {
+  SKILL = "SKILL",
+  LANGUAGE = "LANGUAGE",
+  CERTIFICATE = "CERTIFICATE",
 }

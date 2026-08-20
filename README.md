@@ -133,7 +133,7 @@ Cùng convention với `apps/frontend`, chỉ chứa màn quản trị:
 - `modules/auth`: đăng ký, đăng nhập, xác thực
 - `modules/users`, `roles`, `permissions`: tài khoản & phân quyền (Nhóm 1)
 - `modules/companies`, `job-categories`, `jobs`, `skills`: công ty & tuyển dụng (Nhóm 2)
-- `modules/candidate-profiles`, `resumes`, `educations`, `work-experiences`, `certificates`, `languages`, `applications`, `saved-jobs`: ứng viên & ứng tuyển (Nhóm 3)
+- `modules/candidate-profiles`, `resumes`, `educations`, `work-experiences`, `applications`, `saved-jobs`: ứng viên & ứng tuyển (Nhóm 3)
 - `modules/notifications`, `system-logs`, `admin`, `statistics`: admin & hệ thống (Nhóm 4)
 - `routes`: gom route cấp hệ thống
 - `docs`: tài liệu API, nghiệp vụ
@@ -143,7 +143,7 @@ Cùng convention với `apps/frontend`, chỉ chứa màn quản trị:
 
 - Nhóm 1: `users`, `roles`, `permissions`, `role_permissions`
 - Nhóm 2: `companies`, `job_categories`, `jobs`, `job_skills`
-- Nhóm 3: `candidate_profiles`, `resumes`, `educations`, `work_experiences`, `certificates`, `skills`, `candidate_skills`, `languages`, `candidate_languages`, `applications`, `saved_jobs`
+- Nhóm 3: `candidate_profiles`, `resumes`, `educations`, `work_experiences`, `skills`, `candidate_skills`, `applications`, `saved_jobs`
 - Nhóm 4: `notifications`, `system_logs` + chức năng admin
 
 Nguyên tắc: bảng có owner chính, nhóm khác được dùng FK nhưng không tự ý đổi schema bảng owner khi chưa thống nhất.
