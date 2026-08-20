@@ -22,37 +22,37 @@ export type LogAction =
   | "UPDATE_APPLICATION_STATUS";
 
 @Entity({ name: "system_logs" })
-@Index("idx_system_logs_target", ["target_type", "target_id"])
-@Index("idx_system_logs_user", ["user_id", "created_at"])
-@Index("idx_system_logs_action", ["action", "created_at"])
+@Index("idx_system_logs_target", ["targetType", "targetId"])
+@Index("idx_system_logs_user", ["userId", "createdAt"])
+@Index("idx_system_logs_action", ["action", "createdAt"])
 export class SystemLogEntity {
   @PrimaryGeneratedColumn({ type: "bigint" })
   id!: string;
 
-  @Column({ type: "bigint", nullable: true })
-  user_id!: string | null;
+  @Column({ name: "user_id", type: "bigint", nullable: true })
+  userId!: string | null;
 
-  @Column({ type: "varchar", length: 50 })
+  @Column({ name: "action", type: "varchar", length: 50 })
   action!: LogAction;
 
-  @Column({ type: "varchar", length: 30, nullable: true })
-  target_type!: TargetType | null;
+  @Column({ name: "target_type", type: "varchar", length: 30, nullable: true })
+  targetType!: TargetType | null;
 
-  @Column({ type: "bigint", nullable: true })
-  target_id!: string | null;
+  @Column({ name: "target_id", type: "bigint", nullable: true })
+  targetId!: string | null;
 
-  @Column({ type: "varchar", length: 255, nullable: true })
-  old_value!: string | null;
+  @Column({ name: "old_value", type: "varchar", length: 255, nullable: true })
+  oldValue!: string | null;
 
-  @Column({ type: "varchar", length: 255, nullable: true })
-  new_value!: string | null;
+  @Column({ name: "new_value", type: "varchar", length: 255, nullable: true })
+  newValue!: string | null;
 
-  @Column({ type: "text", nullable: true })
+  @Column({ name: "description", type: "text", nullable: true })
   description!: string | null;
 
-  @Column({ type: "varchar", length: 45, nullable: true })
-  ip_address!: string | null;
+  @Column({ name: "ip_address", type: "varchar", length: 45, nullable: true })
+  ipAddress!: string | null;
 
-  @CreateDateColumn({ type: "timestamptz" })
-  created_at!: Date;
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  createdAt!: Date;
 }
