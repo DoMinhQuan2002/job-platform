@@ -1,6 +1,6 @@
 # API Contract — Jobs (Group 2)
 
-> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`DELETE /api/jobs/{id}`), **.  
+> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`PATCH /api/jobs/{id}`,`GET /api/jobs`, `/api/job-categories`), **.  
 > Status: **Draft GĐ2 — chờ Leader duyệt**.
 
 Liên quan schema: `jobs`, `job_skills`, `job_categories`, `companies`, `skills`.
@@ -223,6 +223,281 @@ Base: `/api/v1/jobs`
 
 **Response 200:** trả job sau cập nhật cùng relations.  
 **Errors:** `400`, `401`, `403`, `404` (job/category/skill), `409`, `500`.
+
+
+### 1.5 PATCH `/api/jobs/{id}`
+
+### Mục đích
+
+Cập nhật **trạng thái tin tuyển dụng** mà không xóa job khỏi database.
+
+### Quyền
+
+`RECRUITER` — chỉ được cập nhật job thuộc company của mình.
+
+### Path Parameter
+
+| Field | Type   | Required | Validation                  |
+| ----- | ------ | -------- | --------------------------- |
+| `id`  | BIGINT | Yes      | ID hợp lệ, job phải tồn tại |
+
+### Request
+
+```json
+{
+  "status": "CLOSED"
+}
+```
+
+| Field    | Type | Required | Validation                                         |
+| -------- | ---- | -------- | -------------------------------------------------- |
+| `status` | enum | Yes      | Phải thuộc trạng thái Recruiter được phép cập nhật |
+
+### Business Rules
+
+* API chỉ cập nhật `status`; sửa nội dung job dùng `PUT /api/jobs/{id}`.
+* Recruiter chỉ thao tác job thuộc company của mình.
+* Dùng trạng thái để đóng/mở/ẩn job thay vì xóa vật lý.
+* Recruiter chỉ được thay đổi trạng thái thuộc vòng đời tuyển dụng, ví dụ `OPEN`, `CLOSED`, `HIDDEN`.
+* Các trạng thái kiểm duyệt như `PENDING`, `APPROVED`, `REJECTED` thuộc quyền Admin nếu hệ thống quy định như vậy.
+* Không cho transition không hợp lệ hoặc chuyển sang chính trạng thái hiện tại.
+
+Ví dụ:
+
+```text
+OPEN → CLOSED
+CLOSED → OPEN
+OPEN → HIDDEN
+HIDDEN → OPEN
+```
+
+> Tên status cuối cùng phải theo đúng enum đã chốt trong database. Bản contract hiện tại cũng yêu cầu không tự bổ sung status ngoài schema.
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Cập nhật trạng thái tin tuyển dụng thành công",
+  "data": {
+    "id": "25",
+    "status": "CLOSED",
+    "updatedAt": "2026-08-21T10:00:00.000Z"
+  }
+}
+```
+
+### Errors
+
+| Status | Khi                                        |
+| ------ | ------------------------------------------ |
+| `400`  | Status/transition không hợp lệ             |
+| `401`  | Chưa đăng nhập                             |
+| `403`  | Không phải Recruiter hoặc không sở hữu job |
+| `404`  | Job không tồn tại                          |
+| `500`  | Lỗi hệ thống                               |
+
+---
+
+### 1.6. GET `/api/jobs`
+
+### Mục đích
+
+Lấy danh sách việc làm công khai, đồng thời hỗ trợ **tìm kiếm, lọc và phân trang**.
+
+### Quyền
+
+`Public`
+
+### Query Parameters
+
+| Param       | Type    | Required | Ý nghĩa          |
+| ----------- | ------- | -------- | ---------------- |
+| `keyword`   | string  | No       | Tìm theo từ khóa |
+| `category`  | BIGINT  | No       | ID ngành nghề    |
+| `location`  | string  | No       | Địa điểm         |
+| `salaryMin` | DECIMAL | No       | Lương tối thiểu  |
+| `salaryMax` | DECIMAL | No       | Lương tối đa     |
+| `page`      | integer | No       | Trang hiện tại   |
+| `limit`     | integer | No       | Số job/trang     |
+
+Ví dụ:
+
+```http
+GET /api/jobs?keyword=backend&category=2&location=Hanoi&salaryMin=10000000&salaryMax=20000000&page=1&limit=10
+```
+
+Các điều kiện được kết hợp theo `AND`.
+
+### Validation
+
+* `keyword`, `location`: trim, không phân biệt hoa thường.
+* `category`: truyền `job_categories.id`.
+* `salaryMin`, `salaryMax >= 0`.
+* Nếu có cả hai: `salaryMin <= salaryMax`.
+* `page >= 1`.
+* `1 <= limit <= 100`.
+* Default: `page=1`, `limit=10`.
+
+### Salary Filter
+
+Job phù hợp khi khoảng lương giao với khoảng người dùng tìm:
+
+```text
+job.salary_max >= salaryMin
+AND
+job.salary_min <= salaryMax
+```
+
+Quy tắc này đang được sử dụng trong contract hiện tại.
+
+### Business Rules
+
+API public chỉ trả job được phép hiển thị:
+
+* job đã được duyệt;
+* job đang mở;
+* company đang hoạt động;
+* category đang hoạt động;
+* chưa hết deadline.
+
+Không trả các job như:
+
+```text
+PENDING
+REJECTED
+CLOSED
+HIDDEN
+```
+
+nếu các trạng thái này tồn tại trong enum.
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "25",
+        "title": "Backend Developer",
+        "salaryMin": 10000000,
+        "salaryMax": 20000000,
+        "location": "Hanoi",
+        "status": "APPROVED",
+        "category": {
+          "id": "2",
+          "name": "Backend Developer"
+        },
+        "company": {
+          "id": "5",
+          "name": "ABC Technology",
+          "logo": "https://example.com/logo.png"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "totalItems": 35,
+      "totalPages": 4
+    }
+  }
+}
+```
+
+Không có kết quả → vẫn trả `200` với `items: []`.
+
+### Errors
+
+| Status | Khi                |
+| ------ | ------------------ |
+| `400`  | Query không hợp lệ |
+| `500`  | Lỗi hệ thống       |
+
+> `GET /api/jobs` là một endpoint duy nhất cho list + search + filter + pagination, không cần tạo `/search` hoặc `/filter` riêng.
+
+---
+
+
+### 1.7. GET `/api/job-categories`
+
+### Mục đích
+
+Lấy danh sách ngành nghề dùng cho:
+
+* filter tìm việc;
+* form tạo/sửa job;
+* hiển thị ngành nghề của job.
+
+### Quyền
+
+`Public`
+
+
+### Request
+
+Không có body.
+
+```http
+GET /api/job-categories
+```
+
+### Business Rules
+
+* Chỉ trả category đang hoạt động.
+* Không cần pagination vì đây là dữ liệu catalog.
+* Nếu database chưa có quan hệ cha–con thì trả **flat list**, không tự tạo `children`.
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": [
+    {
+      "id": "1",
+      "name": "Công nghệ thông tin",
+      "description": "Nhóm ngành công nghệ thông tin"
+    },
+    {
+      "id": "2",
+      "name": "Backend Developer",
+      "description": "Phát triển hệ thống backend"
+    }
+  ]
+}
+```
+
+Nếu không có category:
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": []
+}
+```
+
+### Errors
+
+| Status | Khi                              |
+| ------ | -------------------------------- |
+| `200`  | Thành công, kể cả danh sách rỗng |
+| `500`  | Lỗi hệ thống                     |
+
+
+---
+
+
+| Method  | URL                   | Quyền       | Chức năng                           |
+| ------- | --------------------- | ----------- | ----------------------------------- |
+| `PATCH` | `/api/jobs/{id}`      | `RECRUITER` | Cập nhật trạng thái job             |
+| `GET`   | `/api/jobs`           | Public      | List / search / filter / pagination |
+| `GET`   | `/api/job-categories` | Public      | Danh sách ngành nghề                |
 
 ---
 
