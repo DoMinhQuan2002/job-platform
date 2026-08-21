@@ -81,6 +81,19 @@ export class ApplicationsController {
       next(error);
     }
   }
+
+
+  // @RoleGuard(ROLES.RECRUITER)
+  async getApplicationsByJobId (_req: Request, res: Response, next: NextFunction) {
+    try {
+      const job_id = _req.params.id as string;
+      const recruiterUserId = _req.user?.id as string;
+      const result = await applicationsService.getApplicationsByJobId(job_id, recruiterUserId);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
 };
 
 export const applicationsController = new ApplicationsController();

@@ -15,6 +15,11 @@ applicationsRouter.get("/me/:id", applicationsController.getMyApplicationById);
 // DELETE /api/applications/me/:id  — Rút đơn (chỉ khi status = APPLIED)
 applicationsRouter.delete("/me/:id", applicationsController.withdraw);
 
+
+// RECRUITER - Nhà tuyển dụng
+// GET    /api/applications/:jobId — Recruiter lấy danh sách đơn ứng tuyển của một Job
+applicationsRouter.get("/job/:id", applicationsController.getApplicationsByJobId);
+
 // PATCH  /api/applications/:id/status — Nhà tuyển dụng cập nhật trạng thái (RECRUITER only)
 applicationsRouter.patch("/:id/status", applicationsController.updateStatus);
 

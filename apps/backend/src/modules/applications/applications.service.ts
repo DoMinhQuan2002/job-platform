@@ -3,14 +3,10 @@ import { ROLES } from "../../common/constants/roles";
 import { AppError } from "../../common/errors/app-error";
 import { AppDataSource } from "../../data-source";
 import { ApplicationEntity } from "../../database/entities/application.entity";
+import { ResumeEntity } from "../../database/entities/resume.entity";
+import { Job } from "../../database/entities/job.entity";
+import { JOB_STATUS } from "../../common/constants/job";
 
-/**
- * State machine: định nghĩa các trạng thái được phép chuyển đến
- * từ mỗi trạng thái hiện tại — dùng enum ApplicationStatus, không hardcode string.
- *
- * Terminal states (ACCEPTED, REJECTED, WITHDRAWN) không có entry trong map
- * → tự động bị chặn bởi logic bên dưới.
- */
 
 export class ApplicationsService {
   private appRepo = AppDataSource.getRepository(ApplicationEntity);
@@ -20,9 +16,26 @@ export class ApplicationsService {
   // ──────────────────────────────────────────────────────────────
   async apply(candidateId: string, data: { jobId: string; resumeId: string }) {
     try {
+      // Validate 1: Ownership CV
+      const resumeRepo = AppDataSource.getRepository(ResumeEntity);
+      const resume = await resumeRepo.findOne({ where: { id: data.resumeId, candidateId } });
+      if (!resume) throw new AppError(403, "FORBIDDEN", "CV không phải là của bạn");
+
+      // Validate 2: Cross-Group (Job status)
+      const jobRepo = AppDataSource.getRepository(Job);
+      const job = await jobRepo.findOne({ where: { id: data.jobId, status: JOB_STATUS.APPROVED } });
+      if (!job) throw new AppError(400, "BUSINESS_RULE_VIOLATION", "Job is not available");
+
+      // Validate 3: Duplicate application
+      const existing = await this.appRepo.findOne({ where: { candidateId, jobId: data.jobId } });
+      if (existing) throw new AppError(409, "CONFLICT", "Already applied to this job");
+
       const application = this.appRepo.create({
-        ...data,
         candidateId,
+        jobId: data.jobId,
+        resumeId: data.resumeId,
+        resumeSnapshotUrl: resume.fileUrl,
+        status: ApplicationStatus.APPLIED,
       });
       return await this.appRepo.save(application);
     } catch (error) {
@@ -122,6 +135,44 @@ export class ApplicationsService {
       throw new AppError(500, "DB_ERROR", "Lỗi khi cập nhật trạng thái", error);
     }
   }
+
+  // ──────────────────────────────────────────────────────────────
+  // RECRUITER XEM DANH SÁCH ĐƠN CỦA MỘT JOB
+  // ──────────────────────────────────────────────────────────────
+  async getApplicationsByJobId(jobId: string, recruiterUserId: string) {
+    try {
+      // Validate 1: Kiểm tra Job có tồn tại và recruiter phải là chủ Job
+      const jobRepo = AppDataSource.getRepository(Job);
+      const job = await jobRepo.findOne({
+        where: { id: jobId },
+        relations: ["company"],
+      });
+
+      if (!job) {
+        throw new AppError(404, "NOT_FOUND", "Không tìm thấy Job");
+      }
+
+      if (job.company.userId !== recruiterUserId) {
+        throw new AppError(403, "FORBIDDEN", "Bạn không có quyền xem danh sách ứng tuyển của Job này");
+      }
+
+      // Lấy danh sách kèm theo thông tin resume và ứng viên
+      return await this.appRepo.find({
+        where: { jobId },
+        relations: ["resume", "candidate"],
+        order: {
+          appliedAt: "DESC",
+        }
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, "DB_ERROR", "Lỗi khi lấy danh sách đơn ứng tuyển của Job", error);
+    }
+  }
+
+
+  
+
 }
 
 export const applicationsService = new ApplicationsService();
