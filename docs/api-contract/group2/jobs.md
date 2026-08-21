@@ -1,7 +1,7 @@
 # API Contract — Jobs (Group 2)
 
-> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`PATCH /api/jobs/{id}`,`GET /api/jobs`, `/api/job-categories`), **.  
-> Status: **Draft GĐ2 — chờ Leader duyệt**.
+> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`PATCH /api/jobs/{id}`,`GET /api/jobs`, `/api/job-categories`,`/api/recruiter/jobs`), **.  
+
 
 Liên quan schema: `jobs`, `job_skills`, `job_categories`, `companies`, `skills`.
 
@@ -538,3 +538,128 @@ Recruiter không được tự đặt trạng thái `APPROVED` hoặc `REJECTED`
 
 `apps/backend/src/modules/jobs` hiện chỉ là skeleton / draft implementation.  
 **URL / response / validation trong doc này là đề xuất chính thức sau khi Leader approve.**
+
+## 1.8 GET `/api/recruiter/jobs`
+
+### Mục đích
+
+Lấy danh sách toàn bộ tin tuyển dụng thuộc company của Recruiter để quản lý.
+
+### Quyền
+
+`RECRUITER`
+
+### Query
+
+| Param      | Type    | Required | Ý nghĩa                   |
+| ---------- | ------- | -------- | ------------------------- |
+| `keyword`  | string  | No       | Tìm theo tiêu đề/nội dung |
+| `status`   | enum    | No       | Lọc trạng thái            |
+| `category` | BIGINT  | No       | Lọc ngành nghề            |
+| `page`     | integer | No       | Trang hiện tại            |
+| `limit`    | integer | No       | Số bản ghi/trang          |
+
+Ví dụ:
+
+```http
+GET /api/recruiter/jobs?status=REJECTED&page=1&limit=10
+```
+
+### Business Rules
+
+Backend tự xác định company từ Recruiter đang đăng nhập:
+
+```text
+req.user.id
+→ company của recruiter
+→ jobs.company_id = company.id
+```
+
+Frontend không truyền `companyId`.
+
+Recruiter xem được tất cả job của mình, kể cả:
+
+```text
+APPROVED
+PENDING
+REJECTED
+CLOSED
+```
+
+Nếu không truyền `status` → trả tất cả trạng thái.
+
+### Pagination
+
+```text
+page >= 1
+1 <= limit <= 100
+
+default:
+page = 1
+limit = 10
+```
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "25",
+        "title": "Backend Developer",
+        "salaryMin": 10000000,
+        "salaryMax": 20000000,
+        "location": "Hà Nội",
+        "status": "PENDING",
+        "category": {
+          "id": "2",
+          "name": "Backend Developer"
+        },
+        "createdAt": "2026-08-20T10:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "totalItems": 16,
+      "totalPages": 2
+    }
+  }
+}
+```
+
+Nếu không có job → `200` với `items: []`.
+
+### Errors
+
+| Status | Khi                        |
+| ------ | -------------------------- |
+| `400`  | Query không hợp lệ         |
+| `401`  | Chưa đăng nhập / token lỗi |
+| `403`  | Không phải Recruiter       |
+| `404`  | Recruiter chưa có company  |
+| `500`  | Lỗi hệ thống               |
+
+---
+
+## Phân biệt với GET `/api/jobs`
+
+|            | `GET /api/jobs`    | `GET /api/recruiter/jobs` |
+| ---------- | ------------------ | ------------------------- |
+| Đối tượng  | Public / Candidate | Recruiter                 |
+| Phạm vi    | Job công khai      | Job của company hiện tại  |
+| `APPROVED` | Có                 | Có                        |
+| `PENDING`  | Không              | Có                        |
+| `REJECTED` | Không              | Có                        |
+| `CLOSED`   | Không              | Có                        |
+
+```text
+GET /api/jobs
+→ danh sách job public
+
+GET /api/recruiter/jobs
+→ danh sách job nội bộ để Recruiter quản lý
+```
