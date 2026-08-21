@@ -1,18 +1,17 @@
 import { Router } from "express";
 import { resumesController } from "./resumes.controller";
+import { acceptOptionalUpload } from "../../common/middlewares/upload.middleware";
 
+/** Owner: Nguyễn Văn Lợi — Base: /api/v1/resumes */
 const resumesRouter = Router();
 
-// GET    /api/resumes/me              — Lấy danh sách CV
-resumesRouter.get("/me", resumesController.getMyResumes);
+resumesRouter.get("/", resumesController.getMyResumes);
+resumesRouter.post("/", acceptOptionalUpload, resumesController.createOwnerResume);
+resumesRouter.get("/:id", resumesController.getById);
+resumesRouter.put("/:id/default", resumesController.setDefault);
+resumesRouter.delete("/:id", resumesController.deleteMine);
 
-// POST   /api/resumes/me/upload       — Upload file CV (multipart/form-data)
-resumesRouter.post("/me/upload", resumesController.upload);
-
-// PATCH  /api/resumes/me/:id/set-default — Đặt CV làm mặc định
-resumesRouter.patch("/me/:id/set-default", resumesController.setDefault);
-
-// DELETE /api/resumes/me/:id          — Soft-delete CV
-resumesRouter.delete("/me/:id", resumesController.remove);
+// Tuỳ chọn để Stream/Lấy Signed URL cho CV
+resumesRouter.get("/:id/access", resumesController.getAccessUrl);
 
 export default resumesRouter;

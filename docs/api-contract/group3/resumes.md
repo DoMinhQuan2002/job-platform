@@ -11,12 +11,12 @@ Storage: private bucket, assetType `resume` — xem `apps/backend/STORAGE_API.md
 
 ## 0. Map Brief ↔ Schema / Draft
 
-| Brief                      | Schema / storage                      | Draft stub                       | Đề xuất contract                                                           |
-| -------------------------- | ------------------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| `POST /api/resumes`        | insert `resumes` + file trên Supabase | `POST /api/v1/resumes/me`        | **`POST /api/v1/resumes`** (bám brief, bỏ `/me` nếu list cũng là của mình) |
-| `GET /api/resumes`         | list theo `candidate_id`              | `GET /api/v1/resumes/me`         | **`GET /api/v1/resumes`** = CV của candidate hiện tại                      |
-| `GET /api/resumes/{id}`    | 1 row + ownership                     | _(chưa có trong stub)_           | Có                                                                         |
-| `DELETE /api/resumes/{id}` | soft delete + xóa file storage        | `DELETE /api/v1/resumes/me/{id}` | **`DELETE /api/v1/resumes/{id}`**                                          |
+| Brief                      | Schema / storage                      | Đề xuất contract                                                           |
+| -------------------------- | ------------------------------------- | -------------------------------------------------------------------------- |
+| `POST /api/resumes`        | insert `resumes` + file trên Supabase | **`POST /api/v1/resumes`** |
+| `GET /api/resumes`         | list theo `candidate_id`              | **`GET /api/v1/resumes`** = CV của candidate hiện tại                      |
+| `GET /api/resumes/{id}`    | 1 row + ownership                     | Có                                                                         |
+| `DELETE /api/resumes/{id}` | soft delete + xóa file storage        | **`DELETE /api/v1/resumes/{id}`**                                          |
 
 ### Quy ước file (đề xuất chốt)
 
@@ -25,20 +25,20 @@ Storage: private bucket, assetType `resume` — xem `apps/backend/STORAGE_API.md
 | MIME              | `application/pdf` only                                                             |
 | Max size          | **10MB** (khớp media catalog)                                                      |
 | `file_url` cột DB | lưu **`storagePath`** (vd. `resumes/<uuid>.pdf`), **không** lưu signed URL dài hạn |
-| Lấy URL xem/tải   | `GET /api/v1/media/access?storagePath=...&assetType=resume` → signed URL có hạn    |
+| Lấy URL xem/tải   | `GET /api/v1/access?storagePath=...&assetType=resume` → signed URL có hạn    |
 | Default CV        | đúng 1 `is_default=true` / candidate; set default → clear default cũ               |
 | Tên file          | `fileName` gốc từ client (max 255); object name trên storage do backend generate   |
 
-Flow upload khuyến nghị:
+Flow upload chính thức:
 
-```
-1) POST /api/v1/media/uploads  (multipart, assetType=resume)
-   → { storagePath, url(signed tạm), size, mimeType, fileName }
-2) POST /api/v1/resumes
-   body: { fileName, fileUrl: storagePath, fileSize, mimeType, isDefault? }
+```http
+POST /api/v1/resumes
+Content-Type: multipart/form-data
+
+file: <binary_pdf_file>
 ```
 
-_(Alternative: `POST /resumes` nhận multipart và gọi storage nội bộ — cần Leader chọn 1 flow để FE khỏi lệch.)_
+*(Backend sẽ tự động xử lý upload file lên Supabase Storage và trích xuất các metadata như tên file, kích thước, định dạng để lưu vào Database trong cùng 1 request).*
 
 ---
 
@@ -84,35 +84,23 @@ _(Alternative: `POST /resumes` nhận multipart và gọi storage nội bộ —
 
 ---
 
-## 3. Create resume metadata
+## 3. Upload & Create Resume
 
 |              |                        |
 | ------------ | ---------------------- |
 | Method / URL | `POST /api/v1/resumes` |
 | Quyền        | `CANDIDATE`            |
 
-**Request**
+**Request:** `multipart/form-data`
 
-```json
-{
-  "fileName": "CV_NguyenVanA.pdf",
-  "fileUrl": "resumes/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.pdf",
-  "fileSize": 245678,
-  "mimeType": "application/pdf",
-  "isDefault": true
-}
-```
+| Field  | Required | Validation                                                       |
+| ------ | -------- | ---------------------------------------------------------------- |
+| `file` | yes      | File định dạng `application/pdf`, kích thước tối đa **10MB** |
 
-| Field       | Required | Validation                                     |
-| ----------- | -------- | ---------------------------------------------- |
-| `fileName`  | yes      | max 255                                        |
-| `fileUrl`   | yes      | storagePath đã upload                          |
-| `fileSize`  | yes      | 1…10MB                                         |
-| `mimeType`  | yes      | `application/pdf`                              |
-| `isDefault` | no       | default `false`; nếu `true` → unset default cũ |
+*(Backend sẽ tự động trích xuất `fileName`, `fileSize`, `mimeType`, đẩy file lên Supabase và tự động thiết lập `isDefault = true` nếu đây là CV đầu tiên tải lên).*
 
 **Response 201:** object resume trong `data`.  
-**Errors:** `400`, `401`, `403`, `409` (optional), `500`
+**Errors:** `400` (BAD_REQUEST, INVALID_FILE_TYPE, FILE_TOO_LARGE, QUOTA_EXCEEDED), `401`, `403`, `500`
 
 ---
 
@@ -141,9 +129,9 @@ Nếu Leader không muốn endpoint riêng: cho phép `PUT /api/v1/resumes/{id}`
 
 Logic:
 
-1. Soft delete row (`deleted_at`)
-2. `DELETE /api/v1/media` với `storagePath` + `assetType=resume`
-3. Nếu xóa CV default → có thể promote CV còn lại gần nhất (optional — chốt)
+1. Soft delete row (`deleted_at` ở DB)
+2. Backend tự động gọi SDK nội bộ để xóa file vật lý trên Supabase
+3. Nếu CV bị xóa đang là Default → Backend sẽ tự động chỉ định CV mới nhất còn lại làm Default.
 
 **Errors:** `401`, `403`, `404`; nếu resume đang bị application FK chặn hard-delete → soft delete vẫn OK vì schema dùng soft delete.
 
