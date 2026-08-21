@@ -1,6 +1,6 @@
 # API Contract — Jobs (Group 2)
 
-> Owner doc: **Nguyễn Mạnh Cường, Nguyễn Bá Đức, Trần Cường**  
+> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`DELETE /api/jobs/{id}`), **.  
 > Status: **Draft GĐ2 — chờ Leader duyệt**.
 
 Liên quan schema: `jobs`, `job_skills`, `job_categories`, `companies`, `skills`.
@@ -10,30 +10,31 @@ Liên quan schema: `jobs`, `job_skills`, `job_categories`, `companies`, `skills`
 ## 0. Map Brief ↔ Schema / Draft stub
 
 | Brief (sếp) | Schema / ý nghiệp vụ | Draft stub hiện tại | Đề xuất contract |
-|-------------|----------------------|----------------------|------------------|
-| `POST /api/jobs` | `jobs`, `job_skills` (tạo tin + gắn kỹ năng yêu cầu) | `POST /api/v1/jobs` | `POST /api/v1/jobs` |
+|-------------|----------------------|--------------------|------------------|
+| `POST /api/jobs` | Tạo `jobs` + `job_skills` | `POST /api/v1/jobs` | `POST /api/v1/jobs` |
+| `GET /api/jobs` | List + tìm kiếm / lọc | `GET /api/v1/jobs` | `GET /api/v1/jobs` |
+| `GET /api/jobs/{id}` | Chi tiết + quan hệ | `GET /api/v1/jobs/{id}` | `GET /api/v1/jobs/{id}` |
+| `PUT /api/jobs/{id}` | Sửa job + skills | `PUT /api/v1/jobs/{id}` | `PUT /api/v1/jobs/{id}` |
+| Đóng / mở lại job | Cập nhật `jobs.status` | Chưa có | Action endpoint (khuyến nghị) |
 
-**Identity & Nghiệp vụ**
+**Identity / Ownership**
 
 - `req.user.id` = `users.id`
-- `companies.user_id` = `users.id` (tìm công ty của Recruiter đang đăng nhập)
-- Role: `RECRUITER`
-- Recruiter chỉ được tạo tin khi đã có hồ sơ công ty và trạng thái công ty là `ACTIVE`
-- `status` mặc định khi tạo mới là `PENDING` (chờ duyệt)
-- `slug` tự động sinh từ `title` (kèm unique suffix để đảm bảo duy nhất)
+- `companies.user_id` = `users.id`
+- `jobs.company_id` = `companies.id`
+- Recruiter chỉ thao tác job thuộc công ty của mình; công ty phải ở trạng thái `ACTIVE`.
 
 ---
 
-## 1. Job Endpoints
+## 1. Job endpoints
 
-Base: `/api/v1/jobs` (hoặc `/api/jobs` tuỳ Leader chốt tiền tố `v1`)  
-Auth: `RECRUITER`
+Base: `/api/v1/jobs`
 
-### 1.1 Tạo tin tuyển dụng mới
+### 1.1 Create job
 
 | | |
-|---|---|
-| Tên | Đăng tin tuyển dụng mới |
+|--|--|
+| Tên | Đăng tin tuyển dụng |
 | Method / URL | `POST /api/v1/jobs` |
 | Quyền | `RECRUITER` |
 
@@ -42,51 +43,40 @@ Auth: `RECRUITER`
 ```json
 {
   "categoryId": "2",
-  "title": "Senior NodeJS / TypeScript Developer",
-  "description": "<p>Chúng tôi đang tìm kiếm Senior NodeJS Developer tham gia phát triển hệ thống...</p>",
-  "requirements": "<ul><li>Tối thiểu 3 năm kinh nghiệm với NodeJS, NestJS/Express.</li><li>Thành thạo PostgreSQL, TypeORM.</li></ul>",
-  "benefits": "<ul><li>Lương thưởng cạnh tranh, tháng 13+.</li><li>Bảo hiểm sức khỏe cao cấp.</li><li>Cung cấp Macbook Pro M3.</li></ul>",
+  "title": "Senior NodeJS Developer",
+  "description": "Phát triển hệ thống backend...",
+  "requirements": "Tối thiểu 3 năm kinh nghiệm...",
+  "benefits": "Lương tháng 13, bảo hiểm...",
   "salaryMin": 25000000,
   "salaryMax": 45000000,
   "isNegotiable": false,
-  "address": "Tầng 12, Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
+  "address": "Cầu Giấy, Hà Nội",
   "jobType": "FULL_TIME",
   "jobMode": "HYBRID",
   "experience": 3,
   "quantity": 2,
   "deadline": "2026-09-30",
   "skills": [
-    {
-      "skillId": "5",
-      "isRequired": true
-    },
-    {
-      "skillId": "12",
-      "isRequired": false
-    }
+    { "skillId": "5", "isRequired": true }
   ]
 }
 ```
 
-| Field | Type | Required | Validation / Note |
-|-------|------|----------|-------------------|
-| `categoryId` | string (ID) | yes | ID danh mục ngành nghề, phải tồn tại trong bảng `job_categories` |
-| `title` | string | yes | Độ dài từ 5 đến 255 ký tự, không để trống |
-| `description` | string | yes | Kiểu text (HTML/Markdown/Text), không để trống |
-| `requirements` | string | yes | Kiểu text, không để trống |
-| `benefits` | string \| null | no | Kiểu text |
-| `salaryMin` | number \| null | no | Số nguyên >= 0 (VNĐ) |
-| `salaryMax` | number \| null | no | Số nguyên >= `salaryMin` (VNĐ) |
-| `isNegotiable` | boolean | no | Default: `false`. Nếu `true`, lương có thể để null (Thỏa thuận) |
-| `address` | string | yes | Max 255 ký tự, không để trống (Địa điểm làm việc) |
-| `jobType` | string | yes | Enum: `'FULL_TIME'` \| `'PART_TIME'`. Default: `'FULL_TIME'` |
-| `jobMode` | string | yes | Enum: `'ONSITE'` \| `'REMOTE'` \| `'HYBRID'`. Default: `'ONSITE'` |
-| `experience` | number \| null | no | Số nguyên >= 0 (năm kinh nghiệm). `null` = Không yêu cầu |
-| `quantity` | number | no | Số nguyên >= 1. Default: `1` |
-| `deadline` | string (Date) | yes | Định dạng `YYYY-MM-DD`, ngày phải lớn hơn ngày hiện tại |
-| `skills` | array | no | Mảng các object `{ skillId: string, isRequired?: boolean }` |
-| `skills[].skillId` | string (ID) | yes | ID kỹ năng phải tồn tại trong bảng `skills` |
-| `skills[].isRequired` | boolean | no | Default: `true` (Kỹ năng bắt buộc hay ưu tiên) |
+| Field | Required | Validation / Note |
+|-------|----------|-------------------|
+| `categoryId` | yes | Category phải tồn tại |
+| `title` | yes | 5–255 ký tự |
+| `description`, `requirements` | yes | Không để trống |
+| `benefits` | no | string hoặc null |
+| `salaryMin`, `salaryMax` | no | `>= 0`; max `>=` min |
+| `isNegotiable` | no | boolean, mặc định `false` |
+| `address` | yes | Tối đa 255 ký tự |
+| `jobType` | yes | `FULL_TIME \| PART_TIME` |
+| `jobMode` | yes | `ONSITE \| REMOTE \| HYBRID` |
+| `experience` | no | Số năm, `>= 0` hoặc null |
+| `quantity` | no | Số nguyên `>= 1`, mặc định `1` |
+| `deadline` | yes | `YYYY-MM-DD`, lớn hơn ngày hiện tại |
+| `skills` | no | Skill tồn tại; `isRequired` mặc định `true` |
 
 **Response 201**
 
@@ -98,57 +88,178 @@ Auth: `RECRUITER`
     "id": "101",
     "companyId": "1",
     "categoryId": "2",
-    "title": "Senior NodeJS / TypeScript Developer",
-    "slug": "senior-nodejs-typescript-developer-101",
-    "description": "<p>Chúng tôi đang tìm kiếm Senior NodeJS Developer tham gia phát triển hệ thống...</p>",
-    "requirements": "<ul><li>Tối thiểu 3 năm kinh nghiệm với NodeJS, NestJS/Express.</li><li>Thành thạo PostgreSQL, TypeORM.</li></ul>",
-    "benefits": "<ul><li>Lương thưởng cạnh tranh, tháng 13+.</li><li>Bảo hiểm sức khỏe cao cấp.</li><li>Cung cấp Macbook Pro M3.</li></ul>",
-    "salaryMin": "25000000.00",
-    "salaryMax": "45000000.00",
-    "isNegotiable": false,
-    "address": "Tầng 12, Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
-    "jobType": "FULL_TIME",
-    "jobMode": "HYBRID",
-    "experience": 3,
-    "quantity": 2,
-    "deadline": "2026-09-30",
-    "rejectReason": null,
+    "title": "Senior NodeJS Developer",
+    "slug": "senior-nodejs-developer-101",
     "status": "PENDING",
-    "createdAt": "2026-08-21T09:40:00.000Z",
-    "updatedAt": "2026-08-21T09:40:00.000Z",
     "skills": [
-      {
-        "id": "1",
-        "skillId": "5",
-        "isRequired": true,
-        "skill": {
-          "id": "5",
-          "name": "NodeJS",
-          "category": "SKILL"
-        }
-      },
-      {
-        "id": "2",
-        "skillId": "12",
-        "isRequired": false,
-        "skill": {
-          "id": "12",
-          "name": "PostgreSQL",
-          "category": "SKILL"
-        }
-      }
-    ]
+      { "skillId": "5", "isRequired": true }
+    ],
+    "createdAt": "2026-08-21T09:40:00.000Z"
   }
 }
 ```
 
-**Errors**
+**Errors:** `400`, `401`, `403`, `404` (company/category/skill), `500`.
 
-| Status | Khi |
-|--------|-----|
-| 400 | Dữ liệu không hợp lệ (deadline quá khứ, `salaryMax < salaryMin`, thiếu tiêu đề/mô tả/yêu cầu) |
-| 401 | Chưa đăng nhập hoặc token hết hạn |
-| 403 | Không phải tài khoản `RECRUITER` hoặc công ty đang bị khóa (`BLOCKED`) |
-| 404 | Không tìm thấy thông tin công ty của Recruiter hoặc `categoryId`/`skillId` không tồn tại |
-| 500 | Lỗi hệ thống nội bộ |
+---
 
+### 1.2 List jobs
+
+| | |
+|--|--|
+| Method / URL | `GET /api/v1/jobs` |
+| Quyền | Public |
+
+**Query**
+
+| Param | Validation / Note |
+|-------|-------------------|
+| `keyword` | Tìm theo tên job / công ty |
+| `category` | `job_categories.id` |
+| `location` | string |
+| `salaryMin`, `salaryMax` | number `>= 0`; lọc theo khoảng giao nhau |
+| `page` | integer `>= 1`, mặc định `1` |
+| `limit` | integer `1..100`, mặc định `20` |
+
+**Behavior**
+
+- Chỉ trả job `APPROVED` và chưa hết hạn.
+- Sắp xếp mặc định `created_at DESC`.
+- List không cần trả full `description`, `requirements`, `benefits`.
+
+**Response 200**
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "items": [
+      {
+        "id": "12",
+        "title": "Java Backend Developer",
+        "salaryMin": 10000000,
+        "salaryMax": 20000000,
+        "location": "Hà Nội",
+        "jobType": "FULL_TIME",
+        "deadline": "2026-09-30",
+        "company": { "id": "3", "name": "ABC Technology" },
+        "category": { "id": "2", "name": "Công nghệ thông tin" },
+        "skills": [{ "id": "1", "name": "Java" }]
+      }
+    ],
+    "meta": { "page": 1, "limit": 20, "total": 42, "totalPages": 3 }
+  }
+}
+```
+
+**Errors:** `400`, `500`.
+
+---
+
+### 1.3 Get job detail
+
+| | |
+|--|--|
+| Method / URL | `GET /api/v1/jobs/{id}` |
+| Quyền | Public |
+
+**Behavior**
+
+- Public chỉ xem được job `APPROVED`.
+- Job không tồn tại hoặc không public trả `404` để tránh lộ dữ liệu.
+
+**Response 200**
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": "12",
+    "title": "Java Backend Developer",
+    "description": "Phát triển REST API...",
+    "requirements": "Java, Spring Boot...",
+    "benefits": "Lương tháng 13...",
+    "salaryMin": 10000000,
+    "salaryMax": 20000000,
+    "location": "Hà Nội",
+    "jobType": "FULL_TIME",
+    "status": "APPROVED",
+    "company": { "id": "3", "name": "ABC Technology" },
+    "category": { "id": "2", "name": "Công nghệ thông tin" },
+    "skills": [{ "id": "1", "name": "Java" }]
+  }
+}
+```
+
+**Errors:** `400` (id sai format), `404`, `500`.
+
+---
+
+### 1.4 Update job
+
+| | |
+|--|--|
+| Method / URL | `PUT /api/v1/jobs/{id}` |
+| Quyền | `RECRUITER` — owner company/job |
+
+**Request**
+
+```json
+{
+  "title": "Senior Java Backend Developer",
+  "salaryMin": 15000000,
+  "salaryMax": 25000000,
+  "deadline": "2026-10-30",
+  "skillIds": ["1", "2", "5"]
+}
+```
+
+- Semantics hiện đề xuất: partial update, omit = không đổi.
+- Không cho client sửa `id`, `companyId`, `status`, `createdAt`, `updatedAt`.
+- Khi có `skillIds`, cập nhật `jobs` và `job_skills` trong cùng transaction.
+- Recruiter sửa nội dung job `APPROVED` hoặc `REJECTED` → đề xuất chuyển về `PENDING`.
+
+**Response 200:** trả job sau cập nhật cùng relations.  
+**Errors:** `400`, `401`, `403`, `404` (job/category/skill), `409`, `500`.
+
+---
+
+## 2. Close / reopen job (đề xuất)
+
+| Method | URL | Quyền | Transition |
+|--------|-----|-------|------------|
+| `PUT` | `/api/v1/jobs/{id}/close` | `RECRUITER` owner | `APPROVED → CLOSED` |
+| `PUT` | `/api/v1/jobs/{id}/reopen` | `RECRUITER` owner | `CLOSED → PENDING` |
+
+Recruiter không được tự đặt trạng thái `APPROVED` hoặc `REJECTED`; đây là quyền của Admin.
+
+---
+
+## 3. Ranh giới với Group khác
+
+| Dữ liệu / nghiệp vụ | Owner / phối hợp |
+|----------------------|------------------|
+| `companies`, `jobs`, `job_categories`, `job_skills` | Group 2 |
+| Catalog `skills` | Dùng chung Group 3; không tự đổi schema |
+| Approve / reject job | Group 4 Admin |
+| Applications / Saved jobs | Group 3 |
+
+---
+
+## 4. Chờ Leader chốt
+
+1. Base URL `/api/jobs` hay `/api/v1/jobs`.
+2. Pagination chung: array hay `{ items, meta }`.
+3. PUT là full replace hay partial update.
+4. Job đã duyệt sau khi sửa có quay về `PENDING` không.
+5. Close / reopen dùng action endpoint hay cập nhật `status` trong PUT.
+6. Job hết hạn có tự ẩn khỏi public list không.
+
+---
+
+## 5. Draft stub ≠ contract
+
+`apps/backend/src/modules/jobs` hiện chỉ là skeleton / draft implementation.  
+**URL / response / validation trong doc này là đề xuất chính thức sau khi Leader approve.**
