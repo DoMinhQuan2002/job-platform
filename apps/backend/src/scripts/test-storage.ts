@@ -1,59 +1,35 @@
 import "reflect-metadata";
 import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseClient, getSupabaseConfig } from "../config/supabase";
 
 dotenv.config();
 
-const requiredEnv = [
-  "SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "SUPABASE_STORAGE_BUCKET",
-] as const;
-
-for (const key of requiredEnv) {
-  const value = process.env[key];
-  if (!value || value.trim().length === 0) {
-    throw new Error(`Missing env: ${key}. Please set it in apps/backend/.env`);
-  }
-}
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const bucket = process.env.SUPABASE_STORAGE_BUCKET!;
-
-console.log("Storage test:");
-console.log("  bucket:", bucket);
-console.log("  s3 endpoint:", process.env.SUPABASE_STORAGE_S3_ENDPOINT || "(not set)");
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-// 1x1 transparent PNG (base64)
 const transparentPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X3gAAAABJRU5ErkJggg==";
 
-const filePath = `test-storage/${Date.now()}/test.png`;
-
-const contentBuffer = Buffer.from(transparentPngBase64, "base64");
-
 async function main() {
-  const uploadResult = await supabase.storage
-    .from(bucket)
-    .upload(filePath, contentBuffer, {
-      contentType: "image/png",
-      upsert: false,
-    });
+  const { publicBucket } = getSupabaseConfig();
+  const supabase = getSupabaseClient();
+  const filePath = `test-storage/${Date.now()}/test.png`;
+  const contentBuffer = Buffer.from(transparentPngBase64, "base64");
+
+  console.log("Storage test:");
+  console.log("  public bucket:", publicBucket);
+  console.log("  private bucket:", process.env.SUPABASE_STORAGE_PRIVATE_BUCKET || "(not set)");
+
+  const uploadResult = await supabase.storage.from(publicBucket).upload(filePath, contentBuffer, {
+    contentType: "image/png",
+    upsert: false,
+  });
 
   if (uploadResult.error) {
     throw new Error(`Upload failed: ${uploadResult.error.message}`);
   }
 
-  const publicUrlResult = supabase.storage.from(bucket).getPublicUrl(filePath);
-  const publicUrl = publicUrlResult.data.publicUrl;
-
+  const publicUrl = supabase.storage.from(publicBucket).getPublicUrl(filePath).data.publicUrl;
   console.log("Upload OK");
   console.log("  publicUrl:", publicUrl);
 
-  // Verify that we can reach the URL (works if bucket is public)
   const resp = await fetch(publicUrl, { method: "GET" });
   console.log("  publicUrl GET status:", resp.status);
 
@@ -63,8 +39,8 @@ async function main() {
     );
   }
 
-  console.log("✅ Storage connection + upload test passed");
+  await supabase.storage.from(publicBucket).remove([filePath]);
+  console.log("Storage connection + upload test passed");
 }
 
 void main();
-

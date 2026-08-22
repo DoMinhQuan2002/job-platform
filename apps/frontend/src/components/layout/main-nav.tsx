@@ -4,7 +4,6 @@ const navItems = [
   { href: "/", label: "Home" },
   { href: "/candidate", label: "Candidate" },
   { href: "/recruiter", label: "Recruiter" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export function MainNav() {

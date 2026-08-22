@@ -1,7 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+import { AppError } from "../errors/app-error";
 
-export const notFoundMiddleware = (_req: Request, res: Response) => {
-  res.status(404).json({
-    message: "Endpoint not found",
-  });
+export const notFoundMiddleware = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
+  next(new AppError(404, "NOT_FOUND", `Endpoint not found: ${req.originalUrl}`));
 };

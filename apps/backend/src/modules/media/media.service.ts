@@ -1,60 +1,85 @@
-import { randomUUID } from "crypto";
-import { createClient } from "@supabase/supabase-js";
-import { AppDataSource } from "../../data-source";
-import { MediaAssetEntity } from "../../database/entities/media-asset.entity";
+import { AppError } from "../../common/errors/app-error";
+import {
+  DEFAULT_SIGNED_URL_EXPIRES_IN,
+  storageService,
+  type StoredObject,
+} from "../../common/storage";
 
-type SaveIconInput = {
+export type MediaUploadInput = {
+  assetType: string;
+  fileName: string;
+  mimeType: string;
+  buffer: Buffer;
+};
+
+export type MediaAssetResponse = {
   fileName: string;
   mimeType: string;
   size: number;
-  contentBase64: string;
+  assetType: string;
+  storagePath: string;
+  isPublic: boolean;
+  url: string | null;
+  expiresIn: number | null;
 };
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseStorageBucket = process.env.SUPABASE_STORAGE_BUCKET || "job-platform-assets";
-
-const getSupabaseClient = () => {
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey);
-};
+const toResponse = (
+  stored: StoredObject,
+  access: { url: string; isPublic: boolean; expiresIn: number | null },
+): MediaAssetResponse => ({
+  fileName: stored.fileName,
+  mimeType: stored.mimeType,
+  size: stored.size,
+  assetType: stored.assetType,
+  storagePath: stored.storagePath,
+  isPublic: access.isPublic,
+  url: access.url,
+  expiresIn: access.expiresIn,
+});
 
 export const mediaService = {
-  async saveIconAsset(input: SaveIconInput) {
-    const supabase = getSupabaseClient();
-    const cleanName = input.fileName.replace(/\s+/g, "-").toLowerCase();
-    const storagePath = `icons/${Date.now()}-${randomUUID()}-${cleanName}`;
+  async upload(input: MediaUploadInput): Promise<MediaAssetResponse> {
+    const stored = await storageService.upload(input);
+    const access = stored.isPublic
+      ? { url: stored.publicUrl as string, isPublic: true, expiresIn: null }
+      : await storageService.getAccessUrl(stored.storagePath, stored.assetType);
 
-    const fileBuffer = Buffer.from(input.contentBase64, "base64");
+    return toResponse(stored, access);
+  },
 
-    const uploadResult = await supabase.storage
-      .from(supabaseStorageBucket)
-      .upload(storagePath, fileBuffer, {
-        contentType: input.mimeType,
-        upsert: false,
-      });
-
-    if (uploadResult.error) {
-      throw new Error(`Supabase upload failed: ${uploadResult.error.message}`);
-    }
-
-    const publicUrlResult = supabase.storage
-      .from(supabaseStorageBucket)
-      .getPublicUrl(storagePath);
-
-    const mediaRepo = AppDataSource.getRepository(MediaAssetEntity);
-    const mediaAsset = mediaRepo.create({
+  async saveIconAsset(input: {
+    fileName: string;
+    mimeType: string;
+    contentBase64: string;
+  }) {
+    return this.upload({
+      assetType: "company_icon",
       fileName: input.fileName,
       mimeType: input.mimeType,
-      size: input.size,
-      assetType: "company_icon",
-      storagePath,
-      publicUrl: publicUrlResult.data.publicUrl,
+      buffer: Buffer.from(input.contentBase64, "base64"),
     });
+  },
 
-    return mediaRepo.save(mediaAsset);
+  async getAccessUrl(
+    storagePath: string,
+    assetType: string,
+    expiresIn = DEFAULT_SIGNED_URL_EXPIRES_IN,
+  ) {
+    if (!storagePath || !assetType) {
+      throw new AppError(400, "INVALID_REQUEST", "storagePath and assetType are required");
+    }
+    const access = await storageService.getAccessUrl(storagePath, assetType, expiresIn);
+    return {
+      storagePath,
+      assetType,
+      ...access,
+    };
+  },
+
+  async remove(storagePath: string, assetType: string) {
+    if (!storagePath || !assetType) {
+      throw new AppError(400, "INVALID_REQUEST", "storagePath and assetType are required");
+    }
+    await storageService.remove(storagePath, assetType);
   },
 };

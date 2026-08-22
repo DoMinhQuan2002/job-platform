@@ -4,10 +4,20 @@
   "private": true,
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "test:storage": "npm run build && node dist/scripts/test-storage.js"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:storage": "npm run build && node dist/scripts/test-storage.js",
+    "test:redis": "tsx src/scripts/test-redis.ts",
+    "typeorm": "npx tsx ./node_modules/typeorm/cli.js -d src/data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate src/database/migrations/%npm_config_name%",
+    "migration:create": "npm run typeorm -- migration:create src/database/migrations/%npm_config_name%",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:show": "npm run typeorm -- migration:show",
+    "db:seed:locations": "powershell -ExecutionPolicy Bypass -File scripts/import-vietnamese-locations.ps1"
   },
   "keywords": [],
   "author": "",
@@ -15,17 +25,24 @@
   "description": "",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "@upstash/redis": "^1.38.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "multer": "^2.2.0",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.31"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.2.0",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.2"
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.11"
   }
 }
