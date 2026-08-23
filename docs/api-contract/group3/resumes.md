@@ -1,53 +1,55 @@
 # API Contract — Resumes (Group 3)
 
 > Owner doc: **Nguyễn Văn Lợi**  
-> Status: **Draft GĐ2 — chờ Leader duyệt**.
+> Status: **Draft GĐ2**.  
+> Schema: `resumes` (`candidate_id`, `file_name`, `file_url`, `file_size`, `mime_type`, `is_default`, soft delete `deleted_at`).
 
-Schema: `resumes` (`candidate_id`, `file_name`, `file_url`, `file_size`, `mime_type`, `is_default`, soft delete `deleted_at`).
+Envelope / HTTP status dùng chung: xem [readme.md](./readme.md).
 
-Storage: private bucket, assetType `resume` — xem `apps/backend/STORAGE_API.md`.
+Storage private, `assetType=resume` (PDF, max 10MB): xem `apps/backend/STORAGE_API.md`.  
+Upload CV **không** bắt FE gọi `POST /media/uploads` trước — `POST /resumes` multipart tự upload nội bộ rồi ghi DB (1 request).
 
 ---
 
-## 0. Map Brief ↔ Schema / Draft
+## Notes
 
-| Brief                      | Schema / storage                      | Draft stub                       | Đề xuất contract                                                           |
-| -------------------------- | ------------------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| `POST /api/resumes`        | insert `resumes` + file trên Supabase | `POST /api/v1/resumes/me`        | **`POST /api/v1/resumes`** (bám brief, bỏ `/me` nếu list cũng là của mình) |
-| `GET /api/resumes`         | list theo `candidate_id`              | `GET /api/v1/resumes/me`         | **`GET /api/v1/resumes`** = CV của candidate hiện tại                      |
-| `GET /api/resumes/{id}`    | 1 row + ownership                     | _(chưa có trong stub)_           | Có                                                                         |
-| `DELETE /api/resumes/{id}` | soft delete + xóa file storage        | `DELETE /api/v1/resumes/me/{id}` | **`DELETE /api/v1/resumes/{id}`**                                          |
+- **Identity (khớp [candidates.md](./candidates.md)):** `req.user.id` (`users.id`) → `candidate_profiles.user_id` → `resumes.candidate_id` = `candidate_profiles.id`.
+- **Không nằm trong** `GET /candidates/me` — CV quản lý riêng qua `/api/v1/resumes` (giống educations/skills: không PUT nested vào profile).
+- **Apply (khớp [applications.md](./applications.md)):** `POST /jobs/{jobId}/apply` nhận `resumeId` (hoặc CV `isDefault`); `resume_snapshot_url` copy `fileUrl` (= `storagePath`) lúc apply.
+- **Không chồng G1/G2 media:** avatar / logo / icon vẫn `POST /api/v1/media/uploads` + `assetType` tương ứng. Resume = endpoint riêng; xem/tải lại dùng `GET /api/v1/media/access`.
 
-### Quy ước file (đề xuất chốt)
+---
 
-| Rule              | Value                                                                              |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| MIME              | `application/pdf` only                                                             |
-| Max size          | **10MB** (khớp media catalog)                                                      |
-| `file_url` cột DB | lưu **`storagePath`** (vd. `resumes/<uuid>.pdf`), **không** lưu signed URL dài hạn |
-| Lấy URL xem/tải   | `GET /api/v1/media/access?storagePath=...&assetType=resume` → signed URL có hạn    |
-| Default CV        | đúng 1 `is_default=true` / candidate; set default → clear default cũ               |
-| Tên file          | `fileName` gốc từ client (max 255); object name trên storage do backend generate   |
+## 0. Map Brief → Contract
 
-Flow upload khuyến nghị:
+| Brief | Contract |
+| ----- | -------- |
+| `POST /api/resumes` | **`POST /api/v1/resumes`** (multipart) |
+| `GET /api/resumes` | **`GET /api/v1/resumes`** — CV của candidate hiện tại |
+| `GET /api/resumes/{id}` | **`GET /api/v1/resumes/{id}`** — owner only |
+| `DELETE /api/resumes/{id}` | **`DELETE /api/v1/resumes/{id}`** |
 
-```
-1) POST /api/v1/media/uploads  (multipart, assetType=resume)
-   → { storagePath, url(signed tạm), size, mimeType, fileName }
-2) POST /api/v1/resumes
-   body: { fileName, fileUrl: storagePath, fileSize, mimeType, isDefault? }
-```
+### Quy ước file
 
-_(Alternative: `POST /resumes` nhận multipart và gọi storage nội bộ — cần Leader chọn 1 flow để FE khỏi lệch.)_
+| Rule | Value |
+| ---- | ----- |
+| MIME | `application/pdf` only |
+| Max size | **10MB** (khớp media catalog `resume`) |
+| `fileUrl` (cột DB `file_url`) | lưu **`storagePath`** (vd. `resumes/<uuid>.pdf`), **không** lưu signed URL dài hạn |
+| Lấy URL xem/tải | `GET /api/v1/media/access?storagePath=...&assetType=resume` → signed URL có hạn |
+| Default CV | đúng 1 `is_default=true` / candidate; set default → clear default cũ |
+| Tên file | `fileName` gốc từ client (max 255); object name trên storage do backend generate |
 
 ---
 
 ## 1. List my resumes
 
-|              |                       |
-| ------------ | --------------------- |
+| | |
+| -- | -- |
 | Method / URL | `GET /api/v1/resumes` |
-| Quyền        | `CANDIDATE`           |
+| Quyền | `CANDIDATE` |
+
+Chỉ trả CV chưa soft-delete của candidate hiện tại. Sort đề xuất: `isDefault` desc, rồi `createdAt` desc.
 
 **Response 200**
 
@@ -71,84 +73,90 @@ _(Alternative: `POST /resumes` nhận multipart và gọi storage nội bộ —
 }
 ```
 
+**Errors:** `401`, `403`, `500`
+
 ---
 
 ## 2. Get resume by id
 
-|              |                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| Method / URL | `GET /api/v1/resumes/{id}`                                                                            |
-| Quyền        | `CANDIDATE` (owner) — _Recruiter xem snapshot qua application, không qua API này (chốt thêm nếu cần)_ |
+| | |
+| -- | -- |
+| Method / URL | `GET /api/v1/resumes/{id}` |
+| Quyền | `CANDIDATE` (owner) |
 
-**Errors:** `401`, `403`, `404`
+Recruiter xem CV đã apply qua application snapshot — **không** qua API này.
+
+**Response 200:** một object cùng shape item list (§1).  
+**Errors:** `401`, `403`, `404`, `500`
 
 ---
 
-## 3. Create resume metadata
+## 3. Upload & create resume
 
-|              |                        |
-| ------------ | ---------------------- |
+| | |
+| -- | -- |
 | Method / URL | `POST /api/v1/resumes` |
-| Quyền        | `CANDIDATE`            |
+| Quyền | `CANDIDATE` |
+| Content-Type | `multipart/form-data` |
 
 **Request**
 
-```json
-{
-  "fileName": "CV_NguyenVanA.pdf",
-  "fileUrl": "resumes/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.pdf",
-  "fileSize": 245678,
-  "mimeType": "application/pdf",
-  "isDefault": true
-}
-```
+| Field | Required | Validation |
+| ----- | -------- | ---------- |
+| `file` | yes | `application/pdf`, max **10MB** |
 
-| Field       | Required | Validation                                     |
-| ----------- | -------- | ---------------------------------------------- |
-| `fileName`  | yes      | max 255                                        |
-| `fileUrl`   | yes      | storagePath đã upload                          |
-| `fileSize`  | yes      | 1…10MB                                         |
-| `mimeType`  | yes      | `application/pdf`                              |
-| `isDefault` | no       | default `false`; nếu `true` → unset default cũ |
+Backend trong **1 request**:
 
-**Response 201:** object resume trong `data`.  
-**Errors:** `400`, `401`, `403`, `409` (optional), `500`
+1. Validate MIME / size  
+2. Upload private bucket (`assetType=resume`) qua storage nội bộ  
+3. Insert `resumes` (`fileName` từ `file.originalname`, `fileUrl` = `storagePath`, `fileSize`, `mimeType`)  
+4. CV đầu tiên của candidate → `isDefault = true`; các lần sau → `isDefault = false` (đổi default bằng §4)
+
+**Response 201:** object resume trong `data` (shape §1).
+
+**Errors:** `400` (thiếu file / sai MIME / quá size), `401`, `403`, `500`
 
 ---
 
-## 4. Set default (đề xuất bổ sung so với brief)
+## 4. Set default
 
-Brief không liệt kê riêng. Cần cho UX “chọn CV mặc định khi apply”.
+Brief không liệt kê — cần cho UX “CV mặc định khi apply” ([applications.md](./applications.md)).
 
-|              |                                    |
-| ------------ | ---------------------------------- |
+| | |
+| -- | -- |
 | Method / URL | `PUT /api/v1/resumes/{id}/default` |
-| Quyền        | `CANDIDATE`                        |
-| Request      | — (empty body)                     |
-| Response     | `200` + resume                     |
+| Quyền | `CANDIDATE` (owner) |
+| Request | empty body |
+| Response | `200` + resume đã thành default |
 
-Nếu Leader không muốn endpoint riêng: cho phép `PUT /api/v1/resumes/{id}` với `{ "isDefault": true }`.
+Logic: set `isDefault=true` cho `{id}` → clear `isDefault` các CV khác cùng candidate.
+
+Alternative nếu Leader không muốn URL riêng: `PUT /api/v1/resumes/{id}` body `{ "isDefault": true }`.
+
+**Errors:** `401`, `403`, `404`, `500`
 
 ---
 
 ## 5. Delete resume
 
-|              |                               |
-| ------------ | ----------------------------- |
+| | |
+| -- | -- |
 | Method / URL | `DELETE /api/v1/resumes/{id}` |
-| Quyền        | `CANDIDATE` (owner)           |
-| Response     | `204` hoặc `200` + message    |
+| Quyền | `CANDIDATE` (owner) |
+| Response | `200` + `{ "success": true, "message": "Thành công", "data": null }` *(hoặc `204` nếu Leader chốt envelope không body)* |
 
 Logic:
 
-1. Soft delete row (`deleted_at`)
-2. `DELETE /api/v1/media` với `storagePath` + `assetType=resume`
-3. Nếu xóa CV default → có thể promote CV còn lại gần nhất (optional — chốt)
+1. Soft delete row (`deleted_at`)  
+2. Xóa object storage (`storagePath` + `assetType=resume`) — nội bộ, không bắt FE gọi `DELETE /media`  
+3. Nếu CV đang default bị xóa → promote CV còn lại mới nhất làm default (nếu còn)
 
-**Errors:** `401`, `403`, `404`; nếu resume đang bị application FK chặn hard-delete → soft delete vẫn OK vì schema dùng soft delete.
+Application đã apply giữ `resume_id` + `resume_snapshot_url`; soft delete CV **không** xóa lịch sử đơn.
+
+**Errors:** `401`, `403`, `404`, `500`
 
 ---
 
-## 6. Draft stub ≠ contract
+## 6. Stub ≠ contract
 
-Stub `modules/resumes` (`/resumes/me/...`) là draft. Contract chính thức dùng bảng map mục 0 sau khi Leader duyệt.
+Stub nội bộ `/resumes/me/...` (nếu còn) **không** phải contract. Public API dùng bảng map §0 sau khi Leader duyệt.

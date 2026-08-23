@@ -1,44 +1,58 @@
 # API Contract — Candidates (Group 3)
 
-> Owner doc: **Nguyễn Thanh Bình** (profile / education / experience) + **Nguyễn Văn Lợi** (skills).  
-> Status: **Draft GĐ2 — chờ Leader duyệt**.
+> Owner: **Nguyễn Thanh Bình** (candidate + educations + work experiences) + **Nguyễn Văn Lợi** (skills).  
+> Status: **Draft GĐ2**.  
+> Schema **không đổi**: `candidate_profiles`, `educations`, `work_experiences`, `skills`, `candidate_skills`.
 
-Liên quan schema: `candidate_profiles`, `educations`, `work_experiences`, `skills`, `candidate_skills`.
+Envelope / HTTP status dùng chung: xem [readme.md](./readme.md) §8 brief.
+
+**Error mẫu (mọi API dưới đây):**
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "bio", "message": "bio must be a string or null" }]
+}
+```
+
+
+| Status | Khi                                                |
+| ------ | -------------------------------------------------- |
+| 200    | Thành công (GET/PUT/DELETE)                        |
+| 201    | Tạo mới (POST)                                     |
+| 400    | Validation                                         |
+| 401    | Chưa đăng nhập / token lỗi                         |
+| 403    | Không phải `CANDIDATE` (trừ catalog skills)        |
+| 404    | Không tìm thấy hoặc không thuộc candidate hiện tại |
+| 409    | Trùng unique                                       |
+| 500    | Lỗi hệ thống                                       |
+
 
 ---
 
-## 0. Map Brief ↔ Schema / Draft stub
+## Notes
 
-| Brief (sếp) | Schema / ý nghiệp vụ | Draft stub hiện tại (`backend/g3-candidate`) | Đề xuất contract |
-|-------------|----------------------|-----------------------------------------------|------------------|
-| `GET/PUT /api/candidates/me` | `candidate_profiles` + quan hệ con | `GET/PUT /api/v1/candidate-profiles/me` | **Chờ chọn A1 hoặc A2** (xem README) |
-| Học vấn trong `/me` | bảng `educations.candidate_id` | `/candidate-profiles/me/educations` | Nested (A2) hoặc embed trong PUT `/me` (A1) |
-| Kinh nghiệm trong `/me` | bảng `work_experiences` | `/candidate-profiles/me/work-experiences` | Tương tự |
-| Kỹ năng / NN / chứng chỉ trong `/me` | `skills.category` + `candidate_skills` | `/api/v1/skills` + `/skills/me` | Catalog + attach riêng (khuyến nghị) |
-| User họ tên / SĐT / avatar | bảng `users` + media avatar | **Group 1** `/users/me` | **Không** nằm Group 3 |
+Quyết định URL / PUT không replace nested: xem [readme.md](./readme.md) § Quyết định thiết kế (A1).
 
-**Identity**
-
-- `req.user.id` = `users.id`
-- `candidate_profiles.user_id` = `users.id` (unique)
-- Bảng con dùng `candidate_id` = `candidate_profiles.id`
+- **Identity:** `req.user.id` (`users.id`) → `candidate_profiles.user_id` → bảng con dùng `candidate_id` = `candidate_profiles.id`.
+- **GET lần đầu:** tạo `candidate_profiles` nếu chưa có (`bio` / `careerObjective` = null).
+- **Không chồng G1:** account (`fullName`, `phone`, avatar…) = `GET/PATCH /api/v1/users/me`. Hồ sơ nghề nghiệp (`bio`, `careerObjective`, nested) = G3. FE trang hồ sơ gọi **cả hai**; không trộn field.
 
 ---
 
-## 1. Option A2 (khuyến nghị) — Nested endpoints
+## 1. GET hồ sơ ứng viên (aggregate)
 
-Base: `/api/v1/candidate-profiles`  
-Auth: `CANDIDATE` (Bearer / sau này Group 1; local: `DEV_MOCK_USER_ID`)
 
-### 1.1 Get or create my profile
+|               |                                                    |
+| ------------- | -------------------------------------------------- |
+| Tên chức năng | Lấy hồ sơ nghề nghiệp của candidate đang đăng nhập |
+| URL           | `/api/v1/candidates/me`                            |
+| Method        | `GET`                                              |
+| Quyền         | `CANDIDATE`                                        |
+| Request       | Không body. Không query bắt buộc.                  |
+| Validation    | Phải đăng nhập; role `CANDIDATE`                   |
 
-| | |
-|--|--|
-| Tên | Lấy / tự tạo hồ sơ ứng viên |
-| Method / URL | `GET /api/v1/candidate-profiles/me` |
-| Quyền | `CANDIDATE` |
-| Request | — |
-| Validation | Phải đăng nhập |
 
 **Response 200**
 
@@ -51,24 +65,75 @@ Auth: `CANDIDATE` (Bearer / sau này Group 1; local: `DEV_MOCK_USER_ID`)
     "userId": "10",
     "bio": "Fresher backend",
     "careerObjective": "Node.js / TypeORM",
+    "educations": [
+      {
+        "id": "1",
+        "candidateId": "1",
+        "school": "PTIT",
+        "major": "CNTT",
+        "degree": "Cử nhân",
+        "startDate": "2020-09-01",
+        "endDate": null,
+        "isCurrent": true,
+        "description": null,
+        "createdAt": "2026-08-21T00:00:00.000Z",
+        "updatedAt": "2026-08-21T00:00:00.000Z"
+      }
+    ],
+    "workExperiences": [
+      {
+        "id": "1",
+        "candidateId": "1",
+        "companyName": "ABC Corp",
+        "position": "Intern Backend",
+        "startDate": "2024-06-01",
+        "endDate": "2024-12-01",
+        "isCurrent": false,
+        "description": "API + TypeORM",
+        "createdAt": "2026-08-21T00:00:00.000Z",
+        "updatedAt": "2026-08-21T00:00:00.000Z"
+      }
+    ],
+    "skills": [
+      {
+        "id": "12",
+        "candidateId": "1",
+        "skillId": "5",
+        "level": "INTERMEDIATE",
+        "skill": {
+          "id": "5",
+          "name": "TypeScript",
+          "category": "SKILL",
+          "code": null,
+          "description": null,
+          "status": "ACTIVE"
+        }
+      }
+    ],
+    "languages": [],
+    "certificates": [],
     "createdAt": "2026-08-21T00:00:00.000Z",
     "updatedAt": "2026-08-21T00:00:00.000Z"
   }
 }
 ```
 
-> Lần đầu gọi: backend **tạo** row `candidate_profiles` nếu chưa có.
+`skills` / `languages` / `certificates` = `candidate_skills` JOIN `skills`, filter `skills.category` = `SKILL` | `LANGUAGE` | `CERTIFICATE`. Không phải bảng riêng.
 
-**Errors:** `401`, `403`, `500`
+**Lỗi:** `401`, `403`, `500` — envelope error ở đầu file.
 
 ---
 
-### 1.2 Update my profile (text only)
+## 2. PUT hồ sơ nghề nghiệp (text only)
 
-| | |
-|--|--|
-| Method / URL | `PUT /api/v1/candidate-profiles/me` |
-| Quyền | `CANDIDATE` |
+
+|               |                                     |
+| ------------- | ----------------------------------- |
+| Tên chức năng | Cập nhật bio / mục tiêu nghề nghiệp |
+| URL           | `/api/v1/candidates/me`             |
+| Method        | `PUT`                               |
+| Quyền         | `CANDIDATE`                         |
+
 
 **Request**
 
@@ -79,26 +144,51 @@ Auth: `CANDIDATE` (Bearer / sau này Group 1; local: `DEV_MOCK_USER_ID`)
 }
 ```
 
-| Field | Type | Required | Note |
-|-------|------|----------|------|
-| `bio` | string \| null | không | Omit = không đổi; `null` = clear |
-| `careerObjective` | string \| null | không | Tương tự |
 
-**Response 200:** cùng shape `data` như GET.  
-**Errors:** `400`, `401`, `403`, `500`
+| Field                                                                      | Type          | Required | Validation                                                         |
+| -------------------------------------------------------------------------- | ------------- | -------- | ------------------------------------------------------------------ |
+| `bio`                                                                      | string | null | không    | Omit = không đổi; `null` = clear; nếu gửi phải là string hoặc null |
+| `careerObjective`                                                          | string | null | không    | Tương tự                                                           |
+| `educations` / `workExperiences` / `skills` / `languages` / `certificates` | —             | **cấm**  | Có mặt → `400`                                                     |
+
+
+**Response 200:** cùng shape `data` như GET (nested hiện tại, không bị xóa).
+
+**Lỗi:** `400` (kiểu sai / gửi nested), `401`, `403`, `500`.
 
 ---
 
-### 1.3 Educations CRUD
+## 3. Educations
 
-| Method | URL | Mô tả |
-|--------|-----|--------|
-| `GET` | `/api/v1/candidate-profiles/me/educations` | List |
-| `POST` | `/api/v1/candidate-profiles/me/educations` | Tạo |
-| `PUT` | `/api/v1/candidate-profiles/me/educations/{id}` | Sửa (owner) |
-| `DELETE` | `/api/v1/candidate-profiles/me/educations/{id}` | Xóa (owner) → `204` |
+Bảng `educations`. Mọi thao tác filter `candidateId` của user hiện tại.
 
-**Request POST/PUT**
+### 3.1 List
+
+
+|            |                                    |
+| ---------- | ---------------------------------- |
+| Tên        | Danh sách học vấn                  |
+| URL        | `/api/v1/candidates/me/educations` |
+| Method     | `GET`                              |
+| Quyền      | `CANDIDATE`                        |
+| Request    | —                                  |
+| Validation | Đăng nhập, role `CANDIDATE`        |
+
+
+**Response 200:** `{ "success": true, "message": "Thành công", "data": [ ...education ] }` (shape item như GET `/me` → `educations[]`).
+
+### 3.2 Create
+
+
+|        |                                    |
+| ------ | ---------------------------------- |
+| Tên    | Thêm học vấn                       |
+| URL    | `/api/v1/candidates/me/educations` |
+| Method | `POST`                             |
+| Quyền  | `CANDIDATE`                        |
+
+
+**Request**
 
 ```json
 {
@@ -112,54 +202,77 @@ Auth: `CANDIDATE` (Bearer / sau này Group 1; local: `DEV_MOCK_USER_ID`)
 }
 ```
 
-| Field | Required | Validation |
-|-------|----------|------------|
-| `school` | yes | string, max 255 |
-| `major` | no | max 255 |
-| `degree` | no | max 100 |
-| `startDate` | yes | `YYYY-MM-DD` |
-| `endDate` | no | `YYYY-MM-DD` hoặc null; nếu `isCurrent=true` → phải null |
-| `isCurrent` | no | boolean, default false |
-| `description` | no | text |
 
-**Response list 200**
+| Field         | Required | Validation (đúng cột DB)                             |
+| ------------- | -------- | ---------------------------------------------------- |
+| `school`      | yes      | string, max 255                                      |
+| `major`       | no       | string, max 255                                      |
+| `degree`      | no       | string, max 100                                      |
+| `startDate`   | yes      | `YYYY-MM-DD`                                         |
+| `endDate`     | no       | `YYYY-MM-DD` hoặc null; `isCurrent=true` → phải null |
+| `isCurrent`   | no       | boolean, default `false`                             |
+| `description` | no       | text                                                 |
+
+
+**Response 201:** `{ "success": true, "message": "Thành công", "data": { ...education } }`.
+
+**Lỗi:** `400`, `401`, `403`, `500`.
+
+### 3.3 Update
+
+
+|            |                                                             |
+| ---------- | ----------------------------------------------------------- |
+| Tên        | Sửa học vấn                                                 |
+| URL        | `/api/v1/candidates/me/educations/{id}`                     |
+| Method     | `PUT`                                                       |
+| Quyền      | `CANDIDATE`                                                 |
+| Request    | Giống POST, partial: field omit = không đổi                 |
+| Validation | `{id}` thuộc `candidateId` hiện tại; rule ngày giống create |
+
+
+**Response 200:** `{ "success": true, "message": "Thành công", "data": { ...education } }`.
+
+**Lỗi:** `400`, `401`, `403`, `404`, `500`.
+
+### 3.4 Delete
+
+
+|            |                                         |
+| ---------- | --------------------------------------- |
+| Tên        | Xóa học vấn                             |
+| URL        | `/api/v1/candidates/me/educations/{id}` |
+| Method     | `DELETE`                                |
+| Quyền      | `CANDIDATE`                             |
+| Request    | —                                       |
+| Validation | `{id}` thuộc candidate hiện tại         |
+
+
+**Response 200** (theo brief, không dùng 204):
 
 ```json
 {
   "success": true,
   "message": "Thành công",
-  "data": [
-    {
-      "id": "1",
-      "candidateId": "1",
-      "school": "PTIT",
-      "major": "CNTT",
-      "degree": "Cử nhân",
-      "startDate": "2020-09-01",
-      "endDate": null,
-      "isCurrent": true,
-      "description": null,
-      "createdAt": "...",
-      "updatedAt": "..."
-    }
-  ]
+  "data": null
 }
 ```
 
-**Errors:** `400`, `401`, `403`, `404` (id không thuộc profile), `500`
+**Lỗi:** `401`, `403`, `404`, `500`.
 
 ---
 
-### 1.4 Work experiences CRUD
+## 4. Work experiences
 
-| Method | URL |
-|--------|-----|
-| `GET` | `/api/v1/candidate-profiles/me/work-experiences` |
-| `POST` | `/api/v1/candidate-profiles/me/work-experiences` |
-| `PUT` | `/api/v1/candidate-profiles/me/work-experiences/{id}` |
-| `DELETE` | `/api/v1/candidate-profiles/me/work-experiences/{id}` |
+Bảng `work_experiences`. Ownership giống educations.
 
-**Request POST/PUT**
+### 4.1 List — `GET /api/v1/candidates/me/work-experiences`
+
+Quyền `CANDIDATE`. **Response 200:** `data` = mảng item như GET `/me` → `workExperiences[]`.
+
+### 4.2 Create — `POST /api/v1/candidates/me/work-experiences`
+
+**Request**
 
 ```json
 {
@@ -170,40 +283,101 @@ Auth: `CANDIDATE` (Bearer / sau này Group 1; local: `DEV_MOCK_USER_ID`)
   "isCurrent": false,
   "description": "API + TypeORM"
 }
-
 ```
 
-| Field | Required |
-|-------|----------|
-| `companyName` | yes |
-| `position` | yes |
-| `startDate` | yes (`YYYY-MM-DD`) |
-| `endDate` | no; `isCurrent=true` → null |
-| `isCurrent` | no |
-| `description` | no |
 
-**Errors:** giống educations.
+| Field         | Required | Validation                                           |
+| ------------- | -------- | ---------------------------------------------------- |
+| `companyName` | yes      | string, max 255                                      |
+| `position`    | yes      | string, max 255                                      |
+| `startDate`   | yes      | `YYYY-MM-DD`                                         |
+| `endDate`     | no       | `YYYY-MM-DD` hoặc null; `isCurrent=true` → phải null |
+| `isCurrent`   | no       | boolean, default `false`                             |
+| `description` | no       | text                                                 |
+
+
+**Response 201:** `{ "success": true, "message": "Thành công", "data": { ...workExperience } }`.
+
+**Lỗi:** `400`, `401`, `403`, `500`.
+
+### 4.3 Update — `PUT /api/v1/candidates/me/work-experiences/{id}`
+
+Quyền `CANDIDATE`. Partial. Ownership bắt buộc.
+
+**Response 200:** `{ "success": true, "message": "Thành công", "data": { ...workExperience } }`.
+
+**Lỗi:** `400`, `401`, `403`, `404`, `500`.
+
+### 4.4 Delete — `DELETE /api/v1/candidates/me/work-experiences/{id}`
+
+**Response 200:** `{ "success": true, "message": "Thành công", "data": null }`.
+
+**Lỗi:** `401`, `403`, `404`, `500`.
 
 ---
 
-### 1.5 Skills catalog + candidate skills (Lợi)
+## 5. Skills (Lợi) — catalog + gắn vào candidate
 
-Schema:
+Bảng `skills` (`name` varchar 100, `category` `SKILL|LANGUAGE|CERTIFICATE`, `code` varchar 10 nullable, `description` text nullable, `status` default `ACTIVE`).  
+Bảng `candidate_skills` unique `(candidateId, skillId)`, `level`: `BEGINNER|INTERMEDIATE|ADVANCED|EXPERT|NATIVE`.
 
-- `skills`: catalog (`name`, `category`: `SKILL|LANGUAGE|CERTIFICATE`, `code` optional cho language, `status`)
-- `candidate_skills`: (`candidateId`, `skillId`, `level`)
-- `level`: `BEGINNER|INTERMEDIATE|ADVANCED|EXPERT|NATIVE` (`NATIVE` chủ yếu cho LANGUAGE)
+`GET /candidates/me` đã trả skill đã gắn. `/skills/me` dùng khi FE sửa từng dòng, không PUT vào `/candidates/me`.
 
-| Method | URL | Quyền | Mô tả |
-|--------|-----|-------|--------|
-| `GET` | `/api/v1/skills?category=SKILL` | Public hoặc authenticated | Catalog |
-| `POST` | `/api/v1/skills` | `ADMIN` *(hoặc seed-only — chốt với G4)* | Thêm catalog |
-| `GET` | `/api/v1/skills/me` | `CANDIDATE` | Skills đã gắn |
-| `POST` | `/api/v1/skills/me` | `CANDIDATE` | Gắn skill |
-| `PUT` | `/api/v1/skills/me/{id}` | `CANDIDATE` | Đổi level (`id` = `candidate_skills.id`) |
-| `DELETE` | `/api/v1/skills/me/{id}` | `CANDIDATE` | Gỡ |
+### 5.1 List catalog — `GET /api/v1/skills?category=SKILL`
 
-**POST `/skills/me` body**
+
+|       |                                                           |
+| ----- | --------------------------------------------------------- |
+| Tên   | Danh mục skill / ngôn ngữ / chứng chỉ                     |
+| Quyền | Public hoặc đã đăng nhập                                  |
+| Query | `category` optional: `SKILL` | `LANGUAGE` | `CERTIFICATE` |
+
+
+**Response 200:** `{ "success": true, "message": "Thành công", "data": [ { "id", "name", "category", "code", "description", "status" } ] }`.
+
+**Lỗi:** `400` (category sai), `500`.
+
+### 5.2 Create catalog — `POST /api/v1/skills`
+
+
+|       |                               |
+| ----- | ----------------------------- |
+| Quyền | `ADMIN` (hoặc seed — chốt G4) |
+
+
+**Request**
+
+```json
+{
+  "name": "TypeScript",
+  "category": "SKILL",
+  "code": null,
+  "description": null
+}
+```
+
+
+| Field         | Required | Validation                           |
+| ------------- | -------- | ------------------------------------ |
+| `name`        | yes      | max 100                              |
+| `category`    | yes      | `SKILL` | `LANGUAGE` | `CERTIFICATE` |
+| `code`        | no       | max 10; dùng cho LANGUAGE (vd. `EN`) |
+| `description` | no       | text                                 |
+
+
+**Response 201:** `{ "success": true, "message": "Thành công", "data": { ...skill } }`.
+
+**Lỗi:** `400`, `401`, `403`, `409` (nếu sau này unique name+category), `500`.
+
+### 5.3 List mine — `GET /api/v1/skills/me`
+
+Quyền `CANDIDATE`. **Response 200:** `data` = mảng cùng shape item trong GET `/candidates/me` → `skills` (có thể gồm cả 3 category).
+
+### 5.4 Attach — `POST /api/v1/skills/me`
+
+Quyền `CANDIDATE`.
+
+**Request**
 
 ```json
 {
@@ -212,71 +386,29 @@ Schema:
 }
 ```
 
-**Conflict:** cùng `candidateId + skillId` → `409`.
 
-**Response item**
+| Field     | Required | Validation                             |
+| --------- | -------- | -------------------------------------- |
+| `skillId` | yes      | tồn tại trên `skills`, `status=ACTIVE` |
+| `level`   | yes      | enum `SkillLevel`                      |
 
-```json
-{
-  "id": "12",
-  "candidateId": "1",
-  "skillId": "5",
-  "level": "INTERMEDIATE",
-  "skill": {
-    "id": "5",
-    "name": "TypeScript",
-    "category": "SKILL",
-    "code": null
-  }
-}
-```
 
----
+**Response 201:** `{ "success": true, "message": "Thành công", "data": { ...candidateSkill + skill } }`.
 
-## 2. Option A1 (theo brief) — Gom `/candidates/me`
+**Lỗi:** `400`, `401`, `403`, `404` (skill không tồn tại), `409` (đã gắn), `500`.
 
-Nếu Leader chọn A1:
+### 5.5 Update level — `PUT /api/v1/skills/me/{id}`
 
-| Method | URL |
-|--------|-----|
-| `GET` | `/api/v1/candidates/me` |
-| `PUT` | `/api/v1/candidates/me` |
+`{id}` = `candidate_skills.id`. Quyền `CANDIDATE`. Body: `{ "level": "ADVANCED" }`.
 
-**GET `data` (ví dụ)**
+**Response 200:** item đã cập nhật.  
+**Lỗi:** `400`, `401`, `403`, `404`, `500`.
 
-```json
-{
-  "id": "1",
-  "userId": "10",
-  "bio": "...",
-  "careerObjective": "...",
-  "educations": [],
-  "workExperiences": [],
-  "skills": [],
-  "languages": [],
-  "certificates": []
-}
-```
+### 5.6 Detach — `DELETE /api/v1/skills/me/{id}`
 
-> `languages` / `certificates` = filter `candidate_skills` theo `skill.category` (không phải bảng riêng).
-
-**PUT:** cần chốt thêm — replace toàn bộ nested hay chỉ update `bio` / `careerObjective`?  
-Khuyến nghị A1 chỉ **đọc gom**; ghi nested vẫn dùng endpoint A2 để tránh payload nguy hiểm.
+**Response 200:** `{ "success": true, "message": "Thành công", "data": null }`.  
+**Lỗi:** `401`, `403`, `404`, `500`.
 
 ---
 
-## 3. Ranh giới với Group 1
 
-| Field | API |
-|-------|-----|
-| fullName, phone, birthday, address, avatar | `GET/PUT /api/v1/users/me` (G1) |
-| bio, careerObjective, education, experience, skills | Group 3 (doc này) |
-
-FE trang “Hồ sơ ứng viên” có thể gọi **cả hai**.
-
----
-
-## 4. Draft stub ≠ contract
-
-Thư mục `apps/backend/src/modules/candidate-profiles|skills` trên branch feature chỉ là skeleton.  
-**URL / envelope / validation trong doc này mới là đề xuất chính thức** sau khi Leader approve.
