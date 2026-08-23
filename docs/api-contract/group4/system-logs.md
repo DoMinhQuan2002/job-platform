@@ -26,7 +26,20 @@ Response lỗi:
 }
 ```
 
-HTTP Status: 200 OK · 201 Created · 400 Validation · 401 Chưa đăng nhập · 403 Không có quyền · 404 Không tìm thấy · 409 Trùng/sai trạng thái · 500 Lỗi hệ thống
+`errors[]` chỉ có khi lỗi 400 (validation), có thể nhiều phần tử. Lỗi 401/403/404/409/500 thì `errors` là mảng rỗng `[]`, thông tin nằm trong `message`.
+
+HTTP Status dùng trong toàn bộ 3 file:
+
+| Status | Ý nghĩa                                      |
+| ------ | -------------------------------------------- |
+| 200    | Thành công                                   |
+| 201    | Tạo mới thành công                           |
+| 400    | Dữ liệu không hợp lệ                         |
+| 401    | Chưa đăng nhập                               |
+| 403    | Không có quyền                               |
+| 404    | Không tìm thấy                               |
+| 409    | Dữ liệu trùng hoặc trạng thái không cho phép |
+| 500    | Lỗi hệ thống                                 |
 
 Phân trang (query `page` mặc định 1, `limit` mặc định 20 tối đa 100, `sort`, `order` asc/desc mặc định desc):
 
@@ -45,14 +58,20 @@ Tên trường JSON: camelCase (cột DB snake_case)
 
 ---
 
-## 1. `GET /api/v1/admin/system-logs`
+## 1. Danh sách nhật ký hệ thống
 
-Query: page, limit, userId, action (11 giá trị — mục 3), targetType (USER/COMPANY/JOB/JOB_CATEGORY/APPLICATION), targetId, fromDate, toDate
+`GET /api/v1/admin/system-logs` · Quyền: ADMIN
+
+Query: page, limit, userId, action (11 giá trị — mục 3), targetType (USER/COMPANY/JOB/JOB_CATEGORY), targetId, fromDate, toDate
+
+**HTTP Status:** 200 · 400 · 401 · 403
 
 **200 OK**
 
 ```json
 {
+  "success": true,
+  "message": "Thành công",
   "data": {
     "items": [
       {
@@ -69,18 +88,108 @@ Query: page, limit, userId, action (11 giá trị — mục 3), targetType (USER
         "createdAt": "datetime"
       }
     ],
-    "pagination": {}
+    "pagination": { "page": 1, "limit": 20, "total": 341, "totalPages": 18 }
   }
 }
 ```
 
 `targetLabel` không phải cột DB, backend tra thêm theo targetType+targetId; `null` nếu bản ghi gốc đã bị xóa cứng.
-**Lỗi:** 400 targetId thiếu targetType / action, targetType sai / fromDate > toDate · 401 chưa đăng nhập · 403 không phải ADMIN
 
-## 2. `GET /api/v1/admin/system-logs/{id}`
+**Response lỗi**
+
+`400` — `targetId` thiếu `targetType`:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "targetId", "message": "Phải truyền kèm targetType" }]
+}
+```
+
+`400` — `action`/`targetType` sai danh mục:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "action", "message": "Giá trị action không hợp lệ" }]
+}
+```
+
+`400` — `fromDate` lớn hơn `toDate`:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [
+    { "field": "toDate", "message": "toDate phải lớn hơn hoặc bằng fromDate" }
+  ]
+}
+```
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`403`:
+
+```json
+{
+  "success": false,
+  "message": "Bạn không có quyền thực hiện thao tác này",
+  "errors": []
+}
+```
+
+---
+
+## 2. Xem chi tiết một bản ghi nhật ký
+
+`GET /api/v1/admin/system-logs/{id}` · Quyền: ADMIN
+
+Path: `id` (number)
+
+**HTTP Status:** 200 · 401 · 403 · 404
 
 **200 OK** — như 1 item ở mục 1
-**Lỗi:** 401 chưa đăng nhập · 403 không phải ADMIN · 404 không tìm thấy
+
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`403`:
+
+```json
+{
+  "success": false,
+  "message": "Bạn không có quyền thực hiện thao tác này",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy bản ghi nhật ký", "errors": [] }
+```
+
+---
 
 ## 3. Ghi nhật ký — không có API
 

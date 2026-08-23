@@ -10,7 +10,9 @@ Mọi API thao tác 1 thông báo phải kiểm tra `notifications.user_id` = ng
 
 ---
 
-### 1. `GET /api/v1/notifications`
+## 1. Lấy danh sách thông báo
+
+`GET /api/v1/notifications` · Quyền: AUTHENTICATED
 
 **Validation (query)**
 
@@ -23,10 +25,14 @@ Mọi API thao tác 1 thông báo phải kiểm tra `notifications.user_id` = ng
 
 Sort cố định `createdAt desc`.
 
+**HTTP Status:** 200 · 400 · 401
+
 **200 OK**
 
 ```json
 {
+  "success": true,
+  "message": "Thành công",
   "data": {
     "items": [
       {
@@ -41,64 +47,174 @@ Sort cố định `createdAt desc`.
         "createdAt": "datetime"
       }
     ],
-    "pagination": {}
+    "pagination": { "page": 1, "limit": 20, "total": 12, "totalPages": 1 }
   }
 }
 ```
 
-**Lỗi:** 400 page/limit/type sai · 401 chưa đăng nhập
+**Response lỗi**
 
-### 2. `GET /api/v1/notifications/unread-count`
+`400` — `page`/`limit` sai:
 
-**Validation:** không có tham số
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "limit", "message": "limit phải từ 1 đến 100" }]
+}
+```
+
+`400` — `type` sai danh mục:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "type", "message": "Giá trị type không hợp lệ" }]
+}
+```
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+---
+
+## 2. Đếm số thông báo chưa đọc
+
+`GET /api/v1/notifications/unread-count` · Quyền: AUTHENTICATED
+
+Validation: không có tham số
+
+**HTTP Status:** 200 · 401
 
 **200 OK**
 
 ```json
-{ "data": { "unreadCount": 7 } }
+{ "success": true, "message": "Thành công", "data": { "unreadCount": 7 } }
 ```
 
-**Lỗi:** 401 chưa đăng nhập
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
 
 Dùng polling 30–60s cho badge (V1 chưa có WebSocket).
 
-### 3. `PATCH /api/v1/notifications/{id}/read`
+---
 
-**Validation:** `id` (path) — number, phải thuộc `notifications.user_id` của người đang đăng nhập. Không có body.
+## 3. Đánh dấu một thông báo đã đọc
+
+`PATCH /api/v1/notifications/{id}/read` · Quyền: AUTHENTICATED (chỉ thông báo của mình)
+
+Validation: `id` (path) — number, phải thuộc `notifications.user_id` của người đang đăng nhập. Không có body.
+
+**HTTP Status:** 200 · 401 · 404
 
 **200 OK** — như 1 item ở mục 1, `isRead: true`, `readAt` = thời điểm hiện tại
-**Lỗi:** 401 chưa đăng nhập · 404 không tồn tại hoặc không phải của mình
+
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy thông báo", "errors": [] }
+```
 
 Gọi lại trên thông báo đã đọc vẫn trả 200, không đổi `readAt`.
 
-### 4. `PATCH /api/v1/notifications/read-all`
+---
 
-**Validation:** không có body
+## 4. Đánh dấu tất cả thông báo đã đọc
+
+`PATCH /api/v1/notifications/read-all` · Quyền: AUTHENTICATED
+
+Validation: không có body
+
+**HTTP Status:** 200 · 401
 
 **200 OK**
 
 ```json
 {
+  "success": true,
   "message": "Đã đánh dấu tất cả thông báo là đã đọc",
   "data": { "updatedCount": 7 }
 }
 ```
 
-**Lỗi:** 401 chưa đăng nhập
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+Không có thông báo chưa đọc nào thì vẫn trả 200 với `updatedCount: 0`.
 
 Route `read-all` phải khai báo trước `{id}/read` để không bị Express khớp nhầm.
 
-### 5. `DELETE /api/v1/notifications/{id}`
+---
 
-**Validation:** `id` (path) — number, phải thuộc `notifications.user_id` của người đang đăng nhập
+## 5. Xóa một thông báo
+
+`DELETE /api/v1/notifications/{id}` · Quyền: AUTHENTICATED (chỉ thông báo của mình)
+
+Validation: `id` (path) — number, phải thuộc `notifications.user_id` của người đang đăng nhập
+
+**HTTP Status:** 200 · 401 · 404
 
 **200 OK**
 
 ```json
-{ "message": "Đã xóa thông báo", "data": null }
+{ "success": true, "message": "Đã xóa thông báo", "data": null }
 ```
 
-**Lỗi:** 401 chưa đăng nhập · 404 không tồn tại hoặc không phải của mình
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy thông báo", "errors": [] }
+```
 
 Xóa cứng (bảng không có `deleted_at`).
 
