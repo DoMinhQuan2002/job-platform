@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { applicationsController } from "./applications.controller";
 
+/**
+ * Applications Router: Mounted at /api/v1/applications
+ */
 const applicationsRouter = Router();
 
 // POST   /api/applications         — Ứng viên nộp đơn
