@@ -2,11 +2,6 @@ import type { NextFunction, Request, Response } from "express";
 import { requireCandidate } from "../../common/utils/auth-user"; //chờ nhóm 1 cấu hình
 import { resumesService } from "./resumes.service";
 
-const readId = (req: Request) => {
-  const value = req.params.id;
-  return Array.isArray(value) ? value[0] : value;
-};
-
 /** Owner: Nguyễn Văn Lợi */
 export const resumesController = {
   getMyResumes: async (req: Request, res: Response, next: NextFunction) => {
@@ -22,7 +17,7 @@ export const resumesController = {
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = requireCandidate(req);
-      const data = await resumesService.getById(user.id, readId(req));
+      const data = await resumesService.getById(user.id, req.params.id as string);
       res.json({ success: true, message: "Thành công", data });
     } catch (error) {
       next(error);
@@ -43,7 +38,7 @@ export const resumesController = {
   setDefault: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = requireCandidate(req);
-      const data = await resumesService.setDefault(user.id, readId(req));
+      const data = await resumesService.setDefault(user.id, req.params.id as string);
       res.json({ success: true, message: "Đặt mặc định thành công", data });
     } catch (error) {
       next(error);
@@ -53,7 +48,7 @@ export const resumesController = {
   deleteMine: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = requireCandidate(req);
-      await resumesService.deleteMine(user.id, readId(req));
+      await resumesService.deleteMine(user.id, req.params.id as string);
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -63,7 +58,7 @@ export const resumesController = {
   getAccessUrl: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = requireCandidate(req);
-      const data = await resumesService.getAccessUrl(user.id, readId(req));
+      const data = await resumesService.getAccessUrl(user.id, req.params.id as string);
       res.json({ success: true, message: "Lấy Link thành công", data });
     } catch (error) {
       next(error);
