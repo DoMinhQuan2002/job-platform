@@ -37,7 +37,7 @@ export class CandidateSkillEntity {
   updatedAt!: Date;
 
   /* Relations */
-  @ManyToOne(() => CandidateProfileEntity, (candidate) => candidate.candidateSkills, {
+  @ManyToOne(() => CandidateProfileEntity, (candidate) => candidate.skills, {
     onDelete: "CASCADE",
   })
   @JoinColumn({ name: "candidate_id" })
