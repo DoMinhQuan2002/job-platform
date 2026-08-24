@@ -1,6 +1,7 @@
 # API Contract — Group 3 (Ứng viên & ứng tuyển)
 
-> **Giai đoạn 2** — tài liệu contract để Leader / FE / BE thống nhất.  
+> **Giai đoạn 2** — tài liệu **chung** cho cả Group 3 (candidates / resumes / applications).  
+> Envelope, base URL, quyết định thiết kế (A1/B1) nằm ở file này; chi tiết endpoint nằm ở từng file bên dưới.  
 > **Chưa phải** implementation chính thức. Code stub trên branch `backend/g3-candidate` chỉ là draft nội bộ.  
 > Branch tài liệu: `docs/api-group3`.
 
@@ -12,7 +13,8 @@
 | [resumes.md](./resumes.md) | CV upload / list / default / delete |
 | [applications.md](./applications.md) | Apply, danh sách đơn, cập nhật status (recruiter), saved jobs |
 
-Media upload dùng chung: `apps/backend/STORAGE_API.md` (`POST /api/v1/media/uploads`, assetType `resume`).
+Media dùng chung (`apps/backend/STORAGE_API.md`): avatar / logo / icon → `POST /api/v1/media/uploads`.  
+**Resume:** `POST /api/v1/resumes` multipart (1 request, upload nội bộ). Xem/tải lại → `GET /api/v1/media/access?assetType=resume`.
 
 ---
 
@@ -67,28 +69,38 @@ Cần Leader chốt: giữ `v1` hay bỏ.
 
 ---
 
-## Quyết định cần Leader chọn (quan trọng)
+## Quyết định thiết kế Group 3 (đề xuất Leader duyệt)
 
-### A. Profile URL shape
+### A. Candidate URL shape — **đã chọn A1 (theo brief)**
 
-| Option | URL | Ưu | Nhược |
-|--------|-----|----|------|
-| **A1 — Brief** | `GET/PUT /api/v1/candidates/me` gom hết nested trong 1 payload | Ít endpoint FE | Payload nặng, khó partial update |
-| **A2 — Nested (khuyến nghị, khớp schema)** | `/candidate-profiles/me` + `/me/educations` + `/me/work-experiences` + `/skills/me` | Khớp bảng DB, update từng phần | Nhiều endpoint hơn |
+| | |
+|--|--|
+| **Chọn** | **A1** |
+| Public API | `GET/PUT /api/v1/candidates/me` |
+| GET | Gom bio, học vấn, kinh nghiệm, kỹ năng / NN / chứng chỉ |
+| PUT | **Chỉ** `bio` + `careerObjective` — không replace nested, không đụng bảng con |
 
-### B. Apply / Save URL
+Ghi học vấn / kinh nghiệm / skill: endpoint con trong [candidates.md](./candidates.md) (`/candidates/me/educations`, …) và `/skills` (Lợi).
+
+> Module `candidate-profiles` (stub nội bộ) **không đổi** ở GĐ2. GĐ3 chỉ thêm facade `/candidates`.
+
+### B. Apply / Save URL — **đã chọn B1**
 
 | Option | Apply | Save |
 |--------|-------|------|
-| **B1 — Brief** | `POST /api/v1/jobs/{jobId}/apply` | `POST/DELETE /api/v1/jobs/{jobId}/save` |
-| **B2 — Draft stub** | `POST /api/v1/applications` body `{ jobId }` | `/api/v1/saved-jobs` |
+| **B1 — chốt** | `POST /api/v1/jobs/{jobId}/apply` | `POST/DELETE /api/v1/jobs/{jobId}/save` |
+| B2 — stub cũ (tham khảo) | `POST /api/v1/applications` | `/api/v1/saved-jobs` (chỉ còn **GET list**) |
 
-**Khuyến nghị:** **B1** (đúng brief, FE dễ hiểu).
+Bổ sung (không có trong brief): `POST /applications/{id}/withdraw`, `GET /saved-jobs`. Chi tiết [applications.md](./applications.md).
 
 ### C. Skills / Language / Certificate
 
 Schema đã merge vào `skills.category`: `SKILL | LANGUAGE | CERTIFICATE` + `candidate_skills.level`.  
 **Không** còn bảng `languages` / `certificates` riêng.
+
+### D. Base path
+
+Đề xuất giữ **`/api/v1`** (đúng monorepo hiện tại).
 
 ---
 
@@ -104,7 +116,10 @@ Schema đã merge vào `skills.category`: `SKILL | LANGUAGE | CERTIFICATE` + `ca
 
 ## Checklist GĐ2 (Group 3)
 
-- [ ] Leader chọn A1/A2, B1/B2, giữ `/api/v1` hay không
+- [x] Candidate shape: **A1** (`/candidates/me`, PUT không replace nested)
+- [x] Resume upload: **1 request multipart** `POST /resumes` (không 2 bước media + metadata)
+- [x] Apply / save: **B1** + withdraw + `GET /saved-jobs`
+- [ ] Leader duyệt A1 + B1 + `/api/v1` + resume flow
 - [ ] FE xác nhận field form cần thiết
 - [ ] Không còn chồng chéo với Group 1 (`/users/me`) — profile nghề nghiệp ≠ user account
-- [ ] PR merge `docs/api-group3` → `main`
+- [ ] Doc đã trên Git / PR merge
