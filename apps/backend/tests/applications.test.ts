@@ -2,7 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import express from "express";
-import apiRouter from "../src/routes";
+import applicationsRouter, {
+  jobsApplicationsRouter,
+  savedJobsRouter,
+} from "../src/modules/applications/applications.route";
 import { errorMiddleware } from "../src/common/middlewares/error.middleware";
 import { AppDataSource } from "../src/data-source";
 import { ApplicationEntity } from "../src/database/entities/application.entity";
@@ -36,7 +39,9 @@ describe("Applications & Saved Jobs Module", () => {
     }
     next();
   });
-  testApp.use("/api/v1", apiRouter);
+  testApp.use("/api/v1/applications", applicationsRouter);
+  testApp.use("/api/v1/jobs", jobsApplicationsRouter);
+  testApp.use("/api/v1/saved-jobs", savedJobsRouter);
   testApp.use(errorMiddleware);
 
   const mockApplicationQueryBuilder = {
