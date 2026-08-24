@@ -11,8 +11,16 @@ import { CandidateProfileEntity } from "../src/database/entities/candidate-profi
 import { ResumeEntity } from "../src/database/entities/resume.entity";
 import { Job } from "../src/database/entities/job.entity";
 import { Company } from "../src/database/entities/company.entity";
+import { UserEntity } from "../src/database/entities/user.entity";
 import { ApplicationStatus } from "../src/common/constants";
 import { JOB_STATUS } from "../src/common/constants/job";
+import { notificationService } from "../src/modules/notifications/notification.service";
+
+vi.mock("../src/modules/notifications/notification.service", () => ({
+  notificationService: {
+    create: vi.fn().mockResolvedValue({ id: "notif_1" }),
+  },
+}));
 
 describe("Applications & Saved Jobs Module", () => {
   let currentUser: {
@@ -39,9 +47,11 @@ describe("Applications & Saved Jobs Module", () => {
     addOrderBy: vi.fn().mockReturnThis(),
     take: vi.fn().mockReturnThis(),
     skip: vi.fn().mockReturnThis(),
-    getMany: vi.fn().mockResolvedValue([
-      { id: "app_1", jobId: "50", status: ApplicationStatus.VIEWED },
-    ]),
+    getMany: vi
+      .fn()
+      .mockResolvedValue([
+        { id: "app_1", jobId: "50", status: ApplicationStatus.VIEWED },
+      ]),
   };
 
   const mockApplicationRepo = {
@@ -87,9 +97,21 @@ describe("Applications & Saved Jobs Module", () => {
     findOne: vi.fn(),
   };
 
+  const mockUserRepo = {
+    findOne: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     currentUser = null;
+
+    mockApplicationRepo.findOne.mockResolvedValue(null);
+    mockSavedJobRepo.findOne.mockResolvedValue(null);
+    mockCompanyRepo.findOne.mockResolvedValue(null);
+    mockUserRepo.findOne.mockResolvedValue(null);
+    mockCandidateProfileRepo.findOne.mockResolvedValue(null);
+    mockResumeRepo.findOne.mockResolvedValue(null);
+    mockJobRepo.findOne.mockResolvedValue(null);
 
     vi.spyOn(AppDataSource, "getRepository").mockImplementation(
       (entity: any) => {
@@ -100,6 +122,7 @@ describe("Applications & Saved Jobs Module", () => {
         if (entity === ResumeEntity) return mockResumeRepo as any;
         if (entity === Job) return mockJobRepo as any;
         if (entity === Company) return mockCompanyRepo as any;
+        if (entity === UserEntity) return mockUserRepo as any;
         return {} as any;
       },
     );
@@ -236,6 +259,7 @@ describe("Applications & Saved Jobs Module", () => {
         });
         mockJobRepo.findOne.mockResolvedValue({
           id: "10",
+          title: "Senior Backend Developer",
           status: JOB_STATUS.APPROVED,
         });
         mockResumeRepo.findOne.mockResolvedValue({
@@ -244,6 +268,14 @@ describe("Applications & Saved Jobs Module", () => {
           isDefault: true,
         });
         mockApplicationRepo.findOne.mockResolvedValue(null);
+        mockCompanyRepo.findOne.mockResolvedValue({
+          id: "comp_1",
+          userId: "user_rec_1",
+        });
+        mockUserRepo.findOne.mockResolvedValue({
+          id: "user_cand_1",
+          fullName: "Nguyễn Văn A",
+        });
 
         const res = await request(testApp)
           .post("/api/v1/jobs/10/apply")
@@ -256,6 +288,51 @@ describe("Applications & Saved Jobs Module", () => {
         expect(res.body.data.jobId).toBe("10");
         expect(res.body.data.resumeSnapshotUrl).toBe("resumes/default.pdf");
         expect(res.body.data.status).toBe(ApplicationStatus.APPLIED);
+        expect(notificationService.create).toHaveBeenCalledWith({
+          userId: "user_rec_1",
+          type: "NEW_APPLICATION",
+          target: { type: "APPLICATION", id: "99" },
+          params: {
+            candidateName: "Nguyễn Văn A",
+            jobTitle: "Senior Backend Developer",
+          },
+        });
+      });
+
+      it("continues apply flow even if notificationService fails (resilience)", async () => {
+        mockCandidateProfileRepo.findOne.mockResolvedValue({
+          id: "cand_1",
+          userId: "user_cand_1",
+        });
+        mockJobRepo.findOne.mockResolvedValue({
+          id: "10",
+          title: "Senior Backend Developer",
+          status: JOB_STATUS.APPROVED,
+        });
+        mockResumeRepo.findOne.mockResolvedValue({
+          id: "res_def",
+          fileUrl: "resumes/default.pdf",
+          isDefault: true,
+        });
+        mockApplicationRepo.findOne.mockResolvedValue(null);
+        mockCompanyRepo.findOne.mockResolvedValue({
+          id: "comp_1",
+          userId: "user_rec_1",
+        });
+        mockUserRepo.findOne.mockResolvedValue({
+          id: "user_cand_1",
+          fullName: "Nguyễn Văn A",
+        });
+        vi.mocked(notificationService.create).mockRejectedValueOnce(
+          new Error("Notification service unavailable"),
+        );
+
+        const res = await request(testApp)
+          .post("/api/v1/jobs/10/apply")
+          .send({});
+
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
       });
 
       it("handles race condition (DB unique_violation 23505) returning 409 Conflict", async () => {
@@ -543,13 +620,61 @@ describe("Applications & Saved Jobs Module", () => {
         });
         mockApplicationRepo.findOne.mockResolvedValue({
           id: "app_1",
+          candidateId: "cand_1",
           jobId: "50",
           status: ApplicationStatus.APPLIED,
         });
         mockJobRepo.findOne.mockResolvedValue({
           id: "50",
           companyId: "comp_1",
+          title: "Node.js Developer",
         });
+        mockCandidateProfileRepo.findOne.mockResolvedValue({
+          id: "cand_1",
+          userId: "user_cand_1",
+        });
+
+        const res = await request(testApp)
+          .put("/api/v1/applications/app_1/status")
+          .send({ status: ApplicationStatus.VIEWED });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.status).toBe(ApplicationStatus.VIEWED);
+        expect(notificationService.create).toHaveBeenCalledWith({
+          userId: "user_cand_1",
+          type: "APPLICATION_STATUS_CHANGED",
+          target: { type: "APPLICATION", id: "app_1" },
+          params: {
+            jobTitle: "Node.js Developer",
+            status: ApplicationStatus.VIEWED,
+          },
+        });
+      });
+
+      it("continues updateStatus flow even if notificationService fails (resilience)", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue({
+          id: "comp_1",
+          userId: "user_rec_1",
+        });
+        mockApplicationRepo.findOne.mockResolvedValue({
+          id: "app_1",
+          candidateId: "cand_1",
+          jobId: "50",
+          status: ApplicationStatus.APPLIED,
+        });
+        mockJobRepo.findOne.mockResolvedValue({
+          id: "50",
+          companyId: "comp_1",
+          title: "Node.js Developer",
+        });
+        mockCandidateProfileRepo.findOne.mockResolvedValue({
+          id: "cand_1",
+          userId: "user_cand_1",
+        });
+        vi.mocked(notificationService.create).mockRejectedValueOnce(
+          new Error("Notification service unavailable"),
+        );
 
         const res = await request(testApp)
           .put("/api/v1/applications/app_1/status")
