@@ -28,26 +28,26 @@ Quyết định URL apply/save **B1**: xem [readme.md](./readme.md) § Quyết �
 
 ## 0. Map Brief → Contract
 
-| Brief | Contract |
-| ----- | -------- |
-| `POST /api/jobs/{jobId}/apply` | **`POST /api/v1/jobs/{jobId}/apply`** |
-| `GET /api/applications` | **`GET /api/v1/applications`** (+ query theo role) |
-| `GET /api/applications/{id}` | **`GET /api/v1/applications/{id}`** |
-| `PUT /api/applications/{id}/status` | **`PUT /api/v1/applications/{id}/status`** — recruiter only |
-| `POST /api/jobs/{jobId}/save` | **`POST /api/v1/jobs/{jobId}/save`** |
-| `DELETE /api/jobs/{jobId}/save` | **`DELETE /api/v1/jobs/{jobId}/save`** |
-| (không liệt kê) | **`POST /api/v1/applications/{id}/withdraw`** — candidate rút đơn |
-| (không liệt kê) | **`GET /api/v1/saved-jobs`** — list việc đã lưu |
+| Brief                               | Contract                                                          |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `POST /api/jobs/{jobId}/apply`      | **`POST /api/v1/jobs/{jobId}/apply`**                             |
+| `GET /api/applications`             | **`GET /api/v1/applications`** (+ query theo role)                |
+| `GET /api/applications/{id}`        | **`GET /api/v1/applications/{id}`**                               |
+| `PUT /api/applications/{id}/status` | **`PUT /api/v1/applications/{id}/status`** — recruiter only       |
+| `POST /api/jobs/{jobId}/save`       | **`POST /api/v1/jobs/{jobId}/save`**                              |
+| `DELETE /api/jobs/{jobId}/save`     | **`DELETE /api/v1/jobs/{jobId}/save`**                            |
+| (không liệt kê)                     | **`POST /api/v1/applications/{id}/withdraw`** — candidate rút đơn |
+| (không liệt kê)                     | **`GET /api/v1/saved-jobs`** — list việc đã lưu                   |
 
 ---
 
 ## 1. Apply to job
 
-| | |
-| -- | -- |
-| Tên | Ứng tuyển một tin |
+|              |                                   |
+| ------------ | --------------------------------- |
+| Tên          | Ứng tuyển một tin                 |
 | Method / URL | `POST /api/v1/jobs/{jobId}/apply` |
-| Quyền | `CANDIDATE` |
+| Quyền        | `CANDIDATE`                       |
 
 **Request**
 
@@ -57,10 +57,10 @@ Quyết định URL apply/save **B1**: xem [readme.md](./readme.md) § Quyết �
 }
 ```
 
-| Field | Required | Validation |
-| ----- | -------- | ---------- |
-| `resumeId` | no* | Thuộc candidate hiện tại, chưa soft-deleted. *Omit → dùng CV `isDefault=true`; không có default → `400` |
-| `jobId` | path | Job tồn tại / đang mở (rule chốt G2) |
+| Field      | Required | Validation                                                                                               |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `resumeId` | no\*     | Thuộc candidate hiện tại, chưa soft-deleted. \*Omit → dùng CV `isDefault=true`; không có default → `400` |
+| `jobId`    | path     | Job tồn tại / đang mở (APPROVED)                                                                         |
 
 **Response 201**
 
@@ -88,18 +88,18 @@ Quyết định URL apply/save **B1**: xem [readme.md](./readme.md) § Quyết �
 
 ## 2. List applications
 
-| | |
-| -- | -- |
-| Method / URL | `GET /api/v1/applications` |
-| Quyền | `CANDIDATE` hoặc `RECRUITER` |
+|              |                              |
+| ------------ | ---------------------------- |
+| Method / URL | `GET /api/v1/applications`   |
+| Quyền        | `CANDIDATE` hoặc `RECRUITER` |
 
 **Query**
 
-| Param | Ai dùng | Note |
-| ----- | ------- | ---- |
-| `status` | cả hai | filter enum |
-| `jobId` | recruiter | đơn của 1 tin |
-| `page`, `limit` | cả hai | optional; default do BE |
+| Param           | Ai dùng   | Note                    |
+| --------------- | --------- | ----------------------- |
+| `status`        | cả hai    | filter enum             |
+| `jobId`         | recruiter | đơn của 1 tin           |
+| `page`, `limit` | cả hai    | optional; default do BE |
 
 **Behavior**
 
@@ -115,10 +115,10 @@ Quyết định URL apply/save **B1**: xem [readme.md](./readme.md) § Quyết �
 
 ## 3. Get application detail
 
-| | |
-| -- | -- |
-| Method / URL | `GET /api/v1/applications/{id}` |
-| Quyền | Owner candidate **hoặc** recruiter của job đó |
+|              |                                               |
+| ------------ | --------------------------------------------- |
+| Method / URL | `GET /api/v1/applications/{id}`               |
+| Quyền        | Owner candidate **hoặc** recruiter của job đó |
 
 **Response 200:** một object cùng shape §1.  
 Recruiter xem file CV qua `resumeSnapshotUrl` + `GET /api/v1/media/access?assetType=resume` — **không** cần quyền `GET /resumes/{id}` của candidate.
@@ -129,10 +129,10 @@ Recruiter xem file CV qua `resumeSnapshotUrl` + `GET /api/v1/media/access?assetT
 
 ## 4. Update application status (Recruiter)
 
-| | |
-| -- | -- |
-| Method / URL | `PUT /api/v1/applications/{id}/status` |
-| Quyền | `RECRUITER` (đúng company/job) — **Candidate không gọi** |
+|              |                                                          |
+| ------------ | -------------------------------------------------------- |
+| Method / URL | `PUT /api/v1/applications/{id}/status`                   |
+| Quyền        | `RECRUITER` (đúng company/job) — **Candidate không gọi** |
 
 **Request**
 
@@ -164,12 +164,12 @@ INTERVIEW → ACCEPTED | REJECTED
 
 DB có `WITHDRAWN`; brief không liệt kê riêng.
 
-| | |
-| -- | -- |
-| Method / URL | `POST /api/v1/applications/{id}/withdraw` |
-| Quyền | `CANDIDATE` (owner) |
-| Request | empty body |
-| Rule | Chỉ khi `status` ∈ { `APPLIED`, `VIEWED` } → set `WITHDRAWN` |
+|              |                                                              |
+| ------------ | ------------------------------------------------------------ |
+| Method / URL | `POST /api/v1/applications/{id}/withdraw`                    |
+| Quyền        | `CANDIDATE` (owner)                                          |
+| Request      | empty body                                                   |
+| Rule         | Chỉ khi `status` ∈ { `APPLIED`, `VIEWED` } → set `WITHDRAWN` |
 
 **Response 200:** application đã cập nhật.  
 **Errors:** `400` (status không cho rút), `401`, `403`, `404`, `500`
@@ -178,18 +178,20 @@ DB có `WITHDRAWN`; brief không liệt kê riêng.
 
 ## 6. Save / unsave job
 
-| Method | URL | Quyền |
-| ------ | --- | ----- |
-| `POST` | `/api/v1/jobs/{jobId}/save` | `CANDIDATE` |
+| Method   | URL                         | Quyền       |
+| -------- | --------------------------- | ----------- |
+| `POST`   | `/api/v1/jobs/{jobId}/save` | `CANDIDATE` |
 | `DELETE` | `/api/v1/jobs/{jobId}/save` | `CANDIDATE` |
-| `GET` | `/api/v1/saved-jobs` | `CANDIDATE` |
+| `GET`    | `/api/v1/saved-jobs`        | `CANDIDATE` |
 
-**POST** — body empty. Insert `saved_jobs`.  
-- Chưa save → `201` + row  
+**POST** — body empty. Insert `saved_jobs`.
+
+- Chưa save → `201` + row
 - Đã save → `200` idempotent (không `409`)
 
-**DELETE** — unsave.  
-- Có row → xóa, `200` + `{ "success": true, "message": "Thành công", "data": null }`  
+**DELETE** — unsave.
+
+- Có row → xóa, `200` + `{ "success": true, "message": "Thành công", "data": null }`
 - Chưa save → `200` idempotent (cùng body)
 
 **GET `/api/v1/saved-jobs`** — list việc đã lưu của candidate hiện tại.
@@ -209,7 +211,7 @@ DB có `WITHDRAWN`; brief không liệt kê riêng.
 }
 ```
 
-*(FE cần job title/company: join G2 khi list, hoặc FE gọi thêm `GET /jobs/{id}` — chốt với G2.)*
+_(FE cần job title/company: join G2 khi list, hoặc FE gọi thêm `GET /jobs/{id}` — chốt với G2.)_
 
 **Errors:** `401`, `403`, `404` (job không tồn tại khi save), `500`
 
