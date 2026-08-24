@@ -1,6 +1,9 @@
 import { Router } from "express";
 import adminRouter from "../modules/admin/admin.route";
-import applicationsRouter from "../modules/applications/applications.route";
+import applicationsRouter, {
+  jobsApplicationsRouter,
+  savedJobsRouter,
+} from "../modules/applications/applications.route";
 import authRouter from "../modules/auth/auth.route";
 import candidateProfilesRouter from "../modules/candidate-profiles/candidate-profiles.route";
 import companiesRouter from "../modules/companies/companies.route";
@@ -19,6 +22,7 @@ const apiRouter = Router();
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/companies", companiesRouter);
+apiRouter.use("/jobs", jobsApplicationsRouter);
 apiRouter.use("/jobs", jobsRouter);
 apiRouter.use("/media", mediaRouter);
 apiRouter.use("/candidate-profiles", candidateProfilesRouter);
@@ -27,7 +31,11 @@ apiRouter.use("/work-experiences", workExperiencesRouter);
 apiRouter.use("/resumes", resumesRouter);
 apiRouter.use("/saved-jobs", savedJobsRouter);
 apiRouter.use("/applications", applicationsRouter);
+<<<<<<< HEAD
 apiRouter.use("/admin/system-logs", systemLogsRouter);
+=======
+apiRouter.use("/saved-jobs", savedJobsRouter);
+>>>>>>> 0d751e5 (Lưu tạm code phần Application & Saved Jobs để pull main)
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/notifications", notificationsRouter);
 
