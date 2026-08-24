@@ -1,6 +1,6 @@
 # API Contract — Company (Group 2)
 
-> Owner doc: **Nguyễn Bá Đức(`GET /api/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/company`,`GET /api/v1/company`,`PUT /api/v1/company`)**  
+> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/company`,`GET /api/v1/company`,`PUT /api/v1/company`)**  
 
 
 Liên quan schema: `companies`, `users`.
@@ -223,7 +223,7 @@ Auth: `RECRUITER`
 | 409 | Trùng mã số thuế hoặc tên công ty / slug |
 | 500 | Lỗi hệ thống nội bộ |
 
-## 1.4 GET `/api/companies/{id}`
+## 1.4 GET `/api/v1/companies/{id}`
 
 ### Mục đích
 
@@ -286,8 +286,8 @@ Chỉ company đang được phép hiển thị mới được trả về. Compa
 
 > Phân biệt:
 >
-> `GET /api/company` → Recruiter xem company của mình.
-> `GET /api/companies/{id}` → Public xem company theo ID.
+> `GET /api/v1/company` → Recruiter xem company của mình.
+> `GET /api/v1/companies/{id}` → Public xem company theo ID.
 
 ---
 

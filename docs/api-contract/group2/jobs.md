@@ -1,6 +1,6 @@
 # API Contract — Jobs (Group 2)
 
-> Owner doc: ** Trần Văn Cường (`GET /jobs`, `GET /jobs/{id}`, `PUT /jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/jobs`), Nguyễn Bá Đức(`PATCH /api/jobs/{id}`,`GET /api/jobs`, `/api/job-categories`,`/api/recruiter/jobs`), **.  
+> Owner doc: ** Trần Văn Cường (`GET api/v1/jobs`, `GET api/v1/jobs/{id}`, `PUT api/v1/jobs/{id}`),Nguyễn Mạnh Cường (`POST /api/v1/jobs`), Nguyễn Bá Đức(`PATCH /api/v1/jobs/{id}`,`GET /api/v1/jobs`, `/api/v1/job-categories`,`/api/v1/recruiter/jobs`), **.  
 
 
 Liên quan schema: `jobs`, `job_skills`, `job_categories`, `companies`, `skills`.
@@ -299,7 +299,7 @@ HIDDEN → OPEN
 
 ---
 
-### 1.6. GET `/api/jobs`
+### 1.6. GET `/api/v1/jobs`
 
 ### Mục đích
 
@@ -417,12 +417,12 @@ Không có kết quả → vẫn trả `200` với `items: []`.
 | `400`  | Query không hợp lệ |
 | `500`  | Lỗi hệ thống       |
 
-> `GET /api/jobs` là một endpoint duy nhất cho list + search + filter + pagination, không cần tạo `/search` hoặc `/filter` riêng.
+> `GET /api/v1/jobs` là một endpoint duy nhất cho list + search + filter + pagination, không cần tạo `/search` hoặc `/filter` riêng.
 
 ---
 
 
-### 1.7. GET `/api/job-categories`
+### 1.7. GET `/api/v1/job-categories`
 
 ### Mục đích
 
@@ -442,7 +442,7 @@ Lấy danh sách ngành nghề dùng cho:
 Không có body.
 
 ```http
-GET /api/job-categories
+GET /api/v1/job-categories
 ```
 
 ### Business Rules
@@ -495,9 +495,9 @@ Nếu không có category:
 
 | Method  | URL                   | Quyền       | Chức năng                           |
 | ------- | --------------------- | ----------- | ----------------------------------- |
-| `PATCH` | `/api/jobs/{id}`      | `RECRUITER` | Cập nhật trạng thái job             |
-| `GET`   | `/api/jobs`           | Public      | List / search / filter / pagination |
-| `GET`   | `/api/job-categories` | Public      | Danh sách ngành nghề                |
+| `PATCH` | `/api/v1/jobs/{id}`      | `RECRUITER` | Cập nhật trạng thái job             |
+| `GET`   | `/api/v1/jobs`           | Public      | List / search / filter / pagination |
+| `GET`   | `/api/v1/job-categories` | Public      | Danh sách ngành nghề                |
 
 ---
 
@@ -539,7 +539,7 @@ Recruiter không được tự đặt trạng thái `APPROVED` hoặc `REJECTED`
 `apps/backend/src/modules/jobs` hiện chỉ là skeleton / draft implementation.  
 **URL / response / validation trong doc này là đề xuất chính thức sau khi Leader approve.**
 
-## 1.8 GET `/api/recruiter/jobs`
+## 1.8 GET `/api/v1/recruiter/jobs`
 
 ### Mục đích
 
@@ -562,7 +562,7 @@ Lấy danh sách toàn bộ tin tuyển dụng thuộc company của Recruiter �
 Ví dụ:
 
 ```http
-GET /api/recruiter/jobs?status=REJECTED&page=1&limit=10
+GET /api/v1/recruiter/jobs?status=REJECTED&page=1&limit=10
 ```
 
 ### Business Rules
@@ -645,9 +645,9 @@ Nếu không có job → `200` với `items: []`.
 
 ---
 
-## Phân biệt với GET `/api/jobs`
+## Phân biệt với GET `/api/v1/jobs`
 
-|            | `GET /api/jobs`    | `GET /api/recruiter/jobs` |
+|            | `GET /api/v1/jobs`    | `GET /api/v1/recruiter/jobs` |
 | ---------- | ------------------ | ------------------------- |
 | Đối tượng  | Public / Candidate | Recruiter                 |
 | Phạm vi    | Job công khai      | Job của company hiện tại  |
@@ -657,9 +657,9 @@ Nếu không có job → `200` với `items: []`.
 | `CLOSED`   | Không              | Có                        |
 
 ```text
-GET /api/jobs
+GET /api/v1/jobs
 → danh sách job public
 
-GET /api/recruiter/jobs
+GET /api/v1/recruiter/jobs
 → danh sách job nội bộ để Recruiter quản lý
 ```
