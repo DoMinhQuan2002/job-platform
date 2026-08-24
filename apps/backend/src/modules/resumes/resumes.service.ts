@@ -4,19 +4,20 @@ import { AppDataSource } from "../../data-source";
 import { ResumeEntity } from "../../database/entities/resume.entity";
 import { storageService } from "../../common/storage/storage.service";
 
+// Sử dụng helper function thay vì gọi thẳng ở top-level để tránh lỗi "DataSource is not initialized"
+const getRepo = () => AppDataSource.getRepository(ResumeEntity);
+
 /** Owner: Nguyễn Văn Lợi */
 export const resumesService = {
   async getMyResumes(candidateId: string) {
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    return await resumeRepo.find({
+    return await getRepo().find({
       where: { candidateId, deletedAt: IsNull() },
       order: { isDefault: "DESC", createdAt: "DESC" },
     });
   },
 
   async getById(candidateId: string, id: string) {
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    const resume = await resumeRepo.findOne({
+    const resume = await getRepo().findOne({
       where: { id, candidateId, deletedAt: IsNull() },
     });
     if (!resume) throw new AppError(404, "NOT_FOUND", "CV không tồn tại hoặc đã bị xóa");
@@ -34,10 +35,8 @@ export const resumesService = {
       throw new AppError(400, "FILE_TOO_LARGE", "File size vượt quá 10MB");
     }
 
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    
     // Check quota max 5 CVs
-    const count = await resumeRepo.count({ where: { candidateId, deletedAt: IsNull() } });
+    const count = await getRepo().count({ where: { candidateId, deletedAt: IsNull() } });
     if (count >= 5) {
       throw new AppError(400, "QUOTA_EXCEEDED", "Chỉ được phép tải lên tối đa 5 CV");
     }
@@ -53,7 +52,7 @@ export const resumesService = {
     // Nếu là CV đầu tiên, bắt buộc set default
     const isDefault = count === 0;
 
-    const resume = resumeRepo.create({
+    const resume = getRepo().create({
       candidateId,
       fileName: file.originalname,
       fileUrl: storedObject.storagePath, // Lưu storagePath
@@ -62,13 +61,11 @@ export const resumesService = {
       isDefault,
     });
 
-    return await resumeRepo.save(resume);
+    return await getRepo().save(resume);
   },
 
   async setDefault(candidateId: string, id: string) {
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    
-    const resume = await resumeRepo.findOne({ where: { id, candidateId, deletedAt: IsNull() } });
+    const resume = await getRepo().findOne({ where: { id, candidateId, deletedAt: IsNull() } });
     if (!resume) throw new AppError(404, "NOT_FOUND", "CV không tồn tại hoặc đã bị xóa");
 
     await AppDataSource.transaction(async (manager) => {
@@ -78,16 +75,15 @@ export const resumesService = {
       await manager.update(ResumeEntity, { id }, { isDefault: true });
     });
 
-    return await resumeRepo.findOne({ where: { id } });
+    return await getRepo().findOne({ where: { id } });
   },
 
   async deleteMine(candidateId: string, id: string) {
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    const resume = await resumeRepo.findOne({ where: { id, candidateId, deletedAt: IsNull() } });
+    const resume = await getRepo().findOne({ where: { id, candidateId, deletedAt: IsNull() } });
     if (!resume) throw new AppError(404, "NOT_FOUND", "CV không tồn tại hoặc đã bị xóa");
 
     // 1. Soft delete DB
-    await resumeRepo.softDelete(id);
+    await getRepo().softDelete(id);
 
     // 2. Xóa vật lý trên Supabase
     try {
@@ -98,20 +94,19 @@ export const resumesService = {
 
     // 3. Promote CV khác thành Default nếu CV vừa xóa là CV Default
     if (resume.isDefault) {
-      const latestResume = await resumeRepo.findOne({
+      const latestResume = await getRepo().findOne({
         where: { candidateId, deletedAt: IsNull() },
         order: { createdAt: "DESC" }
       });
       if (latestResume) {
         latestResume.isDefault = true;
-        await resumeRepo.save(latestResume);
+        await getRepo().save(latestResume);
       }
     }
   },
 
   async getAccessUrl(candidateId: string, id: string) {
-    const resumeRepo = AppDataSource.getRepository(ResumeEntity);
-    const resume = await resumeRepo.findOne({ where: { id, candidateId } });
+    const resume = await getRepo().findOne({ where: { id, candidateId } });
     if (!resume) throw new AppError(404, "NOT_FOUND", "CV không tồn tại");
 
     return await storageService.getAccessUrl(resume.fileUrl, "resume");

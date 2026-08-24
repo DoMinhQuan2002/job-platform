@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { requireCandidate } from "../../common/utils/auth-user";
+import { requireCandidate } from "../../common/utils/auth-user"; //chờ nhóm 1 cấu hình
 import { resumesService } from "./resumes.service";
 
 const readId = (req: Request) => {
@@ -32,7 +32,7 @@ export const resumesController = {
   createOwnerResume: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = requireCandidate(req);
-      // Data lúc này nhận TRỰC TIẾP req.file qua middleware multer
+      // nhận file trực tiếp qua multer
       const data = await resumesService.createOwnerResume(user.id, req.file);
       res.json({ success: true, message: "Tạo CV thành công", data });
     } catch (error) {
