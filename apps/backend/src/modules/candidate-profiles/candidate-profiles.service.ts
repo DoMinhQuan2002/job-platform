@@ -79,6 +79,10 @@ export class CandidateProfilesService {
     return profile;
   }
 
+  async getMyProfile(userId: string): Promise<CandidateProfileEntity> {
+    return this.getOrCreateByUserId(userId);
+  }
+
   async getAggregateByUserId(userId: string): Promise<CandidateAggregate> {
     const profile = await this.getOrCreateByUserId(userId);
 
@@ -422,3 +426,5 @@ export class CandidateProfilesService {
     };
   }
 }
+
+export const candidateProfilesService = new CandidateProfilesService();
