@@ -1,10 +1,10 @@
 import { EntityManager } from "typeorm";
-import { AppDataSource } from "../../data-source";
+import { AppDataSource } from "@/data-source";
 import {
   NotificationEntity,
   NotificationType,
   TargetType,
-} from "../../database/entities/notification.entity";
+} from "@/database/entities/notification.entity";
 
 type Base<T extends NotificationType, TT extends TargetType> = {
   userId: string;
