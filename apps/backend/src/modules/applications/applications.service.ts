@@ -5,9 +5,11 @@ import { CandidateProfileEntity } from "../../database/entities/candidate-profil
 import { ResumeEntity } from "../../database/entities/resume.entity";
 import { Job } from "../../database/entities/job.entity";
 import { Company } from "../../database/entities/company.entity";
+import { UserEntity } from "../../database/entities/user.entity";
 import { ApplicationStatus } from "../../common/constants";
 import { JOB_STATUS } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
+import { notificationService } from "../notifications/notification.service";
 import {
   ALLOWED_STATUS_TRANSITIONS,
   ApplicationQueryDto,
@@ -38,6 +40,10 @@ export class ApplicationsService {
 
   private get companyRepo() {
     return AppDataSource.getRepository(Company);
+  }
+
+  private get userRepo() {
+    return AppDataSource.getRepository(UserEntity);
   }
 
   private async getCandidateProfileByUserId(
@@ -135,7 +141,32 @@ export class ApplicationsService {
         appliedAt: new Date(),
       });
 
-      return await this.applicationRepo.save(application);
+      const saved = await this.applicationRepo.save(application);
+
+      // Gửi thông báo tới nhà tuyển dụng sở hữu tin
+      try {
+        const company = await this.companyRepo.findOne({
+          where: { id: job.companyId },
+        });
+        if (company?.userId) {
+          const user = await this.userRepo.findOne({
+            where: { id: userId },
+          });
+          await notificationService.create({
+            userId: company.userId,
+            type: "NEW_APPLICATION",
+            target: { type: "APPLICATION", id: saved.id },
+            params: {
+              candidateName: user?.fullName || "Ứng viên",
+              jobTitle: job.title,
+            },
+          });
+        }
+      } catch (notifErr) {
+        console.error("Failed to send notification for NEW_APPLICATION:", notifErr);
+      }
+
+      return saved;
     } catch (err: any) {
       if (err?.code === "23505") {
         throw new AppError(
@@ -328,6 +359,10 @@ export class ApplicationsService {
       );
     }
 
+    const job = await this.jobRepo.findOne({
+      where: { id: application.jobId },
+    });
+
     if (user.role === "RECRUITER") {
       const company = await this.getCompanyByUserId(user.id);
       if (!company) {
@@ -338,9 +373,6 @@ export class ApplicationsService {
         );
       }
 
-      const job = await this.jobRepo.findOne({
-        where: { id: application.jobId },
-      });
       if (!job || job.companyId !== company.id) {
         throw new AppError(
           403,
@@ -361,7 +393,29 @@ export class ApplicationsService {
     }
 
     application.status = dto.status;
-    return this.applicationRepo.save(application);
+    const saved = await this.applicationRepo.save(application);
+
+    // Gửi thông báo tới ứng viên khi trạng thái hồ sơ thay đổi
+    try {
+      const candidate = await this.candidateProfileRepo.findOne({
+        where: { id: application.candidateId },
+      });
+      if (candidate?.userId && job?.title) {
+        await notificationService.create({
+          userId: candidate.userId,
+          type: "APPLICATION_STATUS_CHANGED",
+          target: { type: "APPLICATION", id: application.id },
+          params: {
+            jobTitle: job.title,
+            status: dto.status,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error("Failed to send notification for APPLICATION_STATUS_CHANGED:", notifErr);
+    }
+
+    return saved;
   }
 
   /** 5. Withdraw application (Candidate) */
