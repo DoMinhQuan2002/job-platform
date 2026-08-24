@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
 import { ResumeEntity } from "./resume.entity";
+import { Job } from "./job.entity";
 import { ApplicationStatus } from "../../common/constants";
 
 @Entity({ name: "applications" })
@@ -66,4 +67,10 @@ export class ApplicationEntity {
   })
   @JoinColumn({ name: "resume_id" })
   resume!: ResumeEntity;
+
+  @ManyToOne(() => Job, {
+    onDelete: "RESTRICT",
+  })
+  @JoinColumn({ name: "job_id" })
+  job!: Job;
 }
