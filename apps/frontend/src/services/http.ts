@@ -1,6 +1,5 @@
 import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+import { env } from "@/config/env";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -12,7 +11,7 @@ type HttpOptions = {
 
 export const http = async <T>(path: string, options: HttpOptions = {}): Promise<T> => {
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(`${env.apiBaseUrl}${path}`, {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
