@@ -6,25 +6,24 @@ import { applicationsController } from "./applications.controller";
  */
 const applicationsRouter = Router();
 
-applicationsRouter.get("/", applicationsController.listApplications);
-applicationsRouter.get("/:id", applicationsController.getApplicationById);
-applicationsRouter.put("/:id/status", applicationsController.updateStatus);
-applicationsRouter.post("/:id/withdraw", applicationsController.withdraw);
+// POST   /api/applications         — Ứng viên nộp đơn
+applicationsRouter.post("/", applicationsController.apply);
 
-/**
- * Saved Jobs Router: Mounted at /api/v1/saved-jobs
- */
-export const savedJobsRouter = Router();
+// GET    /api/applications/me      — Lịch sử ứng tuyển của ứng viên
+applicationsRouter.get("/me", applicationsController.getMyApplications);
 
-savedJobsRouter.get("/", applicationsController.listSavedJobs);
+// GET    /api/applications/me/:id  — Chi tiết một đơn ứng tuyển
+applicationsRouter.get("/me/:id", applicationsController.getMyApplicationById);
 
-/**
- * Jobs Applications & Saved Jobs Router: Mounted at /api/v1/jobs
- */
-export const jobsApplicationsRouter = Router();
+// DELETE /api/applications/me/:id  — Rút đơn (chỉ khi status = APPLIED)
+applicationsRouter.delete("/me/:id", applicationsController.withdraw);
 
-jobsApplicationsRouter.post("/:jobId/apply", applicationsController.apply);
-jobsApplicationsRouter.post("/:jobId/save", applicationsController.saveJob);
-jobsApplicationsRouter.delete("/:jobId/save", applicationsController.unsaveJob);
+
+// RECRUITER - Nhà tuyển dụng
+// GET    /api/applications/:jobId — Recruiter lấy danh sách đơn ứng tuyển của một Job
+applicationsRouter.get("/job/:id", applicationsController.getApplicationsByJobId);
+
+// PATCH  /api/applications/:id/status — Nhà tuyển dụng cập nhật trạng thái (RECRUITER only)
+applicationsRouter.patch("/:id/status", applicationsController.updateStatus);
 
 export default applicationsRouter;
