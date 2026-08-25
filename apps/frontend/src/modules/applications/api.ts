@@ -1,6 +1,7 @@
 import { http } from "@/services/http";
 import type { ApiSuccess } from "@/types/api";
 import type { Application, ApplyJobInput, SavedJob } from "./types";
+import type { ResumeOption } from "./components/apply-modal";
 
 export const applicationsApi = {
   apply: (jobId: string, body: ApplyJobInput = {}) =>
@@ -29,4 +30,9 @@ export const applicationsApi = {
     http<ApiSuccess<null>>(`/jobs/${jobId}/save`, { method: "DELETE" }),
 
   listSavedJobs: () => http<ApiSuccess<SavedJob[]>>("/saved-jobs"),
+
+  getMyResumes: () => http<ApiSuccess<ResumeOption[]>>("/resumes"),
+
+  getJobDetail: (jobId: string) => http<ApiSuccess<unknown>>(`/jobs/${jobId}`),
 };
+
