@@ -3,7 +3,7 @@ import { COMPANY_SIZE } from "../../../common/constants/job";
 
 export const createCompanySchema = z.object({
   name: z
-    .string({ errorMap: () => ({ message: "Tên công ty là bắt buộc" }) })
+    .string({ error: "Tên công ty là bắt buộc" })
     .trim()
     .min(1, "Tên công ty không được để trống")
     .max(255, "Tên công ty không được vượt quá 255 ký tự"),
@@ -21,12 +21,12 @@ export const createCompanySchema = z.object({
     .nullable()
     .optional(),
   email: z
-    .string({ errorMap: () => ({ message: "Email là bắt buộc" }) })
+    .string({ error: "Email là bắt buộc" })
     .trim()
     .email("Email không đúng định dạng")
     .max(255, "Email không được vượt quá 255 ký tự"),
   phone: z
-    .string({ errorMap: () => ({ message: "Số điện thoại là bắt buộc" }) })
+    .string({ error: "Số điện thoại là bắt buộc" })
     .trim()
     .regex(/^(0|\+84)[0-9]{9,10}$/, "Số điện thoại VN không hợp lệ (10-11 chữ số)")
     .max(20, "Số điện thoại không được vượt quá 20 ký tự"),
@@ -45,15 +45,13 @@ export const createCompanySchema = z.object({
         COMPANY_SIZE.SIZE_500_PLUS,
       ],
       {
-        errorMap: () => ({
-          message: "Quy mô công ty không hợp lệ (chọn: '1-50', '50-100', '100-500', '500+')",
-        }),
+        error: "Quy mô công ty không hợp lệ (chọn: '1-50', '50-100', '100-500', '500+')",
       }
     )
     .nullable()
     .optional(),
   address: z
-    .string({ errorMap: () => ({ message: "Địa chỉ là bắt buộc" }) })
+    .string({ error: "Địa chỉ là bắt buộc" })
     .trim()
     .min(1, "Địa chỉ không được để trống")
     .max(255, "Địa chỉ không được vượt quá 255 ký tự"),
@@ -61,3 +59,4 @@ export const createCompanySchema = z.object({
 });
 
 export type CreateCompanyDto = z.infer<typeof createCompanySchema>;
+
