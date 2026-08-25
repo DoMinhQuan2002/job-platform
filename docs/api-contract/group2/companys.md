@@ -1,6 +1,6 @@
 # API Contract — Company (Group 2)
 
-> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/company`,`GET /api/v1/company`,`PUT /api/v1/company`)**  
+> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/companies`,`GET /api/v1/companies/me`,`PUT /api/v1/company`)**  
 
 
 Liên quan schema: `companies`, `users`.
@@ -11,8 +11,8 @@ Liên quan schema: `companies`, `users`.
 
 | Brief (sếp) | Schema / ý nghiệp vụ | Draft stub hiện tại | Đề xuất contract |
 |-------------|----------------------|----------------------|------------------|
-| Tạo hồ sơ công ty | `companies` (`userId = req.user.id`) | `POST /api/v1/company` | `POST /api/v1/company` |
-| `GET /api/company` | `companies` (`user_id = req.user.id`) | `GET /api/v1/company` | `GET /api/v1/company` |
+| Tạo hồ sơ công ty | `companies` (`userId = req.user.id`) | `POST /api/v1/companies` | `POST /api/v1/companies` |
+| `GET /api/companies/me` | `companies` (`user_id = req.user.id`) | `GET /api/v1/companies/me` | `GET /api/v1/companies/me` |
 | `PUT /api/company` | `companies` (`logo`, `website`, `email`, `phone`, `address`, `description`, `taxCode`, `companySize`) | `PUT /api/v1/company` | `PUT /api/v1/company` |
 
 **Identity**
@@ -25,7 +25,7 @@ Liên quan schema: `companies`, `users`.
 
 ## 1. Company Endpoints
 
-Base: `/api/v1/company` (hoặc `/api/company` tuỳ Leader chốt tiền tố `v1`)  
+Base: `/api/v1/companies` (hoặc `/api/companies` tuỳ Leader chốt tiền tố `v1`)  
 Auth: `RECRUITER`
 
 ### 1.1 Khởi tạo hồ sơ công ty mới
@@ -33,7 +33,7 @@ Auth: `RECRUITER`
 | | |
 |---|---|
 | Tên | Tạo mới hồ sơ công ty cho nhà tuyển dụng |
-| Method / URL | `POST /api/v1/company` |
+| Method / URL | `POST /api/v1/companies` |
 | Quyền | `RECRUITER` |
 | Nghiệp vụ | 1. Mỗi tài khoản `RECRUITER` chỉ được tạo tối đa 1 công ty (`companies.user_id` unique).<br>2. Tự động liên kết `userId = req.user.id`.<br>3. Tự động sinh `slug` từ `name` (kèm unique suffix nếu cần).<br>4. Trạng thái mặc định: `status = "ACTIVE"`. |
 
@@ -104,11 +104,11 @@ Auth: `RECRUITER`
 ---
 
 ### 1.2 Lấy thông tin công ty của tôi
-
+ 
 | | |
 |---|---|
 | Tên | Xem thông tin công ty của nhà tuyển dụng đang đăng nhập |
-| Method / URL | `GET /api/v1/company` |
+| Method / URL | `GET /api/v1/companies/me` |
 | Quyền | `RECRUITER` |
 | Request | — |
 | Validation | Phải đăng nhập với vai trò `RECRUITER` |
@@ -286,7 +286,7 @@ Chỉ company đang được phép hiển thị mới được trả về. Compa
 
 > Phân biệt:
 >
-> `GET /api/v1/company` → Recruiter xem company của mình.
+> `GET /api/v1/companies/me` → Recruiter xem company của mình.
 > `GET /api/v1/companies/{id}` → Public xem company theo ID.
 
 ---
