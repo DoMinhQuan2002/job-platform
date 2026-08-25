@@ -96,22 +96,17 @@ npm run build:backend
 
 ### Frontend public (`apps/frontend/src`)
 
-- `app/(public)`: màn public (home, login, register, job list)
-- `app/(candidate)`: màn ứng viên
-- `app/(recruiter)`: màn nhà tuyển dụng
-- `components/ui`: component shadcn/ui dùng chung
-- `components/common`: component dùng chung toàn app
-- `components/layout`: header/sidebar/footer/layout
-- `components/features/*`: UI theo nghiệp vụ từng nhóm
-- `features/auth`: state/logic gọi API cho auth
-- `features/candidate`: state/logic ứng viên
-- `features/recruiter`: state/logic nhà tuyển dụng
-- `services`: API client, service gọi backend
-- `store`: global state
-- `hooks`: custom hooks
-- `types`: typings/interfaces
-- `constants`: hằng số và enum FE
-- `utils`: hàm tiện ích
+Chi tiết Group 3: `apps/frontend/README.md`.
+
+**3 module tách biệt — mỗi dev chỉ sửa 1 folder:**
+
+| Dev | Folder | Route |
+|-----|--------|-------|
+| Bình | `modules/candidate/` | `/candidate/profile` |
+| Lợi | `modules/resume/` | `/candidate/resume` |
+| Mạnh | `modules/applications/` | `/candidate/applications` |
+
+Shared: `services/http.ts`, `lib/*`, `components/ui`, `components/layout`, `app/(public)`, `app/(recruiter)`.
 
 ### Frontend admin (`apps/frontend-admin/src`)
 

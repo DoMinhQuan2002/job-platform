@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend (public + candidate + recruiter)
 
-## Getting Started
+Next.js 16 + Tailwind 4 + shadcn. Port **3000**.
 
-First, run the development server:
+## Group 3 — 3 folder tách biệt (quan trọng)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Mỗi người chỉ sửa đúng 1 folder module.** Không đụng folder người khác.
+
+| Dev | Folder (code ở đây) | Route |
+|-----|---------------------|-------|
+| **Bình** | `src/modules/candidate/` | `/candidate/profile` |
+| **Lợi** | `src/modules/resume/` | `/candidate/resume` |
+| **Mạnh** | `src/modules/applications/` | `/candidate/applications`, `/candidate/applications/saved-jobs` |
+
+Mỗi module gồm:
+
+```
+modules/<tên>/
+  README.md      # scope + quy tắc
+  api.ts         # gọi BE
+  types.ts
+  components/    # UI riêng
+  hooks/
+  pages/         # page component
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`app/(candidate)/…/page.tsx` **chỉ re-export** từ `modules/*/pages` — không viết logic ở đó.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Shared (cả team dùng, sửa cần báo nhau): `services/http.ts`, `lib/*`, `components/ui`, `components/layout`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Chạy
 
-## Learn More
+```bash
+npm install
+cp apps/frontend/.env.example apps/frontend/.env
+npm run dev:frontend   # :3000
+npm run dev:backend    # :4000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Contract BE: `docs/api-contract/group3/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Ví dụ import
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```ts
+// Bình — trong modules/candidate/
+import { candidateApi } from "@/modules/candidate/api";
 
-## Deploy on Vercel
+// Lợi
+import { resumeApi, skillsApi } from "@/modules/resume/api";
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+// Mạnh
+import { applicationsApi } from "@/modules/applications/api";
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Auth (Nhóm 1): `services/auth.service.ts` — login trước khi gọi API G3.
