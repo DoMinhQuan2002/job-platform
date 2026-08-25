@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { JOB_MODE, JOB_TYPE, type JobModeValue, type JobTypeValue } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
 import { jobService } from "./jobs.service";
+import { recruiterJobsQuerySchema } from "./dto/jobs.dto";
 import type {
   CreateJobInput,
   CurrentUser,
@@ -269,6 +270,36 @@ export const jobsController = {
       res.status(200).json({
         success: true,
         message: "Lấy danh sách danh mục việc làm thành công.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /** GET /recruiter/jobs - Danh sách job của recruiter đang đăng nhập. */
+  getRecruiterJobs: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = requireCurrentUser(req);
+      const parsed = recruiterJobsQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        const errorMessages = parsed.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        }));
+        throw new AppError(
+          400,
+          "BAD_REQUEST",
+          parsed.error.issues[0]?.message || "Tham số truy vấn không hợp lệ",
+          errorMessages
+        );
+      }
+
+      const data = await jobService.listRecruiterJobs(user, parsed.data);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách tin tuyển dụng thành công.",
         data,
       });
     } catch (error) {
