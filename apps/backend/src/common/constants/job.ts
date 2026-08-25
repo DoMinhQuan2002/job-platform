@@ -40,6 +40,8 @@ export type JobModeValue = (typeof JOB_MODE)[keyof typeof JOB_MODE];
 export const JOB_STATUS = {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
+  OPEN: 'OPEN',
+  HIDDEN:'HIDDEN',
   REJECTED: 'REJECTED',
   CLOSED: 'CLOSED',
 } as const;

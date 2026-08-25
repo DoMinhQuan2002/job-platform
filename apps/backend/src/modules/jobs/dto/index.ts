@@ -5,4 +5,5 @@ export type {
   JobSkillInput,
   RecruiterJobsQuery,
   UpdateJobInput,
+  UpdateJobStatusInput,
 } from "./jobs.dto";

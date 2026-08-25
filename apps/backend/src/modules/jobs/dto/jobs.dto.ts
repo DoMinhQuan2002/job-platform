@@ -99,6 +99,16 @@ export const recruiterJobsQuerySchema = z.object({
 
 export type RecruiterJobsQuery = z.infer<typeof recruiterJobsQuerySchema>;
 
+export const updateJobStatusSchema = z
+  .object({
+    status: z.enum([JOB_STATUS.OPEN, JOB_STATUS.CLOSED, JOB_STATUS.HIDDEN, JOB_STATUS.APPROVED], {
+      error: "Recruiter chỉ được cập nhật trạng thái OPEN, CLOSED hoặc HIDDEN",
+    }),
+  })
+  .strict();
+
+export type UpdateJobStatusInput = z.infer<typeof updateJobStatusSchema>;
+
 /** Contract user do middleware xác thực gắn vào request. */
 export interface CurrentUser {
   id: string;

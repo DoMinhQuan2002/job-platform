@@ -21,6 +21,7 @@ import type {
   JobSkillInput,
   RecruiterJobsQuery,
   UpdateJobInput,
+  UpdateJobStatusInput,
 } from "./dto";
 
 // Re-export để giữ tương thích với các module đã import type từ jobs.service.
@@ -31,6 +32,7 @@ export type {
   JobSkillInput,
   RecruiterJobsQuery,
   UpdateJobInput,
+  UpdateJobStatusInput,
 } from "./dto";
 
 // Các relation dùng chung khi trả thông tin đầy đủ của một job.
@@ -572,6 +574,44 @@ export const jobService = {
         totalItems,
         totalPages: Math.ceil(totalItems / query.limit),
       },
+    };
+  },
+  async updateJobStatus(currentUser: CurrentUser, id: string, input: UpdateJobStatusInput) {
+    if (currentUser.role !== "RECRUITER") {
+      throw new AppError(403, "FORBIDDEN", "Chỉ nhà tuyển dụng mới có quyền cập nhật trạng thái job.");
+    }
+
+    const company = await getCompanyRepository().findOneBy({ userId: currentUser.id });
+    if (!company) {
+      throw new AppError(404, "COMPANY_NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty.");
+    }
+
+    const job = await getJobRepository().findOneBy({ id });
+    if (!job) {
+      throw new AppError(404, "JOB_NOT_FOUND", "Tin tuyển dụng không tồn tại.");
+    }
+
+    if (job.companyId !== company.id) {
+      throw new AppError(403, "JOB_ACCESS_DENIED", "Bạn không có quyền cập nhật tin này.");
+    }
+
+    if (company.status !== "ACTIVE") {
+      throw new AppError(403, "COMPANY_BLOCKED", "Công ty hiện đang bị khóa.");
+    }
+
+    if (job.status === input.status) {
+      throw new AppError(400, "INVALID_STATUS_TRANSITION", "Tin tuyển dụng đã ở trạng thái này.");
+    }
+
+    job.status = input.status;
+    job.rejectReason = null;
+
+    const updatedJob = await getJobRepository().save(job);
+
+    return {
+      id: updatedJob.id,
+      status: updatedJob.status,
+      updatedAt: updatedJob.updatedAt,
     };
   },
 };

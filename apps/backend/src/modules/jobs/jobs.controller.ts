@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { JOB_MODE, JOB_TYPE, type JobModeValue, type JobTypeValue } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
 import { jobService } from "./jobs.service";
-import { recruiterJobsQuerySchema } from "./dto/jobs.dto";
+import { recruiterJobsQuerySchema, updateJobStatusSchema } from "./dto/jobs.dto";
 import type {
   CreateJobInput,
   CurrentUser,
@@ -300,6 +300,37 @@ export const jobsController = {
       res.status(200).json({
         success: true,
         message: "Lấy danh sách tin tuyển dụng thành công.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /** PATCH /jobs/:id - Recruiter cập nhật trạng thái job. */
+  updateJobStatus: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = parseBigIntId(req.params.id, "id");
+      const user = requireCurrentUser(req);
+      const parsed = updateJobStatusSchema.safeParse(req.body);
+      if (!parsed.success) {
+        const errorMessages = parsed.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        }));
+        throw new AppError(
+          400,
+          "BAD_REQUEST",
+          parsed.error.issues[0]?.message || "Dữ liệu không hợp lệ",
+          errorMessages
+        );
+      }
+
+      const data = await jobService.updateJobStatus(user, id, parsed.data);
+
+      res.status(200).json({
+        success: true,
+        message: "Cập nhật trạng thái tin tuyển dụng thành công",
         data,
       });
     } catch (error) {
