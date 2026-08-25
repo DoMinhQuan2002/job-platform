@@ -13,9 +13,11 @@ export class ApiError extends Error {
 }
 
 type AppErrorBody = {
+  success?: boolean;
   code?: string;
   message?: string;
   details?: unknown;
+  errors?: unknown;
 };
 
 const isAppErrorBody = (value: unknown): value is AppErrorBody => {
@@ -38,15 +40,16 @@ export const toApiErrorFromResponse = async (response: Response): Promise<ApiErr
   try {
     const body: unknown = await response.json();
 
-    if (isAppErrorBody(body) && (body.code || body.message)) {
+    if (isAppErrorBody(body) && (body.code || body.message || body.errors)) {
       return new ApiError(
         response.status,
         body.code || "UNKNOWN_ERROR",
         body.message || response.statusText,
-        body.details,
+        body.details ?? body.errors ?? null,
       );
     }
   } catch {
+    // ignore JSON parse errors
   }
 
   return new ApiError(

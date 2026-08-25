@@ -12,6 +12,7 @@ import jobsRouter from "../modules/jobs/jobs.route";
 import mediaRouter from "../modules/media/media.route";
 import notificationsRouter from "../modules/notifications/notifications.route";
 import resumesRouter from "../modules/resumes/resumes.route";
+import statisticsRouter from "../modules/statistics/statistics.route";
 import systemLogsRouter from "../modules/system-logs/system-logs.route";
 import usersRouter from "../modules/users/users.route";
 import workExperiencesRouter from "../modules/work-experiences/work-experiences.route";
@@ -35,6 +36,7 @@ apiRouter.use("/resumes", resumesRouter);
 apiRouter.use("/saved-jobs", savedJobsRouter);
 apiRouter.use("/applications", applicationsRouter);
 apiRouter.use("/admin/system-logs", systemLogsRouter);
+apiRouter.use("/admin/statistics", statisticsRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/notifications", notificationsRouter);
 

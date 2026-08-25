@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { fakeAuth, requireAuth } from "./notifications.middleware";
+import { authenticate } from "@/common/middlewares/authenticate.middleware";
+import { requireAuth } from "./notifications.middleware";
 import { notificationsController } from "./notifications.controller";
 
 const notificationsRouter = Router();
 
-notificationsRouter.use(fakeAuth, requireAuth);
+notificationsRouter.use(authenticate, requireAuth);
 
 notificationsRouter.get("/", notificationsController.list);
 notificationsRouter.get("/unread-count", notificationsController.unreadCount);
