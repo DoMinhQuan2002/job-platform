@@ -170,8 +170,9 @@ describe("Companies Module", () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        code: "UNAUTHORIZED",
+        success: false,
         message: "Chưa đăng nhập hoặc token không hợp lệ",
+        errors: [{ code: "UNAUTHORIZED" }],
       });
     });
 
@@ -205,7 +206,7 @@ describe("Companies Module", () => {
       testApp.use(express.json());
       // Giả lập middleware auth đã gán req.user
       testApp.use((req, _res, next) => {
-        req.user = { id: "10", role: "RECRUITER" };
+        req.user = { id: "10", email: "hr@fpt.com", role: "RECRUITER" };
         next();
       });
       testApp.use("/api/v1/companies", companiesRouter);
@@ -234,7 +235,7 @@ describe("Companies Module", () => {
       const testApp = express();
       testApp.use(express.json());
       testApp.use((req, _res, next) => {
-        req.user = { id: "999", role: "RECRUITER" };
+        req.user = { id: "999", email: "hr@fpt.com", role: "RECRUITER" };
         next();
       });
       testApp.use("/api/v1/companies", companiesRouter);
@@ -244,8 +245,9 @@ describe("Companies Module", () => {
 
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({
-        code: "NOT_FOUND",
+        success: false,
         message: "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty",
+        errors: [{ code: "NOT_FOUND" }],
       });
     });
 
@@ -262,7 +264,7 @@ describe("Companies Module", () => {
       const testApp = express();
       testApp.use(express.json());
       testApp.use((req, _res, next) => {
-        req.user = { id: "10", role: "RECRUITER" };
+        req.user = { id: "10", email: "hr@fpt.com", role: "RECRUITER" };
         next();
       });
       testApp.use("/api/v1/companies", companiesRouter);
@@ -272,8 +274,9 @@ describe("Companies Module", () => {
 
       expect(res.status).toBe(500);
       expect(res.body).toMatchObject({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Internal server error. Please try again later.",
+        success: false,
+        message: "Lỗi hệ thống, vui lòng thử lại sau",
+        errors: [{ code: "INTERNAL_SERVER_ERROR" }],
       });
     });
   });
@@ -493,7 +496,9 @@ describe("Companies Module", () => {
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
-        code: "UNAUTHORIZED",
+        success: false,
+        message: "Chưa đăng nhập hoặc token không hợp lệ",
+        errors: [{ code: "UNAUTHORIZED" }],
       });
     });
 
@@ -506,7 +511,7 @@ describe("Companies Module", () => {
       const testApp = express();
       testApp.use(express.json());
       testApp.use((req, _res, next) => {
-        req.user = { id: "10", role: "RECRUITER" };
+        req.user = { id: "10", email: "hr@fpt.com", role: "RECRUITER" };
         next();
       });
       testApp.use("/api/v1/companies", companiesRouter);
@@ -521,7 +526,12 @@ describe("Companies Module", () => {
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
-        code: "BAD_REQUEST",
+        success: false,
+        errors: [
+          {
+            code: "BAD_REQUEST",
+          },
+        ],
       });
     });
 
