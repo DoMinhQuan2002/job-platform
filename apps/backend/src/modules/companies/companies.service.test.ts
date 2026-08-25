@@ -79,6 +79,50 @@ describe("Companies Module", () => {
     });
   });
 
+  describe("requireRecruiter Middleware", () => {
+    it("should call next with AppError 401 when req.user is missing", async () => {
+      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const req = { user: undefined } as unknown as Request;
+      const res = {} as Response;
+      const next = vi.fn() as NextFunction;
+
+      requireRecruiter(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.statusCode).toBe(401);
+      expect(error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("should call next with AppError 403 when req.user.role is not RECRUITER", async () => {
+      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const req = { user: { id: "10", role: "CANDIDATE" } } as unknown as Request;
+      const res = {} as Response;
+      const next = vi.fn() as NextFunction;
+
+      requireRecruiter(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
+      expect(error).toBeInstanceOf(AppError);
+      expect(error.statusCode).toBe(403);
+      expect(error.code).toBe("FORBIDDEN");
+    });
+
+    it("should call next with no error when req.user.role is RECRUITER", async () => {
+      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const req = { user: { id: "10", role: "RECRUITER" } } as unknown as Request;
+      const res = {} as Response;
+      const next = vi.fn() as NextFunction;
+
+      requireRecruiter(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(next).mock.calls[0][0]).toBeUndefined();
+    });
+  });
+
   describe("CompaniesController.getMyCompany", () => {
     it("should call next with AppError 401 when req.user is not set", async () => {
       const req = { user: undefined } as unknown as Request;
@@ -95,23 +139,6 @@ describe("Companies Module", () => {
       expect(error).toBeInstanceOf(AppError);
       expect(error.statusCode).toBe(401);
       expect(error.code).toBe("UNAUTHORIZED");
-    });
-
-    it("should call next with AppError 403 when req.user.role is not RECRUITER", async () => {
-      const req = { user: { id: "10", role: "CANDIDATE" } } as unknown as Request;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as unknown as Response;
-      const next = vi.fn() as unknown as NextFunction;
-
-      await companiesController.getMyCompany(req, res, next);
-
-      expect(next).toHaveBeenCalledTimes(1);
-      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
-      expect(error).toBeInstanceOf(AppError);
-      expect(error.statusCode).toBe(403);
-      expect(error.code).toBe("FORBIDDEN");
     });
 
     it("should return 200 with company data when user is authenticated as RECRUITER", async () => {
@@ -439,19 +466,6 @@ describe("Companies Module", () => {
       expect(error.statusCode).toBe(401);
     });
 
-    it("should call next with AppError 403 when user is not a RECRUITER", async () => {
-      const req = { user: { id: "10", role: "CANDIDATE" }, body: {} } as unknown as Request;
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response;
-      const next = vi.fn() as unknown as NextFunction;
-
-      await companiesController.createCompany(req, res, next);
-
-      expect(next).toHaveBeenCalledTimes(1);
-      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
-      expect(error.statusCode).toBe(403);
-      expect(error.code).toBe("FORBIDDEN");
-    });
-
     it("should call next with AppError 400 when validation fails", async () => {
       const req = {
         user: { id: "10", role: "RECRUITER" },
@@ -764,19 +778,6 @@ describe("Companies Module", () => {
       expect(next).toHaveBeenCalledTimes(1);
       const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
       expect(error.statusCode).toBe(401);
-    });
-
-    it("should call next with AppError 403 when user is not a RECRUITER", async () => {
-      const req = { user: { id: "10", role: "CANDIDATE" }, body: {} } as unknown as Request;
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response;
-      const next = vi.fn() as unknown as NextFunction;
-
-      await companiesController.updateMyCompany(req, res, next);
-
-      expect(next).toHaveBeenCalledTimes(1);
-      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
-      expect(error.statusCode).toBe(403);
-      expect(error.code).toBe("FORBIDDEN");
     });
 
     it("should call next with AppError 400 when validation fails", async () => {

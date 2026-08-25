@@ -7,16 +7,6 @@ import { updateCompanySchema } from "./dto/update-company.dto";
 import { queryCompaniesSchema } from "./dto/query-companies.dto";
 
 export class CompaniesController {
-  private ensureRecruiter = (req: Request): string => {
-    const user = req.user;
-    if (!user?.id) {
-      throw new AppError(401, "UNAUTHORIZED", "Chưa đăng nhập hoặc token không hợp lệ");
-    }
-    if (user.role !== ROLES.RECRUITER) {
-      throw new AppError(403, "FORBIDDEN", "Chỉ tài khoản RECRUITER mới có quyền thực hiện thao tác này");
-    }
-    return user.id;
-  };
 
   /**
    * GET /api/v1/companies — Xem danh sách công ty công khai dành cho Candidate/Public
@@ -54,7 +44,10 @@ export class CompaniesController {
    */
   getMyCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = this.ensureRecruiter(req);
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new AppError(401, "UNAUTHORIZED", "Chưa đăng nhập hoặc token không hợp lệ");
+      }
       const data = await companiesService.getMyCompany(userId);
 
       res.status(200).json({
@@ -72,7 +65,10 @@ export class CompaniesController {
    */
   createCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = this.ensureRecruiter(req);
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new AppError(401, "UNAUTHORIZED", "Chưa đăng nhập hoặc token không hợp lệ");
+      }
 
       const parsed = createCompanySchema.safeParse(req.body);
       if (!parsed.success) {
@@ -105,7 +101,10 @@ export class CompaniesController {
    */
   updateMyCompany = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = this.ensureRecruiter(req);
+      const userId = req.user?.id;
+      if (!userId) {
+        throw new AppError(401, "UNAUTHORIZED", "Chưa đăng nhập hoặc token không hợp lệ");
+      }
 
       const parsed = updateCompanySchema.safeParse(req.body);
       if (!parsed.success) {
