@@ -2,7 +2,7 @@ import { IsNull } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
 import { AppDataSource } from "../../data-source";
 import { ResumeEntity } from "../../database/entities/resume.entity";
-import { storageService } from "../../common/storage/storage.service";
+import { mediaService } from "../media/media.service";
 
 // Sử dụng helper function thay vì gọi thẳng ở top-level để tránh lỗi "DataSource is not initialized"
 const getRepo = () => AppDataSource.getRepository(ResumeEntity);
@@ -41,8 +41,7 @@ export const resumesService = {
       throw new AppError(400, "QUOTA_EXCEEDED", "Chỉ được phép tải lên tối đa 5 CV");
     }
 
-    // Tự động xử lý upload lên Supabase Storage (bỏ qua API Media)
-    const storedObject = await storageService.upload({
+    const storedObject = await mediaService.upload({
       assetType: "resume",
       fileName: file.originalname,
       mimeType: file.mimetype,
@@ -87,7 +86,7 @@ export const resumesService = {
 
     // 2. Xóa vật lý trên Supabase
     try {
-      await storageService.remove(resume.fileUrl, "resume");
+      await mediaService.remove(resume.fileUrl, "resume");
     } catch (error) {
       console.error(`Failed to remove file from Supabase: ${resume.fileUrl}`, error);
     }
@@ -109,6 +108,6 @@ export const resumesService = {
     const resume = await getRepo().findOne({ where: { id, candidateId } });
     if (!resume) throw new AppError(404, "NOT_FOUND", "CV không tồn tại");
 
-    return await storageService.getAccessUrl(resume.fileUrl, "resume");
+    return await mediaService.getAccessUrl(resume.fileUrl, "resume");
   }
 };
