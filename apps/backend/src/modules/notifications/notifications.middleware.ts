@@ -9,9 +9,12 @@ import { AppError } from "@/common/errors/app-error";
 export const fakeAuth = (req: Request, _res: Response, next: NextFunction) => {
   const id = req.headers["x-user-id"];
   const role = req.headers["x-user-role"];
+  const email = req.headers["x-user-email"];
 
-  if (typeof id === "string" && typeof role === "string") {
-    req.user = { id, role: role as "CANDIDATE" | "RECRUITER" | "ADMIN" };
+  if (typeof id === "string" && typeof role === "string" && typeof email === "string") {
+    // `email` ép kiểu tạm — chưa thêm vào `common/types/express.d.ts` vì Nhóm 1
+    // đang sửa đúng file đó ở nhánh riêng, tránh conflict. Xóa `as any` khi merge xong.
+    req.user = { id, role: role as "CANDIDATE" | "RECRUITER" | "ADMIN", email } as any;
   }
 
   next();
