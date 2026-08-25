@@ -1,8 +1,10 @@
+import { Not } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
 import { COMPANY_STATUS } from "../../common/constants/job";
 import { AppDataSource } from "../../data-source";
 import { Company } from "../../database/entities/company.entity";
 import type { CreateCompanyDto } from "./dto/create-company.dto";
+import type { UpdateCompanyDto } from "./dto/update-company.dto";
 import { slugify } from "./utils/slug.util";
 
 export class CompaniesService {
@@ -71,17 +73,73 @@ export class CompaniesService {
   }
 
   /**
+   * Cập nhật thông tin chi tiết hồ sơ công ty
+   * @param userId ID của recruiter (user_id)
+   * @param dto Thông tin cập nhật công ty
+   */
+  async updateMyCompany(userId: string, dto: UpdateCompanyDto): Promise<Company> {
+    const companyRepo = AppDataSource.getRepository(Company);
+
+    // 1. Tìm công ty của recruiter hiện tại
+    const company = await companyRepo.findOne({
+      where: { userId },
+    });
+    if (!company) {
+      throw new AppError(404, "NOT_FOUND", "Không tìm thấy hồ sơ công ty");
+    }
+
+    // 2. Kiểm tra trùng mã số thuế với công ty khác
+    if (dto.taxCode && dto.taxCode !== company.taxCode) {
+      const existingTaxCode = await companyRepo.findOne({
+        where: {
+          taxCode: dto.taxCode,
+          id: Not(company.id),
+        },
+      });
+      if (existingTaxCode) {
+        throw new AppError(409, "CONFLICT", "Mã số thuế đã tồn tại trong hệ thống");
+      }
+    }
+
+    // 3. Tự động cập nhật lại slug nếu tên công ty thay đổi
+    let updatedSlug = company.slug;
+    if (dto.name !== company.name) {
+      updatedSlug = await this.generateUniqueSlug(dto.name, company.id);
+    }
+
+    // 4. Cập nhật các trường
+    company.name = dto.name;
+    company.slug = updatedSlug;
+    company.logo = dto.logo !== undefined ? dto.logo : company.logo;
+    company.website = dto.website !== undefined ? dto.website : company.website;
+    company.email = dto.email;
+    company.phone = dto.phone;
+    company.taxCode = dto.taxCode !== undefined ? dto.taxCode : company.taxCode;
+    company.companySize = dto.companySize !== undefined ? dto.companySize : company.companySize;
+    company.address = dto.address;
+    company.description = dto.description !== undefined ? dto.description : company.description;
+    company.updatedAt = new Date();
+
+    return await companyRepo.save(company);
+  }
+
+  /**
    * Sinh slug duy nhất không trùng lặp trong cơ sở dữ liệu
    * @param name Tên công ty
+   * @param excludeCompanyId Bỏ qua kiểm tra trùng cho ID công ty hiện tại (khi cập nhật)
    */
-  async generateUniqueSlug(name: string): Promise<string> {
+  async generateUniqueSlug(name: string, excludeCompanyId?: string): Promise<string> {
     const companyRepo = AppDataSource.getRepository(Company);
     const baseSlug = slugify(name);
 
     let candidateSlug = baseSlug;
     let counter = 1;
 
-    while (await companyRepo.findOne({ where: { slug: candidateSlug } })) {
+    while (true) {
+      const existing = await companyRepo.findOne({ where: { slug: candidateSlug } });
+      if (!existing || (excludeCompanyId && existing.id === excludeCompanyId)) {
+        break;
+      }
       candidateSlug = `${baseSlug}-${counter}`;
       counter++;
     }
@@ -91,4 +149,5 @@ export class CompaniesService {
 }
 
 export const companiesService = new CompaniesService();
+
 

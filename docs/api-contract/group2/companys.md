@@ -1,6 +1,6 @@
 # API Contract — Company (Group 2)
 
-> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/companies`,`GET /api/v1/companies/me`,`PUT /api/v1/company`)**  
+> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/companies`,`GET /api/v1/companies/me`,`PUT /api/v1/companies/me`)**  
 
 
 Liên quan schema: `companies`, `users`.
@@ -13,7 +13,7 @@ Liên quan schema: `companies`, `users`.
 |-------------|----------------------|----------------------|------------------|
 | Tạo hồ sơ công ty | `companies` (`userId = req.user.id`) | `POST /api/v1/companies` | `POST /api/v1/companies` |
 | `GET /api/companies/me` | `companies` (`user_id = req.user.id`) | `GET /api/v1/companies/me` | `GET /api/v1/companies/me` |
-| `PUT /api/company` | `companies` (`logo`, `website`, `email`, `phone`, `address`, `description`, `taxCode`, `companySize`) | `PUT /api/v1/company` | `PUT /api/v1/company` |
+| `PUT /api/companies/me` | `companies` (`logo`, `website`, `email`, `phone`, `address`, `description`, `taxCode`, `companySize`) | `PUT /api/v1/companies/me` | `PUT /api/v1/companies/me` |
 
 **Identity**
 
@@ -155,7 +155,7 @@ Auth: `RECRUITER`
 | | |
 |---|---|
 | Tên | Cập nhật thông tin chi tiết hồ sơ công ty |
-| Method / URL | `PUT /api/v1/company` |
+| Method / URL | `PUT /api/v1/companies/me` |
 | Quyền | `RECRUITER` |
 
 **Request**
