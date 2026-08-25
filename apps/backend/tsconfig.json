@@ -4,6 +4,9 @@
     "module": "CommonJS",
     "outDir": "dist",
     "rootDir": "src",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
