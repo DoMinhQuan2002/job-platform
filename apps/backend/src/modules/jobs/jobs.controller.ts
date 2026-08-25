@@ -260,4 +260,19 @@ export const jobsController = {
       next(error);
     }
   },
+
+  /** GET /jobs/job-categories - API public. */
+  getJobCategories: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const data = await jobService.getActiveJobCategories();
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách danh mục việc làm thành công.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

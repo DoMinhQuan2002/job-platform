@@ -9,6 +9,7 @@ import candidateProfilesRouter from "../modules/candidate-profiles/candidate-pro
 import skillsRouter from "../modules/candidate-profiles/skills.route";
 import companiesRouter from "../modules/companies/companies.route";
 import jobsRouter from "../modules/jobs/jobs.route";
+import jobCategoriesRouter from "../modules/jobs/job-categories.route";
 import mediaRouter from "../modules/media/media.route";
 import notificationsRouter from "../modules/notifications/notifications.route";
 import resumesRouter from "../modules/resumes/resumes.route";
@@ -27,6 +28,7 @@ apiRouter.use("/users", usersRouter);
 apiRouter.use("/companies", companiesRouter);
 apiRouter.use("/jobs", jobsApplicationsRouter);
 apiRouter.use("/jobs", jobsRouter);
+apiRouter.use("/job-categories", jobCategoriesRouter);
 apiRouter.use("/media", mediaRouter);
 apiRouter.use("/candidate-profiles", candidateProfilesRouter);
 apiRouter.use("/candidates", candidateProfilesRouter);

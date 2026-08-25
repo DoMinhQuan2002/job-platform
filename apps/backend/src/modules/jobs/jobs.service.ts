@@ -473,4 +473,20 @@ export const jobService = {
     if (!result) throw new AppError(500, "JOB_UPDATE_FAILED", "Không thể lấy tin sau cập nhật.");
     return result;
   },
+
+  /** GET /jobs/job-categories - Danh sách danh mục việc làm đang hoạt động. */
+  async getActiveJobCategories() {
+    const categories = await getCategoryRepository().find({
+      where: { status: JOB_CATEGORY_STATUS.ACTIVE },
+      order: { name: "ASC" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+      },
+    });
+
+    return categories;
+  },
 };
