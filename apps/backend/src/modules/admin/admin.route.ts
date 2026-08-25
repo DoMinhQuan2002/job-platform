@@ -1,9 +1,12 @@
 import { Router } from "express";
+import { authenticate } from "@/common/middlewares/authenticate.middleware";
+import { requireAdmin } from "./admin.middleware";
+import usersRouter from "./users/users.route";
 
 const adminRouter = Router();
 
-adminRouter.get("/overview", (_req, res) => {
-  res.status(200).json({ module: "admin", message: "TODO: admin overview" });
-});
+adminRouter.use(authenticate, requireAdmin);
+
+adminRouter.use("/users", usersRouter);
 
 export default adminRouter;
