@@ -6,5 +6,5 @@ export const notFoundMiddleware = (
   _res: Response,
   next: NextFunction,
 ) => {
-  next(new AppError(404, "NOT_FOUND", `Endpoint not found: ${req.originalUrl}`));
+  next(new AppError(404, "NOT_FOUND", `Không tìm thấy endpoint: ${req.originalUrl}`));
 };
