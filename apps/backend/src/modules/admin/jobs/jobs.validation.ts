@@ -1,3 +1,4 @@
+// Validation zod cho 5 API quản lý tin tuyển dụng của admin (list/detail/duyệt/từ chối/xóa).
 import { z } from "zod";
 import { AppError } from "@/common/errors/app-error";
 
@@ -33,6 +34,7 @@ const listQuerySchema = z.object({
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 
+/** Validate query của GET /admin/jobs. */
 export const validateListQuery = (query: Record<string, unknown>): ListQuery => {
   const result = listQuerySchema.safeParse(query);
   if (!result.success) throw fail(result.error);
@@ -43,6 +45,7 @@ const idParamSchema = z.object({
   id: z.string().regex(/^\d+$/, "id phải là số nguyên dương"),
 });
 
+/** Validate `id` trên path — dùng chung cho detail/duyệt/từ chối/xóa. */
 export const validateIdParam = (params: Record<string, unknown>): string => {
   const result = idParamSchema.safeParse(params);
   if (!result.success) throw fail(result.error);
@@ -56,6 +59,7 @@ const reasonBodySchema = z.object({
     .max(500, "Lý do phải từ 10 đến 500 ký tự"),
 });
 
+/** Validate body `reason` — dùng chung cho từ chối và xóa tin. */
 export const validateReasonBody = (body: unknown): string => {
   const result = reasonBodySchema.safeParse(body);
   if (!result.success) throw fail(result.error);

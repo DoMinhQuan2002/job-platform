@@ -1,3 +1,5 @@
+// Gộp router con của các tài nguyên admin quản lý (users/companies/jobs/...),
+// gắn sẵn authenticate + requireAdmin cho toàn bộ /admin/*.
 import { Router } from "express";
 import { authenticate } from "@/common/middlewares/authenticate.middleware";
 import { requireAdmin } from "./admin.middleware";

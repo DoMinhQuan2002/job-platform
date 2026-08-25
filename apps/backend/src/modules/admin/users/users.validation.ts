@@ -1,3 +1,4 @@
+// Validation zod cho 3 API quản lý tài khoản của admin (list/detail/khóa-mở khóa).
 import { z } from "zod";
 import { AppError } from "@/common/errors/app-error";
 
@@ -33,6 +34,7 @@ const listQuerySchema = z.object({
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 
+/** Validate query của GET /admin/users. */
 export const validateListQuery = (query: Record<string, unknown>): ListQuery => {
   const result = listQuerySchema.safeParse(query);
   if (!result.success) throw fail(result.error);
@@ -43,6 +45,7 @@ const idParamSchema = z.object({
   id: z.string().regex(/^\d+$/, "id phải là số nguyên dương"),
 });
 
+/** Validate `id` trên path — dùng chung cho detail và đổi trạng thái. */
 export const validateIdParam = (params: Record<string, unknown>): string => {
   const result = idParamSchema.safeParse(params);
   if (!result.success) throw fail(result.error);
@@ -65,6 +68,7 @@ const statusBodySchema = z
 
 export type StatusBody = z.infer<typeof statusBodySchema>;
 
+/** Validate body của PUT /admin/users/{id}/status — reason bắt buộc khi khóa. */
 export const validateStatusBody = (body: unknown): StatusBody => {
   const result = statusBodySchema.safeParse(body);
   if (!result.success) throw fail(result.error);

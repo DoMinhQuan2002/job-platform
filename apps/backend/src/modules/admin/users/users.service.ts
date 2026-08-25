@@ -7,6 +7,7 @@ import { ListQuery, StatusBody } from "./users.validation";
 
 const repo = () => AppDataSource.getRepository(UserEntity);
 
+/** Shape trả về cho list — không lộ field thô như `passwordHash`, `deletedAt`. */
 const toListItem = (user: UserEntity) => ({
   id: user.id,
   email: user.email,
@@ -20,6 +21,7 @@ const toListItem = (user: UserEntity) => ({
   createdAt: user.createdAt,
 });
 
+/** Shape trả về cho detail — thêm vài field profile so với list item. */
 const toDetail = (user: UserEntity) => ({
   ...toListItem(user),
   dateOfBirth: user.dateOfBirth,
@@ -34,6 +36,7 @@ export type PaginatedUsers = {
 };
 
 export const adminUsersService = {
+  /** GET /admin/users — lọc theo search/role/status, phân trang. */
   async list(query: ListQuery): Promise<PaginatedUsers> {
     const qb = repo().createQueryBuilder("user").innerJoinAndSelect("user.role", "role");
 
@@ -65,6 +68,7 @@ export const adminUsersService = {
     };
   },
 
+  /** GET /admin/users/{id}. */
   async detail(id: string) {
     const user = await repo().findOne({ where: { id }, relations: { role: true } });
     if (!user) {
@@ -74,6 +78,10 @@ export const adminUsersService = {
     return toDetail(user);
   },
 
+  /**
+   * PUT /admin/users/{id}/status — khóa/mở khóa 1 tài khoản.
+   * Gộp 1 transaction: đổi status + ghi log + bắn thông báo cho chủ tài khoản.
+   */
   async updateStatus(actingUserId: string, id: string, body: StatusBody) {
     if (id === actingUserId && body.status === "BANNED") {
       throw new AppError(403, "FORBIDDEN", "Bạn không thể tự khóa tài khoản của chính mình");

@@ -1,3 +1,4 @@
+// Handler HTTP cho 5 API quản lý tin tuyển dụng: validate input, gọi service, trả JSON.
 import { Request, Response } from "express";
 import { AppError } from "@/common/errors/app-error";
 import { validateIdParam, validateListQuery, validateReasonBody } from "./jobs.validation";

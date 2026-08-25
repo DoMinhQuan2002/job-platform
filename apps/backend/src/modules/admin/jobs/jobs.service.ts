@@ -8,6 +8,7 @@ import { ListQuery } from "./jobs.validation";
 
 const repo = () => AppDataSource.getRepository(Job);
 
+/** Shape trả về cho list — company/category chỉ trả {id,name}, không lộ field thô. */
 const toListItem = (job: Job) => ({
   id: job.id,
   title: job.title,
@@ -26,6 +27,7 @@ const toListItem = (job: Job) => ({
   createdAt: job.createdAt,
 });
 
+/** Shape trả về cho detail — thêm mô tả đầy đủ + `skills` join từ `job_skills`. */
 const toDetail = (job: Job) => ({
   ...toListItem(job),
   description: job.description,
@@ -47,6 +49,7 @@ export type PaginatedJobs = {
 };
 
 export const adminJobsService = {
+  /** GET /admin/jobs — lọc theo search/status/companyId/categoryId, phân trang. */
   async list(query: ListQuery): Promise<PaginatedJobs> {
     const qb = repo()
       .createQueryBuilder("job")
@@ -82,6 +85,7 @@ export const adminJobsService = {
     };
   },
 
+  /** GET /admin/jobs/{id}. */
   async detail(id: string) {
     const job = await repo().findOne({
       where: { id },
@@ -94,6 +98,7 @@ export const adminJobsService = {
     return toDetail(job);
   },
 
+  /** PUT /admin/jobs/{id}/approve — chỉ duyệt được tin đang PENDING. */
   async approve(actingUserId: string, id: string) {
     return AppDataSource.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);
@@ -133,6 +138,7 @@ export const adminJobsService = {
     });
   },
 
+  /** PUT /admin/jobs/{id}/reject — chỉ từ chối được tin đang PENDING, ghi kèm lý do. */
   async reject(actingUserId: string, id: string, reason: string) {
     return AppDataSource.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);
@@ -180,6 +186,7 @@ export const adminJobsService = {
     });
   },
 
+  /** DELETE /admin/jobs/{id} — xóa mềm, không giới hạn trạng thái hiện tại của tin. */
   async remove(actingUserId: string, id: string, reason: string): Promise<void> {
     return AppDataSource.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);

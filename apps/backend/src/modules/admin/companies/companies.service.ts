@@ -25,6 +25,7 @@ const countJobsByCompany = async (companyIds: string[]): Promise<Map<string, num
   return new Map(rows.map((row) => [row.companyId, Number(row.count)]));
 };
 
+/** Shape trả về cho list — kèm `owner` (recruiter chủ sở hữu) và `totalJobs`. */
 const toListItem = (company: Company, totalJobs: number) => ({
   id: company.id,
   name: company.name,
@@ -41,6 +42,7 @@ const toListItem = (company: Company, totalJobs: number) => ({
   createdAt: company.createdAt,
 });
 
+/** Shape trả về cho detail — thêm website/description so với list item. */
 const toDetail = (company: Company, totalJobs: number) => ({
   ...toListItem(company, totalJobs),
   website: company.website,
@@ -54,6 +56,7 @@ export type PaginatedCompanies = {
 };
 
 export const adminCompaniesService = {
+  /** GET /admin/companies — lọc theo search/status, phân trang. */
   async list(query: ListQuery): Promise<PaginatedCompanies> {
     const qb = repo().createQueryBuilder("company").innerJoinAndSelect("company.user", "owner");
 
@@ -83,6 +86,7 @@ export const adminCompaniesService = {
     };
   },
 
+  /** GET /admin/companies/{id}. */
   async detail(id: string) {
     const company = await repo().findOne({ where: { id }, relations: { user: true } });
     if (!company) {
@@ -93,6 +97,10 @@ export const adminCompaniesService = {
     return toDetail(company, jobCounts.get(company.id) ?? 0);
   },
 
+  /**
+   * PUT /admin/companies/{id}/status — khóa/mở khóa 1 công ty.
+   * Gộp 1 transaction: đổi status + ghi log + bắn thông báo cho recruiter chủ sở hữu.
+   */
   async updateStatus(actingUserId: string, id: string, body: StatusBody) {
     return AppDataSource.transaction(async (manager) => {
       const companyRepo = manager.getRepository(Company);

@@ -1,3 +1,4 @@
+// Handler HTTP cho 3 API quản lý công ty: validate input, gọi service, trả JSON.
 import { Request, Response } from "express";
 import { AppError } from "@/common/errors/app-error";
 import { validateIdParam, validateListQuery, validateStatusBody } from "./companies.validation";

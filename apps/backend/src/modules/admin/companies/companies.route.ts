@@ -1,3 +1,4 @@
+// Route quản lý công ty, mount tại /admin/companies (auth+quyền admin gắn sẵn ở admin.route.ts).
 import { Router } from "express";
 import { companiesController } from "./companies.controller";
 

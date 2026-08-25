@@ -1,3 +1,4 @@
+// Route quản lý tin tuyển dụng, mount tại /admin/jobs (auth+quyền admin gắn sẵn ở admin.route.ts).
 import { Router } from "express";
 import { jobsController } from "./jobs.controller";
 
