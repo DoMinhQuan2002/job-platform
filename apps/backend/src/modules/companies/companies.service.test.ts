@@ -911,4 +911,213 @@ describe("Companies Module", () => {
       });
     });
   });
+
+  describe("CompaniesService.getPublicCompanies", () => {
+    it("should return paginated active companies with taxCode included", async () => {
+      const mockCompanies = [
+        {
+          id: "1",
+          userId: "10",
+          name: "Công ty FPT",
+          slug: "cong-ty-fpt",
+          logo: null,
+          website: "https://fpt.com",
+          email: "contact@fpt.com",
+          phone: "02473007300",
+          taxCode: "0101248141",
+          companySize: "500+",
+          address: "Hà Nội",
+          description: "Mô tả công ty",
+          status: "ACTIVE",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const qbMock: any = {
+        where: vi.fn().mockReturnThis(),
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([mockCompanies, 1]),
+      };
+
+      vi.spyOn(AppDataSource, "getRepository").mockReturnValue({
+        createQueryBuilder: vi.fn().mockReturnValue(qbMock),
+      } as any);
+
+      const result = await companiesService.getPublicCompanies({ page: 1, limit: 10 });
+
+      expect(qbMock.where).toHaveBeenCalledWith("company.status = :status", { status: "ACTIVE" });
+      expect(qbMock.skip).toHaveBeenCalledWith(0);
+      expect(qbMock.take).toHaveBeenCalledWith(10);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toHaveProperty("taxCode", "0101248141");
+      expect(result.items[0]).not.toHaveProperty("userId");
+      expect(result.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      });
+    });
+
+    it("should filter by search and companySize when provided", async () => {
+      const qbMock: any = {
+        where: vi.fn().mockReturnThis(),
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[], 0]),
+      };
+
+      vi.spyOn(AppDataSource, "getRepository").mockReturnValue({
+        createQueryBuilder: vi.fn().mockReturnValue(qbMock),
+      } as any);
+
+      const result = await companiesService.getPublicCompanies({
+        page: 2,
+        limit: 20,
+        search: "Tech",
+        companySize: "100-500",
+      });
+
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        "(company.name ILIKE :search OR company.address ILIKE :search)",
+        { search: "%Tech%" }
+      );
+      expect(qbMock.andWhere).toHaveBeenCalledWith(
+        "company.companySize = :companySize",
+        { companySize: "100-500" }
+      );
+      expect(qbMock.skip).toHaveBeenCalledWith(20);
+      expect(qbMock.take).toHaveBeenCalledWith(20);
+      expect(result.meta).toEqual({
+        page: 2,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+      });
+    });
+  });
+
+  describe("CompaniesController.getPublicCompanies", () => {
+    it("should call next with AppError 400 when query validation fails", async () => {
+      const req = {
+        query: { page: "0", limit: "500", companySize: "INVALID" },
+      } as unknown as Request;
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response;
+      const next = vi.fn() as unknown as NextFunction;
+
+      await companiesController.getPublicCompanies(req, res, next);
+
+      expect(next).toHaveBeenCalledTimes(1);
+      const error = vi.mocked(next).mock.calls[0][0] as unknown as AppError;
+      expect(error.statusCode).toBe(400);
+      expect(error.code).toBe("BAD_REQUEST");
+    });
+
+    it("should return 200 with company list when query is valid", async () => {
+      const mockData = {
+        items: [],
+        meta: { page: 1, limit: 10, total: 0, totalPages: 0 },
+      };
+
+      vi.spyOn(companiesService, "getPublicCompanies").mockResolvedValue(mockData as any);
+
+      const req = {
+        query: { page: "1", limit: "10" },
+      } as unknown as Request;
+
+      const jsonMock = vi.fn();
+      const statusMock = vi.fn().mockReturnValue({ json: jsonMock });
+      const res = { status: statusMock, json: jsonMock } as unknown as Response;
+      const next = vi.fn() as unknown as NextFunction;
+
+      await companiesController.getPublicCompanies(req, res, next);
+
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        message: "Lấy danh sách công ty thành công",
+        data: mockData,
+      });
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("GET /api/v1/companies (Public HTTP Endpoint)", () => {
+    it("should return 200 OK without requiring authentication", async () => {
+      const request = (await import("supertest")).default;
+      const express = (await import("express")).default;
+      const companiesRouter = (await import("./companies.route")).default;
+      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
+
+      const mockData = {
+        items: [
+          {
+            id: "1",
+            name: "Công ty Cổ phần Công nghệ FPT",
+            slug: "cong-ty-co-phan-cong-nghe-fpt",
+            logo: null,
+            website: "https://fpt.com",
+            email: "contact@fpt.com",
+            phone: "02473007300",
+            taxCode: "0101248141",
+            companySize: "500+",
+            address: "Hà Nội",
+            description: "Tập đoàn công nghệ",
+            status: "ACTIVE",
+            createdAt: "2026-08-21T09:30:00.000Z",
+            updatedAt: "2026-08-21T09:30:00.000Z",
+          },
+        ],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      };
+
+      vi.spyOn(companiesService, "getPublicCompanies").mockResolvedValue(mockData as any);
+
+      const testApp = express();
+      testApp.use(express.json());
+      testApp.use("/api/v1/companies", companiesRouter);
+      testApp.use(errorMiddleware);
+
+      const res = await request(testApp).get("/api/v1/companies?page=1&limit=10");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        success: true,
+        message: "Lấy danh sách công ty thành công",
+        data: mockData,
+      });
+      expect(res.body.data.items[0]).toHaveProperty("taxCode", "0101248141");
+    });
+
+    it("should return 400 BAD_REQUEST on invalid query param", async () => {
+      const request = (await import("supertest")).default;
+      const express = (await import("express")).default;
+      const companiesRouter = (await import("./companies.route")).default;
+      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
+
+      const testApp = express();
+      testApp.use(express.json());
+      testApp.use("/api/v1/companies", companiesRouter);
+      testApp.use(errorMiddleware);
+
+      const res = await request(testApp).get("/api/v1/companies?page=-1");
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        success: false,
+        errors: [{ code: "BAD_REQUEST" }],
+      });
+    });
+  });
 });

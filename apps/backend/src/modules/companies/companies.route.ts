@@ -13,9 +13,8 @@ companiesRouter.post("/", authenticate, companiesController.createCompany);
 // PUT /api/v1/companies/me — Cập nhật thông tin chi tiết hồ sơ công ty
 companiesRouter.put("/me", authenticate, companiesController.updateMyCompany);
 
-companiesRouter.get("/", (_req, res) => {
-  res.status(200).json({ module: "companies", message: "TODO: companies list" });
-});
+// GET /api/v1/companies — Xem danh sách công ty công khai dành cho Candidate/Public
+companiesRouter.get("/", companiesController.getPublicCompanies);
 
 export default companiesRouter;
 

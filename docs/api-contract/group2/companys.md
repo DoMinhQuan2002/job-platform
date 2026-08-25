@@ -288,6 +288,75 @@ Chỉ company đang được phép hiển thị mới được trả về. Compa
 >
 > `GET /api/v1/companies/me` → Recruiter xem company của mình.
 > `GET /api/v1/companies/{id}` → Public xem company theo ID.
+> `GET /api/v1/companies` → Public xem danh sách công ty (kèm phân trang, tìm kiếm, lọc).
 
 ---
+
+## 1.5 GET `/api/v1/companies`
+
+### Mục đích
+
+Xem danh sách tất cả công ty công khai dành cho Candidate/Public kèm phân trang, tìm kiếm theo tên/địa chỉ và lọc theo quy mô công ty.
+
+### Quyền
+
+`Public` (Không yêu cầu đăng nhập)
+
+### Query Params
+
+| Param | Type | Required | Default | Validation / Note |
+|-------|------|----------|---------|-------------------|
+| `page` | number | No | `1` | Số nguyên >= 1 |
+| `limit` | number | No | `10` | Số nguyên từ 1 đến 100 |
+| `search` | string | No | — | Tìm kiếm tương đối (không phân biệt hoa thường) theo `name` hoặc `address` |
+| `companySize` | string | No | — | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
+
+### Business Rules
+
+1. Chỉ trả các công ty có `status = "ACTIVE"` và chưa bị xóa mềm (`deleted_at IS NULL`).
+2. Sắp xếp mặc định: Mới nhất lên đầu (`created_at DESC`).
+3. Thông tin trả về bao gồm `taxCode` theo yêu cầu public, loại bỏ `userId` (thông tin nội bộ recruiter).
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Lấy danh sách công ty thành công",
+  "data": {
+    "items": [
+      {
+        "id": "1",
+        "name": "Công ty Cổ phần Công nghệ FPT",
+        "slug": "cong-ty-co-phan-cong-nghe-fpt",
+        "logo": "companies/fpt-logo.png",
+        "website": "https://fpt.com",
+        "email": "contact@fpt.com",
+        "phone": "02473007300",
+        "taxCode": "0101248141",
+        "companySize": "500+",
+        "address": "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
+        "description": "FPT là tập đoàn công nghệ toàn cầu hàng đầu Việt Nam...",
+        "status": "ACTIVE",
+        "createdAt": "2026-08-21T09:30:00.000Z",
+        "updatedAt": "2026-08-21T09:30:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
+    }
+  }
+}
+```
+
+### Errors
+
+| Status | Khi |
+|--------|-----|
+| `400` | Query params không hợp lệ (page < 1, limit > 100, sai enum companySize) |
+| `500` | Lỗi hệ thống nội bộ |
+
 

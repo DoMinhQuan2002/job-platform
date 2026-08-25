@@ -4,6 +4,7 @@ import { AppError } from "../../common/errors/app-error";
 import { companiesService } from "./companies.service";
 import { createCompanySchema } from "./dto/create-company.dto";
 import { updateCompanySchema } from "./dto/update-company.dto";
+import { queryCompaniesSchema } from "./dto/query-companies.dto";
 
 export class CompaniesController {
   private ensureRecruiter = (req: Request): string => {
@@ -15,6 +16,37 @@ export class CompaniesController {
       throw new AppError(403, "FORBIDDEN", "Chỉ tài khoản RECRUITER mới có quyền thực hiện thao tác này");
     }
     return user.id;
+  };
+
+  /**
+   * GET /api/v1/companies — Xem danh sách công ty công khai dành cho Candidate/Public
+   */
+  getPublicCompanies = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = queryCompaniesSchema.safeParse(req.query);
+      if (!parsed.success) {
+        const errorMessages = parsed.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        }));
+        throw new AppError(
+          400,
+          "BAD_REQUEST",
+          parsed.error.issues[0]?.message || "Tham số truy vấn không hợp lệ",
+          errorMessages
+        );
+      }
+
+      const data = await companiesService.getPublicCompanies(parsed.data);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách công ty thành công",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
   };
 
   /**
@@ -103,4 +135,5 @@ export class CompaniesController {
 }
 
 export const companiesController = new CompaniesController();
+
 

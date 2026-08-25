@@ -5,9 +5,67 @@ import { AppDataSource } from "../../data-source";
 import { Company } from "../../database/entities/company.entity";
 import type { CreateCompanyDto } from "./dto/create-company.dto";
 import type { UpdateCompanyDto } from "./dto/update-company.dto";
+import type { QueryCompaniesDto } from "./dto/query-companies.dto";
 import { slugify } from "./utils/slug.util";
 
 export class CompaniesService {
+  /**
+   * Lấy danh sách công ty công khai dành cho Candidate/Public (kèm phân trang, tìm kiếm, lọc)
+   * @param query Tham số phân trang, tìm kiếm, lọc
+   */
+  async getPublicCompanies(query: QueryCompaniesDto) {
+    const companyRepo = AppDataSource.getRepository(Company);
+    const { page = 1, limit = 10, search, companySize } = query;
+
+    const qb = companyRepo
+      .createQueryBuilder("company")
+      .where("company.status = :status", { status: COMPANY_STATUS.ACTIVE });
+
+    if (search && search.trim().length > 0) {
+      qb.andWhere(
+        "(company.name ILIKE :search OR company.address ILIKE :search)",
+        { search: `%${search.trim()}%` }
+      );
+    }
+
+    if (companySize) {
+      qb.andWhere("company.companySize = :companySize", { companySize });
+    }
+
+    qb.orderBy("company.createdAt", "DESC")
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [companies, total] = await qb.getManyAndCount();
+
+    const items = companies.map((company) => ({
+      id: company.id,
+      name: company.name,
+      slug: company.slug,
+      logo: company.logo,
+      website: company.website,
+      email: company.email,
+      phone: company.phone,
+      taxCode: company.taxCode,
+      companySize: company.companySize,
+      address: company.address,
+      description: company.description,
+      status: company.status,
+      createdAt: company.createdAt,
+      updatedAt: company.updatedAt,
+    }));
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   /**
    * Lấy thông tin công ty của nhà tuyển dụng đang đăng nhập
    * @param userId ID của recruiter (user_id)
@@ -149,5 +207,6 @@ export class CompaniesService {
 }
 
 export const companiesService = new CompaniesService();
+
 
 
