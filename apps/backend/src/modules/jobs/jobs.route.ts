@@ -1,9 +1,19 @@
 import { Router } from "express";
+import { authenticate } from "../../common/middlewares/authenticate.middleware";
+import { jobsController } from "./jobs.controller";
 
 const jobsRouter = Router();
 
-jobsRouter.get("/", (_req, res) => {
-  res.status(200).json({ module: "jobs", message: "TODO: jobs list" });
-});
+/** POST /api/v1/jobs - Recruiter tạo tin; service kiểm tra quyền sở hữu company. */
+jobsRouter.post("/", authenticate, jobsController.createJob);
+
+/** GET /api/v1/jobs - Danh sách job đã duyệt, còn hạn (public). */
+jobsRouter.get("/", jobsController.getJobs);
+
+/** GET /api/v1/jobs/:id - Chi tiết job đã duyệt, còn hạn (public). */
+jobsRouter.get("/:id", jobsController.getJobById);
+
+/** PUT /api/v1/jobs/:id - Chỉ chủ company hoặc admin được cập nhật. */
+jobsRouter.put("/:id", authenticate, jobsController.updateJob);
 
 export default jobsRouter;
