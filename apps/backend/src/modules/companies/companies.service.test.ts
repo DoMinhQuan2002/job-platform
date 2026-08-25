@@ -81,7 +81,7 @@ describe("Companies Module", () => {
 
   describe("requireRecruiter Middleware", () => {
     it("should call next with AppError 401 when req.user is missing", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: undefined } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
@@ -96,7 +96,7 @@ describe("Companies Module", () => {
     });
 
     it("should call next with AppError 403 when req.user.role is not RECRUITER", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: { id: "10", role: "CANDIDATE" } } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
@@ -111,7 +111,7 @@ describe("Companies Module", () => {
     });
 
     it("should call next with no error when req.user.role is RECRUITER", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/role.middleware");
+      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: { id: "10", role: "RECRUITER" } } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
