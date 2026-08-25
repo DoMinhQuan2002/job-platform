@@ -137,7 +137,7 @@ describe("Applications & Saved Jobs Module", () => {
     it("returns 401 when unauthenticated", async () => {
       const res = await request(testApp).get("/api/v1/applications");
       expect(res.status).toBe(401);
-      expect(res.body.code).toBe("UNAUTHORIZED");
+      expect(res.body.errors[0].code).toBe("UNAUTHORIZED");
     });
   });
 
@@ -155,7 +155,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "res_1" });
 
         expect(res.status).toBe(404);
-        expect(res.body.code).toBe("CANDIDATE_PROFILE_NOT_FOUND");
+        expect(res.body.errors[0].code).toBe("CANDIDATE_PROFILE_NOT_FOUND");
       });
 
       it("fails if job is not found", async () => {
@@ -170,7 +170,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "res_1" });
 
         expect(res.status).toBe(404);
-        expect(res.body.code).toBe("JOB_NOT_FOUND");
+        expect(res.body.errors[0].code).toBe("JOB_NOT_FOUND");
       });
 
       it("fails if job is closed or not approved", async () => {
@@ -188,7 +188,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "res_1" });
 
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("JOB_CLOSED");
+        expect(res.body.errors[0].code).toBe("JOB_CLOSED");
       });
 
       it("fails if specified resume does not exist", async () => {
@@ -207,7 +207,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "non_existent" });
 
         expect(res.status).toBe(404);
-        expect(res.body.code).toBe("RESUME_NOT_FOUND");
+        expect(res.body.errors[0].code).toBe("RESUME_NOT_FOUND");
       });
 
       it("fails if resumeId omitted and no default resume exists", async () => {
@@ -226,7 +226,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({});
 
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("RESUME_REQUIRED");
+        expect(res.body.errors[0].code).toBe("RESUME_REQUIRED");
       });
 
       it("fails if application already exists (409 Conflict)", async () => {
@@ -254,7 +254,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "res_1" });
 
         expect(res.status).toBe(409);
-        expect(res.body.code).toBe("APPLICATION_ALREADY_EXISTS");
+        expect(res.body.errors[0].code).toBe("APPLICATION_ALREADY_EXISTS");
       });
 
       it("successfully applies to job with default resume", async () => {
@@ -365,7 +365,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ resumeId: "res_1" });
 
         expect(res.status).toBe(409);
-        expect(res.body.code).toBe("APPLICATION_ALREADY_EXISTS");
+        expect(res.body.errors[0].code).toBe("APPLICATION_ALREADY_EXISTS");
       });
     });
 
@@ -402,7 +402,7 @@ describe("Applications & Saved Jobs Module", () => {
           "/api/v1/applications?status=INVALID_STATUS",
         );
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("INVALID_STATUS");
+        expect(res.body.errors[0].code).toBe("INVALID_STATUS");
       });
     });
 
@@ -412,7 +412,7 @@ describe("Applications & Saved Jobs Module", () => {
 
         const res = await request(testApp).get("/api/v1/applications/999");
         expect(res.status).toBe(404);
-        expect(res.body.code).toBe("APPLICATION_NOT_FOUND");
+        expect(res.body.errors[0].code).toBe("APPLICATION_NOT_FOUND");
       });
 
       it("returns 403 if candidate is not owner of application", async () => {
@@ -427,7 +427,7 @@ describe("Applications & Saved Jobs Module", () => {
 
         const res = await request(testApp).get("/api/v1/applications/app_1");
         expect(res.status).toBe(403);
-        expect(res.body.code).toBe("FORBIDDEN");
+        expect(res.body.errors[0].code).toBe("FORBIDDEN");
       });
 
       it("returns application detail for owner candidate", async () => {
@@ -464,7 +464,7 @@ describe("Applications & Saved Jobs Module", () => {
           "/api/v1/applications/app_1/withdraw",
         );
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("CANNOT_WITHDRAW");
+        expect(res.body.errors[0].code).toBe("CANNOT_WITHDRAW");
       });
 
       it("successfully withdraws application if status is APPLIED", async () => {
@@ -592,7 +592,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ status: ApplicationStatus.WITHDRAWN });
 
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
+        expect(res.body.errors[0].code).toBe("INVALID_STATUS_TRANSITION");
       });
 
       it("fails on invalid status transition (e.g. APPLIED -> ACCEPTED directly)", async () => {
@@ -615,7 +615,7 @@ describe("Applications & Saved Jobs Module", () => {
           .send({ status: ApplicationStatus.ACCEPTED });
 
         expect(res.status).toBe(400);
-        expect(res.body.code).toBe("INVALID_STATUS_TRANSITION");
+        expect(res.body.errors[0].code).toBe("INVALID_STATUS_TRANSITION");
       });
 
       it("succeeds on allowed transition APPLIED -> VIEWED", async () => {
