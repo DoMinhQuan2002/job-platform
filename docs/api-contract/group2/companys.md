@@ -1,6 +1,6 @@
 # API Contract — Company (Group 2)
 
-> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/company`,`GET /api/v1/company`,`PUT /api/v1/company`)**  
+> Owner doc: **Nguyễn Bá Đức(`GET /api/v1/companies/{id}`), Nguyễn Mạnh Cường(`POST /api/v1/companies`,`GET /api/v1/companies/me`,`PUT /api/v1/companies/me`)**  
 
 
 Liên quan schema: `companies`, `users`.
@@ -11,9 +11,9 @@ Liên quan schema: `companies`, `users`.
 
 | Brief (sếp) | Schema / ý nghiệp vụ | Draft stub hiện tại | Đề xuất contract |
 |-------------|----------------------|----------------------|------------------|
-| Tạo hồ sơ công ty | `companies` (`userId = req.user.id`) | `POST /api/v1/company` | `POST /api/v1/company` |
-| `GET /api/company` | `companies` (`user_id = req.user.id`) | `GET /api/v1/company` | `GET /api/v1/company` |
-| `PUT /api/company` | `companies` (`logo`, `website`, `email`, `phone`, `address`, `description`, `taxCode`, `companySize`) | `PUT /api/v1/company` | `PUT /api/v1/company` |
+| Tạo hồ sơ công ty | `companies` (`userId = req.user.id`) | `POST /api/v1/companies` | `POST /api/v1/companies` |
+| `GET /api/companies/me` | `companies` (`user_id = req.user.id`) | `GET /api/v1/companies/me` | `GET /api/v1/companies/me` |
+| `PUT /api/companies/me` | `companies` (`logo`, `website`, `email`, `phone`, `address`, `description`, `taxCode`, `companySize`) | `PUT /api/v1/companies/me` | `PUT /api/v1/companies/me` |
 
 **Identity**
 
@@ -25,7 +25,7 @@ Liên quan schema: `companies`, `users`.
 
 ## 1. Company Endpoints
 
-Base: `/api/v1/company` (hoặc `/api/company` tuỳ Leader chốt tiền tố `v1`)  
+Base: `/api/v1/companies` (hoặc `/api/companies` tuỳ Leader chốt tiền tố `v1`)  
 Auth: `RECRUITER`
 
 ### 1.1 Khởi tạo hồ sơ công ty mới
@@ -33,7 +33,7 @@ Auth: `RECRUITER`
 | | |
 |---|---|
 | Tên | Tạo mới hồ sơ công ty cho nhà tuyển dụng |
-| Method / URL | `POST /api/v1/company` |
+| Method / URL | `POST /api/v1/companies` |
 | Quyền | `RECRUITER` |
 | Nghiệp vụ | 1. Mỗi tài khoản `RECRUITER` chỉ được tạo tối đa 1 công ty (`companies.user_id` unique).<br>2. Tự động liên kết `userId = req.user.id`.<br>3. Tự động sinh `slug` từ `name` (kèm unique suffix nếu cần).<br>4. Trạng thái mặc định: `status = "ACTIVE"`. |
 
@@ -60,7 +60,7 @@ Auth: `RECRUITER`
 | `website` | string \| null | no | URL hợp lệ (`http://` hoặc `https://`), max 255 |
 | `email` | string | yes | Email hợp lệ, max 255 |
 | `phone` | string | yes | Regex số điện thoại VN (10-11 số), max 20 |
-| `taxCode` | string \| null | no | Max 50 ký tự |
+| `taxCode` | string | yes | Mã số thuế doanh nghiệp, max 50 ký tự |
 | `companySize` | string \| null | no | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
 | `address` | string | yes | Max 255 ký tự, không để trống |
 | `description` | string \| null | no | Kiểu text |
@@ -104,11 +104,11 @@ Auth: `RECRUITER`
 ---
 
 ### 1.2 Lấy thông tin công ty của tôi
-
+ 
 | | |
 |---|---|
 | Tên | Xem thông tin công ty của nhà tuyển dụng đang đăng nhập |
-| Method / URL | `GET /api/v1/company` |
+| Method / URL | `GET /api/v1/companies/me` |
 | Quyền | `RECRUITER` |
 | Request | — |
 | Validation | Phải đăng nhập với vai trò `RECRUITER` |
@@ -155,7 +155,7 @@ Auth: `RECRUITER`
 | | |
 |---|---|
 | Tên | Cập nhật thông tin chi tiết hồ sơ công ty |
-| Method / URL | `PUT /api/v1/company` |
+| Method / URL | `PUT /api/v1/companies/me` |
 | Quyền | `RECRUITER` |
 
 **Request**
@@ -181,7 +181,7 @@ Auth: `RECRUITER`
 | `website` | string \| null | no | URL hợp lệ (`http://` hoặc `https://`), max 255 |
 | `email` | string | yes | Email hợp lệ, max 255 |
 | `phone` | string | yes | Regex số điện thoại VN (10-11 số), max 20 |
-| `taxCode` | string \| null | no | Max 50 ký tự |
+| `taxCode` | string | yes | Mã số thuế doanh nghiệp, max 50 ký tự |
 | `companySize` | string \| null | no | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
 | `address` | string | yes | Max 255 ký tự, không để trống |
 | `description` | string \| null | no | Kiểu text |
@@ -286,8 +286,77 @@ Chỉ company đang được phép hiển thị mới được trả về. Compa
 
 > Phân biệt:
 >
-> `GET /api/v1/company` → Recruiter xem company của mình.
+> `GET /api/v1/companies/me` → Recruiter xem company của mình.
 > `GET /api/v1/companies/{id}` → Public xem company theo ID.
+> `GET /api/v1/companies` → Public xem danh sách công ty (kèm phân trang, tìm kiếm, lọc).
 
 ---
+
+## 1.5 GET `/api/v1/companies`
+
+### Mục đích
+
+Xem danh sách tất cả công ty công khai dành cho Candidate/Public kèm phân trang, tìm kiếm theo tên/địa chỉ và lọc theo quy mô công ty.
+
+### Quyền
+
+`Public` (Không yêu cầu đăng nhập)
+
+### Query Params
+
+| Param | Type | Required | Default | Validation / Note |
+|-------|------|----------|---------|-------------------|
+| `page` | number | No | `1` | Số nguyên >= 1 |
+| `limit` | number | No | `10` | Số nguyên từ 1 đến 100 |
+| `search` | string | No | — | Tìm kiếm tương đối (không phân biệt hoa thường) theo `name` hoặc `address` |
+| `companySize` | string | No | — | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
+
+### Business Rules
+
+1. Chỉ trả các công ty có `status = "ACTIVE"` và chưa bị xóa mềm (`deleted_at IS NULL`).
+2. Sắp xếp mặc định: Mới nhất lên đầu (`created_at DESC`).
+3. Thông tin trả về bao gồm `taxCode` theo yêu cầu public, loại bỏ `userId` (thông tin nội bộ recruiter).
+
+### Response 200
+
+```json
+{
+  "success": true,
+  "message": "Lấy danh sách công ty thành công",
+  "data": {
+    "items": [
+      {
+        "id": "1",
+        "name": "Công ty Cổ phần Công nghệ FPT",
+        "slug": "cong-ty-co-phan-cong-nghe-fpt",
+        "logo": "companies/fpt-logo.png",
+        "website": "https://fpt.com",
+        "email": "contact@fpt.com",
+        "phone": "02473007300",
+        "taxCode": "0101248141",
+        "companySize": "500+",
+        "address": "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
+        "description": "FPT là tập đoàn công nghệ toàn cầu hàng đầu Việt Nam...",
+        "status": "ACTIVE",
+        "createdAt": "2026-08-21T09:30:00.000Z",
+        "updatedAt": "2026-08-21T09:30:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 42,
+      "totalPages": 5
+    }
+  }
+}
+```
+
+### Errors
+
+| Status | Khi |
+|--------|-----|
+| `400` | Query params không hợp lệ (page < 1, limit > 100, sai enum companySize) |
+| `500` | Lỗi hệ thống nội bộ |
+
 
