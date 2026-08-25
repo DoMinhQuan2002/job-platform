@@ -3,7 +3,8 @@ import { AppError } from "@/common/errors/app-error";
 
 /**
  * Chỉ ADMIN mới truy cập được. Đứng sau `authenticate` thật.
- * Dùng role check thô, không qua `authorize()` — chưa có permission `log:*` nào được seed.
+ * Dùng role check thô, không qua `authorize()` — chưa có permission `admin:*`/`company:*`/
+ * `job:*` nào được seed trong bảng `permissions`.
  */
 export const requireAdmin = (req: Request, _res: Response, next: NextFunction) => {
   if (!req.user) {
