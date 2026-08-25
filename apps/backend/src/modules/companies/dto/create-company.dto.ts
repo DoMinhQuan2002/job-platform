@@ -31,11 +31,10 @@ export const createCompanySchema = z.object({
     .regex(/^(0|\+84)[0-9]{9,10}$/, "Số điện thoại VN không hợp lệ (10-11 chữ số)")
     .max(20, "Số điện thoại không được vượt quá 20 ký tự"),
   taxCode: z
-    .string()
+    .string({ error: "Mã số thuế là bắt buộc" })
     .trim()
-    .max(50, "Mã số thuế không được vượt quá 50 ký tự")
-    .nullable()
-    .optional(),
+    .min(1, "Mã số thuế không được để trống")
+    .max(50, "Mã số thuế không được vượt quá 50 ký tự"),
   companySize: z
     .enum(
       [

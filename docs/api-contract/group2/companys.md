@@ -60,7 +60,7 @@ Auth: `RECRUITER`
 | `website` | string \| null | no | URL hợp lệ (`http://` hoặc `https://`), max 255 |
 | `email` | string | yes | Email hợp lệ, max 255 |
 | `phone` | string | yes | Regex số điện thoại VN (10-11 số), max 20 |
-| `taxCode` | string \| null | no | Max 50 ký tự |
+| `taxCode` | string | yes | Mã số thuế doanh nghiệp, max 50 ký tự |
 | `companySize` | string \| null | no | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
 | `address` | string | yes | Max 255 ký tự, không để trống |
 | `description` | string \| null | no | Kiểu text |
@@ -181,7 +181,7 @@ Auth: `RECRUITER`
 | `website` | string \| null | no | URL hợp lệ (`http://` hoặc `https://`), max 255 |
 | `email` | string | yes | Email hợp lệ, max 255 |
 | `phone` | string | yes | Regex số điện thoại VN (10-11 số), max 20 |
-| `taxCode` | string \| null | no | Max 50 ký tự |
+| `taxCode` | string | yes | Mã số thuế doanh nghiệp, max 50 ký tự |
 | `companySize` | string \| null | no | Enum: `'1-50'` \| `'50-100'` \| `'100-500'` \| `'500+'` |
 | `address` | string | yes | Max 255 ký tự, không để trống |
 | `description` | string \| null | no | Kiểu text |

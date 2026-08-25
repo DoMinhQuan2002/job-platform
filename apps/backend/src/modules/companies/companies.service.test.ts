@@ -351,6 +351,7 @@ describe("Companies Module", () => {
         name: "Công ty Mới",
         email: "contact@moi.com",
         phone: "0912345678",
+        taxCode: "0101248141",
         address: "Hà Nội",
       };
 
@@ -491,6 +492,7 @@ describe("Companies Module", () => {
           name: "Công ty FPT",
           email: "hr@fpt.com",
           phone: "02473007300",
+          taxCode: "0101248141",
           address: "Hà Nội",
         },
       } as unknown as Request;
@@ -528,6 +530,7 @@ describe("Companies Module", () => {
         name: "Công ty FPT",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Hà Nội",
       });
 
@@ -539,7 +542,7 @@ describe("Companies Module", () => {
       });
     });
 
-    it("should return 400 BAD_REQUEST on invalid phone/email", async () => {
+    it("should return 400 BAD_REQUEST on invalid phone/email or missing taxCode", async () => {
       const request = (await import("supertest")).default;
       const express = (await import("express")).default;
       const companiesRouter = (await import("./companies.route")).default;
@@ -584,6 +587,7 @@ describe("Companies Module", () => {
         slug: "cong-ty-co-phan-cong-nghe-fpt",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
         status: "ACTIVE",
       };
@@ -602,6 +606,7 @@ describe("Companies Module", () => {
           name: "Công ty Cổ phần Công nghệ FPT",
           email: "hr@fpt.com",
           phone: "02473007300",
+          taxCode: "0101248141",
           address: "Cầu Giấy, Hà Nội",
         });
 
@@ -625,6 +630,7 @@ describe("Companies Module", () => {
         name: "FPT Corp",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Hà Nội",
       };
 
@@ -682,6 +688,7 @@ describe("Companies Module", () => {
         slug: "cong-ty-fpt",
         email: "old@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Hà Nội",
       };
 
@@ -697,6 +704,7 @@ describe("Companies Module", () => {
         name: "Công ty FPT",
         email: "new@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
       };
 
@@ -715,6 +723,7 @@ describe("Companies Module", () => {
         slug: "cong-ty-cu",
         email: "old@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Hà Nội",
       };
 
@@ -733,6 +742,7 @@ describe("Companies Module", () => {
         name: "Công ty FPT Mới",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
       };
 
@@ -776,6 +786,7 @@ describe("Companies Module", () => {
           name: "",
           email: "invalid-email",
           phone: "invalid",
+          taxCode: "",
         },
       } as unknown as Request;
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as Response;
@@ -795,6 +806,7 @@ describe("Companies Module", () => {
         userId: "10",
         name: "Công ty FPT Đã Cập Nhật",
         slug: "cong-ty-fpt-da-cap-nhat",
+        taxCode: "0101248141",
         status: "ACTIVE",
       } as unknown as Company;
 
@@ -806,6 +818,7 @@ describe("Companies Module", () => {
           name: "Công ty FPT Đã Cập Nhật",
           email: "hr@fpt.com",
           phone: "02473007300",
+          taxCode: "0101248141",
           address: "Hà Nội",
         },
       } as unknown as Request;
@@ -843,6 +856,7 @@ describe("Companies Module", () => {
         name: "Công ty FPT",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Hà Nội",
       });
 
@@ -866,6 +880,7 @@ describe("Companies Module", () => {
         slug: "cong-ty-co-phan-cong-nghe-fpt",
         email: "hr@fpt.com",
         phone: "02473007300",
+        taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
         status: "ACTIVE",
       };
@@ -884,6 +899,7 @@ describe("Companies Module", () => {
           name: "Công ty Cổ phần Công nghệ FPT",
           email: "hr@fpt.com",
           phone: "02473007300",
+          taxCode: "0101248141",
           address: "Cầu Giấy, Hà Nội",
         });
 
