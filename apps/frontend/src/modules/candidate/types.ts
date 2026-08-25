@@ -25,13 +25,23 @@ export type WorkExperience = {
   updatedAt: string;
 };
 
-/** Skills trong GET /candidates/me — UI edit thuộc module resume (Lợi). */
-export type CandidateProfileSkill = {
+export type SkillLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT" | "NATIVE";
+
+export type SkillCatalog = {
   id: string;
-  skillId: string;
   name: string;
   category: "SKILL" | "LANGUAGE" | "CERTIFICATE";
-  level: string | null;
+  code: string | null;
+  description: string | null;
+  status: string;
+};
+
+export type CandidateSkill = {
+  id: string;
+  candidateId: string;
+  skillId: string;
+  level: SkillLevel;
+  skill: SkillCatalog;
 };
 
 export type CandidateProfile = {
@@ -41,10 +51,33 @@ export type CandidateProfile = {
   careerObjective: string | null;
   educations: Education[];
   workExperiences: WorkExperience[];
-  skills: CandidateProfileSkill[];
+  skills: CandidateSkill[];
+  languages: CandidateSkill[];
+  certificates: CandidateSkill[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type UpdateCandidateProfileInput = {
   bio?: string | null;
   careerObjective?: string | null;
+};
+
+export type EducationFormInput = {
+  school: string;
+  major?: string | null;
+  degree?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  isCurrent?: boolean;
+  description?: string | null;
+};
+
+export type WorkExperienceFormInput = {
+  companyName: string;
+  position: string;
+  startDate: string;
+  endDate?: string | null;
+  isCurrent?: boolean;
+  description?: string | null;
 };
