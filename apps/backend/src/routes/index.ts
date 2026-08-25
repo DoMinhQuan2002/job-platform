@@ -10,7 +10,10 @@ import usersRouter from "../modules/users/users.route";
 
 const apiRouter = Router();
 
-apiRouter.use("/auth", authRouter);
+// Contract nhom 1 dat auth ngay duoi /api/v1 (/register, /login, /forgot-password, /oauth/google)
+// nen authRouter duoc mount o goc thay vi duoi prefix /auth.
+apiRouter.use("/", authRouter);
+
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/companies", companiesRouter);
 apiRouter.use("/jobs", jobsRouter);
