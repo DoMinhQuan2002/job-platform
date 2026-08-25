@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../common/middlewares/authenticate.middleware";
-import { requireRecruiter } from "../../common/middlewares/role.middleware";
+import { requireRecruiter } from "../../common/middlewares/require-recruiter.middleware";
 import { companiesController } from "./companies.controller";
 
 const companiesRouter = Router();
