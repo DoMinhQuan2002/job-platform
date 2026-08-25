@@ -1,4 +1,5 @@
 import type { JobModeValue, JobTypeValue } from "../../../common/constants/job";
+import type { RoleValue } from "../../../common/constants/roles";
 
 /** Kỹ năng được gắn vào một tin tuyển dụng. */
 export interface JobSkillInput {
@@ -66,5 +67,5 @@ export interface JobQuery {
 /** Contract user do middleware xác thực gắn vào request. */
 export interface CurrentUser {
   id: string;
-  role: "CANDIDATE" | "RECRUITER" | "ADMIN";
+  role: RoleValue;
 }
