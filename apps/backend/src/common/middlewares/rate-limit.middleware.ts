@@ -14,6 +14,11 @@ export type RateLimitOptions = {
   keyFn?: (req: Request) => string;
 };
 
+const getLimitFactor = () => {
+  const factor = Number(process.env.RATE_LIMIT_FACTOR);
+  return Number.isFinite(factor) && factor >= 1 ? factor : 1;
+};
+
 const limiters = new Map<string, Ratelimit>();
 
 // Ratelimit tao lazy: getRedis() nem loi neu thieu env, khong nen nem ngay luc import module.
@@ -26,7 +31,10 @@ const getLimiter = (options: RateLimitOptions) => {
 
   const limiter = new Ratelimit({
     redis: getRedis(),
-    limiter: Ratelimit.slidingWindow(options.limit, `${options.windowSeconds} s`),
+    limiter: Ratelimit.slidingWindow(
+      Math.floor(options.limit * getLimitFactor()),
+      `${options.windowSeconds} s`
+    ),
     prefix: `rl:${options.name}`,
     analytics: false,
   });
