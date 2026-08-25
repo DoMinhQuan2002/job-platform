@@ -182,6 +182,23 @@ export class CompaniesService {
   }
 
   /**
+   * Lấy chi tiết công ty công khai theo ID.
+   * @param id ID công ty đã được validate từ controller
+   */
+  async getPublicCompanyById(id: string) {
+    const company = await AppDataSource.getRepository(Company).findOneBy({
+      id,
+      status: COMPANY_STATUS.ACTIVE,
+    });
+
+    if (!company) {
+      throw new AppError(404, "COMPANY_NOT_FOUND", "Không tìm thấy công ty");
+    }
+
+    return this.serializePublicCompany(company);
+  }
+
+  /**
    * Sinh slug duy nhất không trùng lặp trong cơ sở dữ liệu
    * @param name Tên công ty
    * @param excludeCompanyId Bỏ qua kiểm tra trùng cho ID công ty hiện tại (khi cập nhật)
@@ -203,6 +220,20 @@ export class CompaniesService {
     }
 
     return candidateSlug;
+  }
+
+  private serializePublicCompany(company: Company) {
+    return {
+      id: company.id,
+      name: company.name,
+      slug: company.slug,
+      logo: company.logo,
+      description: company.description,
+      address: company.address,
+      website: company.website,
+      email: company.email,
+      phone: company.phone,
+    };
   }
 }
 

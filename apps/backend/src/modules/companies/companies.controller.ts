@@ -5,6 +5,7 @@ import { companiesService } from "./companies.service";
 import { createCompanySchema } from "./dto/create-company.dto";
 import { updateCompanySchema } from "./dto/update-company.dto";
 import { queryCompaniesSchema } from "./dto/query-companies.dto";
+import { getCompanyByIdParamsSchema } from "./dto/get-company-by-id.dto";
 
 export class CompaniesController {
 
@@ -131,7 +132,39 @@ export class CompaniesController {
       next(error);
     }
   };
+
+  /**
+   * GET /api/v1/companies/:id — Xem chi tiết công ty công khai
+   */
+  getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = getCompanyByIdParamsSchema.safeParse(req.params);
+      if (!parsed.success) {
+        const errorMessages = parsed.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        }));
+        throw new AppError(
+          400,
+          "BAD_REQUEST",
+          parsed.error.issues[0]?.message || "Tham số đường dẫn không hợp lệ",
+          errorMessages
+        );
+      }
+
+      const data = await companiesService.getPublicCompanyById(parsed.data.id);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin công ty thành công",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
+
 
 export const companiesController = new CompaniesController();
 
