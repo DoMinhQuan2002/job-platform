@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../common/middlewares/authenticate.middleware";
+import { requireRecruiter } from "../../common/middlewares/require-recruiter.middleware";
 import { jobsController } from "./jobs.controller";
 
 const jobsRouter = Router();
@@ -15,5 +16,7 @@ jobsRouter.get("/:id", jobsController.getJobById);
 
 /** PUT /api/v1/jobs/:id - Chỉ chủ company hoặc admin được cập nhật. */
 jobsRouter.put("/:id", authenticate, jobsController.updateJob);
+
+jobsRouter.patch("/:id", authenticate, requireRecruiter, jobsController.updateJobStatus);
 
 export default jobsRouter;

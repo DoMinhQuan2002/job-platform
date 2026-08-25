@@ -17,6 +17,8 @@ companiesRouter.put("/me", authenticate, requireRecruiter, companiesController.u
 // GET /api/v1/companies — Xem danh sách công ty công khai dành cho Candidate/Public
 companiesRouter.get("/", companiesController.getPublicCompanies);
 
+companiesRouter.get("/:id", companiesController.getById);
+
 export default companiesRouter;
 
 

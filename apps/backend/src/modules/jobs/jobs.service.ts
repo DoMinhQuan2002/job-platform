@@ -19,11 +19,21 @@ import type {
   CurrentUser,
   JobQuery,
   JobSkillInput,
+  RecruiterJobsQuery,
   UpdateJobInput,
+  UpdateJobStatusInput,
 } from "./dto";
 
 // Re-export để giữ tương thích với các module đã import type từ jobs.service.
-export type { CreateJobInput, CurrentUser, JobQuery, JobSkillInput, UpdateJobInput } from "./dto";
+export type {
+  CreateJobInput,
+  CurrentUser,
+  JobQuery,
+  JobSkillInput,
+  RecruiterJobsQuery,
+  UpdateJobInput,
+  UpdateJobStatusInput,
+} from "./dto";
 
 // Các relation dùng chung khi trả thông tin đầy đủ của một job.
 const jobRelations = ["company", "category", "jobSkills", "jobSkills.skill"];
@@ -224,6 +234,32 @@ const validateSkills = async (skills: JobSkillInput[]) => {
     );
   }
 };
+
+const serializeRecruiterJob = (job: Job) => ({
+  id: job.id,
+  title: job.title,
+  slug: job.slug,
+  salaryMin: job.salaryMin === null ? null : Number(job.salaryMin),
+  salaryMax: job.salaryMax === null ? null : Number(job.salaryMax),
+  isNegotiable: job.isNegotiable,
+  address: job.address,
+  jobType: job.jobType,
+  jobMode: job.jobMode,
+  experience: job.experience,
+  quantity: job.quantity,
+  deadline: job.deadline,
+  status: job.status,
+  rejectReason: job.rejectReason,
+  category: job.category
+    ? {
+        id: job.category.id,
+        name: job.category.name,
+        slug: job.category.slug,
+      }
+    : null,
+  createdAt: job.createdAt,
+  updatedAt: job.updatedAt,
+});
 
 export const jobService = {
   /** Tạo tin tuyển dụng và danh sách skill trong cùng một transaction. */
@@ -472,5 +508,110 @@ export const jobService = {
 
     if (!result) throw new AppError(500, "JOB_UPDATE_FAILED", "Không thể lấy tin sau cập nhật.");
     return result;
+  },
+
+  /** GET /jobs/job-categories - Danh sách danh mục việc làm đang hoạt động. */
+  async getActiveJobCategories() {
+    const categories = await getCategoryRepository().find({
+      where: { status: JOB_CATEGORY_STATUS.ACTIVE },
+      order: { name: "ASC" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+      },
+    });
+
+    return categories;
+  },
+
+  async listRecruiterJobs(currentUser: CurrentUser, query: RecruiterJobsQuery) {
+    if (currentUser.role !== "RECRUITER") {
+      throw new AppError(403, "FORBIDDEN", "Chỉ nhà tuyển dụng mới có quyền xem danh sách tin này.");
+    }
+
+    const company = await getCompanyRepository().findOneBy({ userId: currentUser.id });
+    if (!company) {
+      throw new AppError(404, "COMPANY_NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty.");
+    }
+
+    const queryBuilder = getJobRepository()
+      .createQueryBuilder("job")
+      .innerJoinAndSelect("job.category", "category")
+      .where("job.companyId = :companyId", { companyId: company.id });
+
+    if (query.keyword) {
+      queryBuilder.andWhere(
+        new Brackets((sub) => {
+          sub
+            .where("job.title ILIKE :keyword", { keyword: `%${query.keyword}%` })
+            .orWhere("job.description ILIKE :keyword", { keyword: `%${query.keyword}%` })
+            .orWhere("job.requirements ILIKE :keyword", { keyword: `%${query.keyword}%` });
+        }),
+      );
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere("job.status = :status", { status: query.status });
+    }
+
+    if (query.category) {
+      queryBuilder.andWhere("job.categoryId = :categoryId", { categoryId: query.category });
+    }
+
+    const [jobs, totalItems] = await queryBuilder
+      .orderBy("job.createdAt", "DESC")
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getManyAndCount();
+
+    return {
+      items: jobs.map(serializeRecruiterJob),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / query.limit),
+      },
+    };
+  },
+  async updateJobStatus(currentUser: CurrentUser, id: string, input: UpdateJobStatusInput) {
+    if (currentUser.role !== "RECRUITER") {
+      throw new AppError(403, "FORBIDDEN", "Chỉ nhà tuyển dụng mới có quyền cập nhật trạng thái job.");
+    }
+
+    const company = await getCompanyRepository().findOneBy({ userId: currentUser.id });
+    if (!company) {
+      throw new AppError(404, "COMPANY_NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty.");
+    }
+
+    const job = await getJobRepository().findOneBy({ id });
+    if (!job) {
+      throw new AppError(404, "JOB_NOT_FOUND", "Tin tuyển dụng không tồn tại.");
+    }
+
+    if (job.companyId !== company.id) {
+      throw new AppError(403, "JOB_ACCESS_DENIED", "Bạn không có quyền cập nhật tin này.");
+    }
+
+    if (company.status !== "ACTIVE") {
+      throw new AppError(403, "COMPANY_BLOCKED", "Công ty hiện đang bị khóa.");
+    }
+
+    if (job.status === input.status) {
+      throw new AppError(400, "INVALID_STATUS_TRANSITION", "Tin tuyển dụng đã ở trạng thái này.");
+    }
+
+    job.status = input.status;
+    job.rejectReason = null;
+
+    const updatedJob = await getJobRepository().save(job);
+
+    return {
+      id: updatedJob.id,
+      status: updatedJob.status,
+      updatedAt: updatedJob.updatedAt,
+    };
   },
 };
