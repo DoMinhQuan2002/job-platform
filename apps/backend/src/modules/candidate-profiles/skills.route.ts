@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticate } from "../../common/middlewares/authenticate.middleware";
 import {
   attachMySkill,
   createSkillCatalog,
@@ -11,10 +12,10 @@ import {
 const skillsRouter = Router();
 
 skillsRouter.get("/", listSkillCatalog);
-skillsRouter.post("/", createSkillCatalog);
-skillsRouter.get("/me", listMySkills);
-skillsRouter.post("/me", attachMySkill);
-skillsRouter.put("/me/:id", updateMySkill);
-skillsRouter.delete("/me/:id", detachMySkill);
+skillsRouter.post("/", authenticate, createSkillCatalog);
+skillsRouter.get("/me", authenticate, listMySkills);
+skillsRouter.post("/me", authenticate, attachMySkill);
+skillsRouter.put("/me/:id", authenticate, updateMySkill);
+skillsRouter.delete("/me/:id", authenticate, detachMySkill);
 
 export default skillsRouter;

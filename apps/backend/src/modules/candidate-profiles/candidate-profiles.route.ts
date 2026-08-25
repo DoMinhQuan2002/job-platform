@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticate } from "../../common/middlewares/authenticate.middleware";
 import {
   createMyEducation,
   createMyWorkExperience,
@@ -13,6 +14,8 @@ import {
 } from "./candidate-profiles.controller";
 
 const candidateProfilesRouter = Router();
+
+candidateProfilesRouter.use(authenticate);
 
 candidateProfilesRouter.get("/me", getMyCandidateProfile);
 candidateProfilesRouter.put("/me", updateMyCandidateProfile);

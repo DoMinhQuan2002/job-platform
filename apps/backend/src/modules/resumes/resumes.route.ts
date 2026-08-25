@@ -1,9 +1,12 @@
 import { Router } from "express";
+import { authenticate } from "../../common/middlewares/authenticate.middleware";
 import { resumesController } from "./resumes.controller";
 import { acceptOptionalUpload } from "../../common/middlewares/upload.middleware";
 
 /** Owner: Nguyễn Văn Lợi — Base: /api/v1/resumes */
 const resumesRouter = Router();
+
+resumesRouter.use(authenticate);
 
 resumesRouter.get("/", resumesController.getMyResumes);
 resumesRouter.post("/", acceptOptionalUpload, resumesController.createOwnerResume); //sử dụng 'Media' để upload cv vào supabase
