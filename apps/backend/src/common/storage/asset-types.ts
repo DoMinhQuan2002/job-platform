@@ -29,7 +29,7 @@ const SPECS: Record<AssetType, AssetSpec> = {
     type: ASSET_TYPE.USER_AVATAR,
     folder: "avatars",
     visibility: "public",
-    maxBytes: 2 * MB,
+    maxBytes: 5 * MB,
     mimeTypes: IMAGE_MIME,
   },
   [ASSET_TYPE.COMPANY_LOGO]: {

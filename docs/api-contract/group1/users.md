@@ -63,9 +63,6 @@ Auth: `CANDIDATE | RECRUITER` (Bearer access token)
     "dateOfBirth": "2000-01-15",
     "addressDetail": "12 Nguyen Trai",
     "wardCode": "00001",
-    "status": "ACTIVE",
-    "createdAt": "2026-08-21T00:00:00.000Z",
-    "updatedAt": "2026-08-21T00:00:00.000Z",
     "lastLoginAt": "2026-08-21T01:00:00.000Z",
     "emailVerifiedAt": null
   }
