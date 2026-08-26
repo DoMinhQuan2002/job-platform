@@ -1,10 +1,10 @@
-import { setAccessToken, clearAccessToken } from "@/lib/auth-token";
+import { setAccessToken, setStoredUser, clearAccessToken } from "@/lib/auth-token";
 import { http } from "@/services/http";
 import type { ApiSuccess } from "@/types/api";
 
 type AuthTokens = {
   accessToken: string;
-  user?: unknown;
+  user?: { email: string; fullName: string };
 };
 
 /** Owner FE: Nhóm 1 — G3 chỉ dùng để login trước khi gọi API candidate */
@@ -35,6 +35,7 @@ export const authApi = {
     });
     if (res.data?.accessToken) {
       setAccessToken(res.data.accessToken);
+      if (res.data.user) setStoredUser(res.data.user);
     }
     return res;
   },
