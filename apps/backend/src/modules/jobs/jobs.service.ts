@@ -354,6 +354,7 @@ export const jobService = {
         }),
       );
     }
+    if (query.companyId) qb.andWhere("job.companyId = :companyId", { companyId: query.companyId });
     if (query.categoryId) qb.andWhere("job.categoryId = :categoryId", { categoryId: query.categoryId });
     if (query.location?.trim()) {
       qb.andWhere("job.address ILIKE :location", { location: `%${query.location.trim()}%` });

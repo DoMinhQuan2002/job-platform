@@ -52,6 +52,7 @@ export interface UpdateJobInput {
 /** Bộ lọc và phân trang cho danh sách job công khai. */
 export interface JobQuery {
   keyword?: string;
+  companyId?: string;
   categoryId?: string;
   location?: string;
   jobType?: JobTypeValue;

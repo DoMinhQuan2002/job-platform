@@ -179,7 +179,16 @@ const parseUpdateInput = (body: Record<string, unknown>): UpdateJobInput => {
 const parseQuery = (query: Request["query"]): JobQuery => {
   const result: JobQuery = {};
   if (query.keyword !== undefined) result.keyword = parseOptionalString(query.keyword, "keyword");
-  if (query.categoryId !== undefined) result.categoryId = parseBigIntId(query.categoryId, "categoryId");
+  if (query.companyId !== undefined) {
+    result.companyId = parseBigIntId(query.companyId, "companyId");
+  } else if (query.company !== undefined) {
+    result.companyId = parseBigIntId(query.company, "company");
+  }
+  if (query.categoryId !== undefined) {
+    result.categoryId = parseBigIntId(query.categoryId, "categoryId");
+  } else if (query.category !== undefined) {
+    result.categoryId = parseBigIntId(query.category, "category");
+  }
   if (query.location !== undefined) result.location = parseOptionalString(query.location, "location");
   if (query.jobType !== undefined) result.jobType = parseJobType(query.jobType);
   if (query.jobMode !== undefined) result.jobMode = parseJobMode(query.jobMode);
@@ -194,7 +203,11 @@ const parseQuery = (query: Request["query"]): JobQuery => {
   }
   if (query.skillId !== undefined) result.skillId = parseBigIntId(query.skillId, "skillId");
   if (query.page !== undefined) result.page = parsePositiveInteger(query.page, "page");
-  if (query.size !== undefined) result.size = parsePositiveInteger(query.size, "size");
+  if (query.size !== undefined) {
+    result.size = parsePositiveInteger(query.size, "size");
+  } else if (query.limit !== undefined) {
+    result.size = parsePositiveInteger(query.limit, "limit");
+  }
   if (query.sort !== undefined) {
     const sort = String(query.sort) as NonNullable<JobQuery["sort"]>;
     if (!SORT_VALUES.includes(sort)) {
