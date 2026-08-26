@@ -47,7 +47,6 @@ export const useSkills = () => {
     fetchMySkills();
   }, [fetchMySkills]);
 
-  // Derived state to separate into columns
   const categorizedSkills = {
     SKILL: skills.filter((s) => s.category === "SKILL"),
     LANGUAGE: skills.filter((s) => s.category === "LANGUAGE"),
