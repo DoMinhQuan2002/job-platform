@@ -1,15 +1,19 @@
+import AuthFooter from "@/components/layout/AuthFooter";
+import { Header } from "@/components/layout/header";
 import type { ReactNode } from "react";
 
-type LayoutProps = Readonly<{
+type AuthLayoutProps = Readonly<{
   children: ReactNode;
 }>;
 
-export default function AuthLayout({ children }: LayoutProps) {
+export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-[calc(100dvh-57px)] flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header></Header>
       <main id="auth-content" className="flex-1">
         {children}
       </main>
+      <AuthFooter />
     </div>
   );
 }

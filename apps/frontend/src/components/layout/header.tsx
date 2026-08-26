@@ -110,13 +110,13 @@ export function Header() {
           {!session ? (
             <>
               <Link
-                href={ROUTES.login}
+                href={ROUTES.auth.login}
                 className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
               >
                 Đăng nhập
               </Link>
               <Link
-                href={ROUTES.register}
+                href={ROUTES.auth.register}
                 className="rounded-md bg-[#3367d6] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2857bb]"
               >
                 Đăng ký
@@ -198,13 +198,13 @@ export function Header() {
             {!session ? (
               <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4">
                 <Link
-                  href={ROUTES.login}
+                  href={ROUTES.auth.login}
                   className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm font-medium"
                 >
                   Đăng nhập
                 </Link>
                 <Link
-                  href={ROUTES.register}
+                  href={ROUTES.auth.register}
                   className="rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-white"
                 >
                   Đăng ký

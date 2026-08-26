@@ -71,7 +71,7 @@ export function Footer() {
                 JobPlatform
               </span>
             </Link>
-            <p className="mt-7 max-w-[190px] text-xs leading-5 text-slate-600">
+            <p className="mt-7 max-w-47.5 text-xs leading-5 text-slate-600">
               JobPlatform là nền tảng tuyển dụng kết nối ứng viên và doanh
               nghiệp một cách nhanh chóng và hiệu quả.
             </p>
