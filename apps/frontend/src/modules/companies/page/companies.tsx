@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { companiesApi } from "../api";
+import { companiesApi1 } from "../api";
 import type { Company } from "../types";
 
 const PAGE_SIZE = 10;
@@ -96,7 +96,7 @@ export default function CompaniesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await companiesApi.list({
+      const res = await companiesApi1.list({
         page: currentPage,
         limit: PAGE_SIZE,
       });

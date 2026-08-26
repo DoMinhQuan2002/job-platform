@@ -26,7 +26,7 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { companiesApi } from "../api";
+import { companiesApi1 } from "../api";
 import type { Company } from "../types";
 
 const DEFAULT_REVIEW_COUNT = "1.234";
@@ -156,7 +156,7 @@ export default function CompanyDetailPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await companiesApi.getById(companyId);
+            const res = await companiesApi1.getById(companyId);
             setCompany(res.data);
         } catch (err) {
             setCompany(null);
