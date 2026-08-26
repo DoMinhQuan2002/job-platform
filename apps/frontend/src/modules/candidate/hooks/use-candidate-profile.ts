@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/api-error";
 import { candidateApi } from "../api";
 import type {
+  AccountUser,
   CandidateProfile,
   EducationFormInput,
   UpdateCandidateProfileInput,
@@ -12,6 +13,7 @@ import type {
 
 type UseCandidateProfileResult = {
   profile: CandidateProfile | null;
+  account: AccountUser | null;
   loading: boolean;
   error: string | null;
   unauthorized: boolean;
@@ -31,6 +33,7 @@ type UseCandidateProfileResult = {
 
 export function useCandidateProfile(): UseCandidateProfileResult {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
+  const [account, setAccount] = useState<AccountUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,8 +46,14 @@ export function useCandidateProfile(): UseCandidateProfileResult {
     setError(null);
     setUnauthorized(false);
     try {
-      const response = await candidateApi.getMe();
-      setProfile(response.data);
+      const [profileRes, accountRes] = await Promise.all([
+        candidateApi.getMe(),
+        candidateApi.getAccountMe().catch(() => null),
+      ]);
+      setProfile(profileRes.data);
+      if (accountRes?.data) {
+        setAccount(accountRes.data);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 401) {
         setUnauthorized(true);
@@ -84,6 +93,7 @@ export function useCandidateProfile(): UseCandidateProfileResult {
 
   return {
     profile,
+    account,
     loading,
     error,
     unauthorized,

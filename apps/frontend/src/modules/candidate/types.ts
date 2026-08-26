@@ -58,6 +58,18 @@ export type CandidateProfile = {
   updatedAt: string;
 };
 
+/** Shape G1 `GET /users/me` — contract: trang hồ sơ gọi cả G1 + G3 */
+export type AccountUser = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  avatar: string | null;
+  dateOfBirth: string | null;
+  addressDetail: string | null;
+  wardCode: string | null;
+};
+
 export type UpdateCandidateProfileInput = {
   bio?: string | null;
   careerObjective?: string | null;

@@ -24,10 +24,10 @@ export const ResumeManager: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Quản lý CV</h1>
-        <p className="text-muted-foreground">
+        <h1 className="mb-2 text-2xl font-bold text-foreground">Quản lý CV</h1>
+        <p className="text-[15px] text-muted-foreground">
           Tải lên, quản lý và sử dụng CV của bạn khi ứng tuyển.
         </p>
       </div>

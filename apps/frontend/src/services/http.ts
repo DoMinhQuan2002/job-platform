@@ -17,6 +17,7 @@ type HttpOptions = {
   skipAuth?: boolean;
   /** Absolute path bắt đầu bằng /api/... — mặc định tự nối /api/v1 */
   absolute?: boolean;
+  signal?: AbortSignal;
 };
 
 const resolveUrl = (path: string, absolute?: boolean) => {
@@ -50,6 +51,7 @@ export const http = async <T>(path: string, options: HttpOptions = {}): Promise<
       method: options.method || "GET",
       headers,
       credentials: "include",
+      signal: options.signal,
       body:
         options.body === undefined
           ? undefined

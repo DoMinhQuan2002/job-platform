@@ -91,20 +91,20 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
               )}
             </div>
 
-            {/* Rating */}
-            <div className="mt-2 flex items-center gap-2 text-xs sm:text-sm text-slate-500">
-              <div className="flex items-center text-amber-500">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                ))}
+            {/* Rating — chỉ hiện khi API có data */}
+            {job.company.rating != null ? (
+              <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 sm:text-sm">
+                <div className="flex items-center text-amber-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <span className="font-bold text-slate-800">{job.company.rating}</span>
+                {job.company.reviewCount != null ? (
+                  <span>({job.company.reviewCount} đánh giá)</span>
+                ) : null}
               </div>
-              <span className="font-bold text-slate-800">{job.company.rating || 4.6}</span>
-              <span>({job.company.reviewCount || 328} đánh giá)</span>
-              <span className="text-slate-300">•</span>
-              <a href="#company" className="font-medium text-primary hover:underline">
-                Xem công ty
-              </a>
-            </div>
+            ) : null}
           </div>
         </div>
 

@@ -68,27 +68,30 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
   };
 
   const handleAction = async (action: "view" | "download") => {
+    if (!resume.fileUrl) {
+      toast.error("CV chưa có đường dẫn lưu trữ.");
+      return;
+    }
     try {
       setIsFetchingUrl(true);
-      const res = await resumeApi.getAccessUrl(resume.id);
-      if (res.success && res.data && res.data.url) {
-        if (action === "download") {
-          // Trigger download
-          const link = document.createElement("a");
-          link.href = res.data.url;
-          link.download = resume.fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          toast.success("Đang tải CV về máy...");
-        } else {
-          // Open in new tab
-          window.open(res.data.url, "_blank", "noopener,noreferrer");
-        }
-      } else {
+      const res = await resumeApi.getAccessUrl(resume.fileUrl);
+      const url = res.data?.url;
+      if (!url) {
         toast.error("Không thể lấy đường dẫn file. Vui lòng thử lại.");
+        return;
       }
-    } catch (error) {
+      if (action === "download") {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = resume.fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Đang tải CV về máy...");
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    } catch {
       toast.error("Đã xảy ra lỗi khi lấy file.");
     } finally {
       setIsFetchingUrl(false);

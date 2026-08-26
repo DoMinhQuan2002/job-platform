@@ -24,7 +24,7 @@ export type CompaniesMeta = {
   totalPages: number;
 };
 
-export type CompaniesResponse = {
+export type CompaniesResponse1 = {
   items: Company[];
   meta: CompaniesMeta;
 };
@@ -33,5 +33,22 @@ export type CompanyListQuery = {
   page?: number;
   limit?: number;
   search?: string;
-  companySize?: CompanySize | "";
+  companySize?: CompanySize | "";}
+  
+export type PublicCompany = {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  companySize: string | null;
+  address: string;
+  description: string | null;
+};
+
+export type CompaniesResponse = {
+  success: boolean;
+  data: {
+    items: PublicCompany[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  };
 };

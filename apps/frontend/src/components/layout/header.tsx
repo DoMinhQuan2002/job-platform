@@ -11,6 +11,7 @@ import {
   type StoredUser,
 } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 type Session = StoredUser & { role: "CANDIDATE" | "RECRUITER" | "ADMIN" };
 const navItems = [
@@ -66,7 +67,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <nav
-        className="mx-auto flex h-[68px] px-5 md:px-0  w-full container items-center "
+        className="mx-auto flex h-[68px] w-full container items-center px-4 sm:px-6"
         aria-label="Điều hướng chính"
       >
         <Link
@@ -74,9 +75,13 @@ export function Header() {
           className="flex shrink-0 items-center gap-2"
           aria-label="JobPlatform - Trang chủ"
         >
-          <span className="grid size-7 place-items-center rounded bg-[#3367d6] text-sm font-semibold text-white">
-            JP
-          </span>
+          <Image
+            src="/logo.png"
+            alt="JobPlatform"
+            width={40}
+            height={40}
+            priority
+          />
           <span className="text-[18px] font-bold tracking-[-0.03em] text-slate-950">
             JobPlatform
           </span>
