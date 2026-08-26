@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticate } from "../../common/middlewares/authenticate.middleware";
 import { resumesController } from "./resumes.controller";
 import { acceptOptionalUpload } from "../../common/middlewares/upload.middleware";
 import { authenticate } from "@/common/middlewares/authenticate.middleware";

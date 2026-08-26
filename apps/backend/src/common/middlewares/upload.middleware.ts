@@ -11,6 +11,12 @@ const multerUpload = multer({
   },
 });
 
+// Cấu hình cho avatar
+export const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+});
+
 export const acceptOptionalUpload = (req: Request, res: Response, next: NextFunction) => {
   const contentType = req.headers["content-type"] || "";
   if (!contentType.includes("multipart/form-data")) {

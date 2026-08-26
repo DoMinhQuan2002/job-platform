@@ -4,23 +4,14 @@
 
 ## Scope
 
-- Ứng tuyển: `POST /jobs/{jobId}/apply`, `GET /applications`, withdraw
+- Ứng tuyển: `POST /jobs/{jobId}/apply`, `GET /applications`, `GET /applications/{id}`, withdraw
 - Việc đã lưu: `POST/DELETE /jobs/{jobId}/save`, `GET /saved-jobs`
-
-## Cấu trúc
-
-```
-modules/applications/
-  api.ts
-  types.ts
-  components/
-  hooks/
-  pages/
-```
+- Enrich job title/company: `GET /jobs/{id}` (G2)
 
 ## Route
 
 - `/candidate/applications`
-- `/candidate/saved-jobs`
+- `/candidate/applications/:id`
+- `/candidate/applications/saved-jobs`
 
 Contract: `docs/api-contract/group3/applications.md`
