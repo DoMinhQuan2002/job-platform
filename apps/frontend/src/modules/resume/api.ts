@@ -20,6 +20,9 @@ export const resumeApi = {
     http<ApiSuccess<Resume>>(`/resumes/${id}/default`, { method: "PUT" }),
 
   remove: (id: string) => http<ApiSuccess<null>>(`/resumes/${id}`, { method: "DELETE" }),
+
+  getAccessUrl: (id: string) =>
+    http<ApiSuccess<{ url: string }>>(`/resumes/${id}/access`),
 };
 
 export const skillsApi = {

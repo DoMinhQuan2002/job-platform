@@ -1,1 +1,5 @@
-export { ResumePage as default } from "@/modules/resume/pages/resume-page";
+import { ResumePage } from "@/modules/resume/pages/ResumePage";
+
+export default function Page() {
+  return <ResumePage />;
+}
