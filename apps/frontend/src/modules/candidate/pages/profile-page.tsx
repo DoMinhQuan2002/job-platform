@@ -29,7 +29,7 @@ export function CandidateProfilePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-[1280px] px-4 py-8">
+      <main className="mx-auto w-full container px-4 py-8 sm:px-6 2xl:px-0">
         <div className="space-y-4">
           <div className="skeleton h-8 w-64" />
           <div className="skeleton h-96 w-full" />
@@ -64,7 +64,7 @@ export function CandidateProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-6 lg:flex-row lg:px-[30px] lg:py-[30px]">
+    <main className="mx-auto flex w-full container flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:py-[30px] 2xl:px-0">
       <CandidateSidebar
         profile={profile}
         displayName={account?.fullName}
