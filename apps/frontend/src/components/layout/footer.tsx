@@ -56,7 +56,7 @@ function FooterLinks({ title, links }: { title: string; links: string[][] }) {
 export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-[#f7f8ff] text-slate-700">
-      <div className="mx-auto w-full container px-5 py-14 md:px-0">
+      <div className="mx-auto w-full container px-4 sm:px-6  2xl:px-0 py-14 ">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1.1fr_1fr_1.2fr] lg:gap-12">
           <section>
             <Link
@@ -187,15 +187,7 @@ export function Footer() {
           </nav>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <ShieldCheck className="size-5" />
-            <span className="mr-2 max-w-12 leading-4">Bảo mật thông tin</span>
-            {["VISA", "mastercard", "napas", "ATM"].map((brand) => (
-              <span
-                key={brand}
-                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-[8px] font-bold text-slate-600"
-              >
-                {brand}
-              </span>
-            ))}
+            <span className="mr-2 max-w-12 leading-4 text-">Bảo mật thông tin</span>
           </div>
         </div>
       </div>

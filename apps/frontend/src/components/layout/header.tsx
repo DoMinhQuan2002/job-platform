@@ -66,7 +66,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <nav
-        className="mx-auto flex h-[68px] px-5 md:px-0  w-full container items-center "
+        className="mx-auto flex h-[68px] w-full container items-center px-4 sm:px-6 2xl:px-0"
         aria-label="Điều hướng chính"
       >
         <Link
