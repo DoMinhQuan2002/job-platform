@@ -2,10 +2,16 @@ import { z } from "zod";
 
 export const getCompanyByIdParamsSchema = z.object({
   id: z
-    .string({ error: "id công ty là bắt buộc" })
+    .string({ error: "id hoặc slug công ty là bắt buộc" })
     .trim()
-    .regex(/^\d+$/, "id công ty phải là số nguyên dương")
-    .refine((id) => BigInt(id) > 0n, "id công ty phải là số nguyên dương"),
+    .min(1, "id hoặc slug công ty là bắt buộc")
+    .refine((value) => {
+      if (/^\d+$/.test(value)) {
+        return BigInt(value) > 0n;
+      }
+
+      return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+    }, "id hoặc slug công ty không hợp lệ"),
 });
 
 export type GetCompanyByIdParamsDto = z.infer<typeof getCompanyByIdParamsSchema>;

@@ -3,6 +3,7 @@ export const ROUTES = {
   login: "/auth/login",
   register: "/auth/register",
   jobs: "/jobs",
+  companies: "/companies",
   candidate: {
     root: "/candidate",
     profile: "/candidate/profile",
