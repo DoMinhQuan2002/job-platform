@@ -13,6 +13,7 @@ import { useCandidateProfile } from "../hooks/use-candidate-profile";
 export function CandidateProfilePage() {
   const {
     profile,
+    account,
     loading,
     error,
     unauthorized,
@@ -64,7 +65,11 @@ export function CandidateProfilePage() {
 
   return (
     <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-6 lg:flex-row lg:px-[30px] lg:py-[30px]">
-      <CandidateSidebar profile={profile} />
+      <CandidateSidebar
+        profile={profile}
+        displayName={account?.fullName}
+        avatarUrl={account?.avatar}
+      />
 
       <div className="min-w-0 flex-1 space-y-5">
         <header className="space-y-2">
