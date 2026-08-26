@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { MainNav } from "@/components/layout/main-nav";
+import { Toaster } from "sonner";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <MainNav />
         <div className="flex-1">{children}</div>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
