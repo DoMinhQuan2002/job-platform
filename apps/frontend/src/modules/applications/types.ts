@@ -6,6 +6,7 @@ export type ApplicationStatus =
   | "REJECTED"
   | "WITHDRAWN";
 
+/** Shape từ GET /applications và GET /applications/:id */
 export type Application = {
   id: string;
   jobId: string;
@@ -14,8 +15,19 @@ export type Application = {
   resumeSnapshotUrl: string | null;
   status: ApplicationStatus;
   appliedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
+/** Shape từ GET /saved-jobs (BE chưa join job) */
+export type SavedJobRecord = {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  createdAt: string;
+};
+
+/** Saved job đã enrich job info cho UI */
 export type SavedJob = {
   id: string;
   jobId: string;
@@ -27,13 +39,18 @@ export type SavedJob = {
   salary: string;
   category: string;
   savedDate: string;
-  createdAt?: string;
-  candidateId?: string;
+  createdAt: string;
 };
-
 
 export type ApplyJobInput = {
   resumeId?: string;
+};
+
+export type ApplicationListItem = Application & {
+  jobTitle: string;
+  companyName: string;
+  location: string;
+  salary: string;
 };
 
 export type CompanyDetail = {
@@ -84,20 +101,6 @@ export type JobDetail = {
   hasApplied?: boolean;
 };
 
-export type TemplateStatus = "USED" | "DRAFT";
-
-
-export type ApplicationTemplate = {
-  id: string;
-  title: string;
-  description: string;
-  content?: string;
-  status: TemplateStatus;
-  updatedAt: string;
-  lastUsedAt: string | null;
-  category?: string;
-};
-
 export type ApplicationTimelineStep = {
   title: string;
   description: string;
@@ -107,6 +110,7 @@ export type ApplicationTimelineStep = {
 
 export type DetailedApplication = {
   id: string;
+  jobId: string;
   code: string;
   appliedAt: string;
   statusText: string;
@@ -136,5 +140,16 @@ export type DetailedApplication = {
   timeline: ApplicationTimelineStep[];
 };
 
+/** Legacy UI types — chưa có API contract (không dùng trên pages chính) */
+export type TemplateStatus = "USED" | "DRAFT";
 
-
+export type ApplicationTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  content?: string;
+  status: TemplateStatus;
+  updatedAt: string;
+  lastUsedAt: string | null;
+  category?: string;
+};

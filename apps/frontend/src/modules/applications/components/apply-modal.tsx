@@ -14,46 +14,12 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { applicationsApi } from "../api";
+import { applicationsApi, type ResumeOption } from "../api";
 import { Button } from "@/components/ui/button";
 
-export interface ResumeOption {
-  id: string;
-  name: string;
-  updatedAt: string;
-  size: string;
-  isDefault?: boolean;
-  fileUrl?: string;
-  title?: string;
-  fileName?: string;
-  fileSize?: string;
-  storagePath?: string;
-}
+export type { ResumeOption };
 
-
-const MOCK_RESUMES: ResumeOption[] = [
-  {
-    id: "resume-1",
-    name: "Nguyễn Văn A - CV Frontend.pdf",
-    updatedAt: "20/04/2025",
-    size: "512 KB",
-    isDefault: true,
-  },
-  {
-    id: "resume-2",
-    name: "Nguyễn Văn A - CV Fullstack.pdf",
-    updatedAt: "15/02/2025",
-    size: "420 KB",
-    isDefault: false,
-  },
-  {
-    id: "resume-3",
-    name: "Nguyễn Văn A - CV Fresher.pdf",
-    updatedAt: "02/01/2025",
-    size: "380 KB",
-    isDefault: false,
-  },
-];
+const EMPTY_RESUMES: ResumeOption[] = [];
 
 interface ApplyModalProps {
   isOpen: boolean;
@@ -77,12 +43,12 @@ export function ApplyModal({
   companyLogoUrl,
   location = "Hà Nội",
   salary = "20 - 30 triệu VND",
-  resumes: initialResumes = MOCK_RESUMES,
+  resumes: initialResumes = EMPTY_RESUMES,
   onApplySuccess,
 }: ApplyModalProps) {
   const [resumeList, setResumeList] = useState<ResumeOption[]>(initialResumes);
   const [selectedResumeId, setSelectedResumeId] = useState<string>(
-    initialResumes.find((r) => r.isDefault)?.id || initialResumes[0]?.id || ""
+    initialResumes.find((r) => r.isDefault)?.id || initialResumes[0]?.id || "",
   );
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);

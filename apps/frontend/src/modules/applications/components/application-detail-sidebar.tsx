@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import type { DetailedApplication } from "../types";
 import { Button } from "@/components/ui/button";
+import { canWithdraw } from "../lib/status";
+import { ROUTES } from "@/constants/routes";
 
 interface ApplicationDetailSidebarProps {
   application: DetailedApplication;
@@ -30,7 +32,10 @@ export function ApplicationDetailSidebar({
   const { jobSummary, company } = application;
 
   const handleDownloadCV = () => {
-    alert(`Đang tải xuống tệp: ${application.resumeName}`);
+    if (application.resumeUrl) {
+      window.open(application.resumeUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
   };
 
   return (
@@ -98,7 +103,7 @@ export function ApplicationDetailSidebar({
 
         {/* Button xem tin */}
         <div className="pt-2">
-          <Link href={`/jobs/${application.id}`}>
+          <Link href={`${ROUTES.jobs}/${application.jobId}`}>
             <Button
               variant="outline"
               className="w-full rounded-xl border-primary/40 text-xs font-semibold text-primary hover:bg-blue-50"
@@ -134,7 +139,7 @@ export function ApplicationDetailSidebar({
             <span>Tải CV đã nộp</span>
           </Button>
 
-          {application.status !== "WITHDRAWN" && (
+          {canWithdraw(application.status) ? (
             <Button
               type="button"
               variant="outline"
@@ -144,7 +149,7 @@ export function ApplicationDetailSidebar({
               <Trash2 className="h-4 w-4" />
               <span>Rút đơn ứng tuyển</span>
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 

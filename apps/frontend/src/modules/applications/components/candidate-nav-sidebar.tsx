@@ -18,8 +18,8 @@ import { ROUTES } from "@/constants/routes";
 
 const NAV_ITEMS = [
   { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: User },
-  { href: "/candidate/account", label: "Thông tin tài khoản", icon: Shield },
-  { href: "/candidate/experience", label: "Hồ sơ nghề nghiệp", icon: Briefcase },
+  { href: ROUTES.candidate.profile, label: "Thông tin tài khoản", icon: Shield },
+  { href: ROUTES.candidate.profile, label: "Hồ sơ nghề nghiệp", icon: Briefcase },
   { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
   { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
   { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
