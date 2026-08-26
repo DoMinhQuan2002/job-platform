@@ -1,28 +1,45 @@
 "use client";
 
-import React from "react";
+import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
+import { ConnectedCandidateSidebar } from "@/modules/candidate/components/connected-candidate-sidebar";
 import { ResumeManager } from "../components/ResumeManager";
 import { CandidateSkillsSection } from "../components/CandidateSkillsSection";
 
-export const ResumePage: React.FC = () => {
+export function ResumePage() {
   return (
-    <div className="container mx-auto py-8 px-4 sm:px-6">
-      {/* 
-        - ResumeManager: Dành cho màn Quản lý CV
-        - CandidateSkillsSection: Dành cho màn Tổng quan hồ sơ
-      */}
-      
-      <div className="mb-12">
-        <ResumeManager />
-      </div>
+    <main className="min-h-screen bg-[#f8fafc]">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-6 lg:flex-row lg:px-[30px] lg:py-[30px]">
+        <ConnectedCandidateSidebar />
 
-      <div className="border-t border-gray-200 pt-12">
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-foreground mb-2">Thử nghiệm Component Kỹ năng (Dành cho Bình export)</h2>
-          <p className="text-muted-foreground text-sm">Component CandidateSkillsSection bên dưới có thể được đem nhúng vào trang Tổng quan hồ sơ.</p>
+        <div className="min-w-0 flex-1 space-y-8">
+          <div>
+            <nav className="mb-2 flex items-center gap-1.5 text-[13px] text-muted">
+              <Link
+                href={ROUTES.home}
+                className="inline-flex items-center gap-1 hover:text-primary"
+              >
+                <Home className="size-3.5" />
+                Trang chủ
+              </Link>
+              <ChevronRight className="size-3" />
+              <span className="font-semibold text-foreground">Quản lý CV</span>
+            </nav>
+            <ResumeManager />
+          </div>
+
+          <div className="border-t border-border/50 pt-8">
+            <div className="mb-6">
+              <h2 className="mb-2 text-xl font-bold text-foreground">Kỹ năng & chứng chỉ</h2>
+              <p className="text-sm text-muted-foreground">
+                Quản lý kỹ năng, ngoại ngữ và chứng chỉ trên hồ sơ của bạn.
+              </p>
+            </div>
+            <CandidateSkillsSection />
+          </div>
         </div>
-        <CandidateSkillsSection />
       </div>
-    </div>
+    </main>
   );
-};
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, AlertCircle, FileText, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
 import { ROUTES } from "@/constants/routes";
 import { applicationsApi } from "../api";
@@ -53,6 +54,22 @@ function toDetailed(app: Application, jobRaw?: unknown): DetailedApplication {
   };
 }
 
+async function openResumeSnapshot(storagePath: string, mode: "view" | "download", fileName: string) {
+  const res = await applicationsApi.getResumeSnapshotUrl(storagePath);
+  const url = res.data?.url;
+  if (!url) throw new Error("Không lấy được URL CV");
+  if (mode === "download") {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function ApplicationDetailPage() {
   const params = useParams();
   const appId = String(params?.id ?? "");
@@ -61,6 +78,7 @@ export function ApplicationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [cvBusy, setCvBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!appId) return;
@@ -105,6 +123,21 @@ export function ApplicationDetailPage() {
           }
         : prev,
     );
+  };
+
+  const handleResumeAction = async (mode: "view" | "download") => {
+    if (!application?.resumeUrl) {
+      toast.error("Đơn này không có snapshot CV.");
+      return;
+    }
+    try {
+      setCvBusy(true);
+      await openResumeSnapshot(application.resumeUrl, mode, application.resumeName);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không mở được CV.");
+    } finally {
+      setCvBusy(false);
+    }
   };
 
   return (
@@ -206,10 +239,15 @@ export function ApplicationDetailPage() {
                     <div className="flex items-center justify-between gap-4 py-3">
                       <span className="text-slate-500">CV đính kèm</span>
                       {application.resumeUrl ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        <button
+                          type="button"
+                          disabled={cvBusy}
+                          onClick={() => void handleResumeAction("view")}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                        >
                           <FileText className="h-4 w-4" />
                           {application.resumeName}
-                        </span>
+                        </button>
                       ) : (
                         <span className="text-slate-500">—</span>
                       )}
@@ -226,8 +264,10 @@ export function ApplicationDetailPage() {
             {application ? (
               <ApplicationDetailSidebar
                 application={application}
+                cvBusy={cvBusy}
                 onOpenWithdraw={() => setIsWithdrawOpen(true)}
-                onViewCV={() => undefined}
+                onViewCV={() => void handleResumeAction("view")}
+                onDownloadCV={() => void handleResumeAction("download")}
               />
             ) : null}
           </div>

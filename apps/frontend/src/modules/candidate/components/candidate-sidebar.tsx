@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Award,
   Bell,
   Bookmark,
   Briefcase,
@@ -25,12 +24,13 @@ import { ProgressBar } from "./progress-bar";
 type CandidateSidebarProps = {
   profile: CandidateProfile | null;
   displayName?: string;
+  avatarUrl?: string | null;
 };
 
 const navItems = [
   { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
   { href: ROUTES.candidate.profile, label: "Thông tin tài khoản", icon: User, disabled: true },
-  { href: ROUTES.candidate.profile, label: "Hồ sơ nghề nghiệp", icon: Briefcase, active: true },
+  { href: ROUTES.candidate.profile, label: "Hồ sơ nghề nghiệp", icon: Briefcase, disabled: true },
   { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
   { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
   { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
@@ -38,19 +38,45 @@ const navItems = [
   { href: "#", label: "Cài đặt tài khoản", icon: Settings, disabled: true, divider: true },
 ];
 
-export function CandidateSidebar({ profile, displayName = "Ứng viên" }: CandidateSidebarProps) {
+function isNavActive(pathname: string, href: string, label: string): boolean {
+  if (href === ROUTES.candidate.profile) {
+    return label === "Tổng quan hồ sơ" && pathname.startsWith(ROUTES.candidate.profile);
+  }
+  if (href === ROUTES.applications.root) {
+    return (
+      pathname === ROUTES.applications.root ||
+      /^\/candidate\/applications\/[^/]+$/.test(pathname)
+    );
+  }
+  if (href === ROUTES.applications.savedJobs) {
+    return pathname.startsWith(ROUTES.applications.savedJobs);
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function CandidateSidebar({
+  profile,
+  displayName = "Ứng viên",
+  avatarUrl,
+}: CandidateSidebarProps) {
   const pathname = usePathname();
   const completion = profile ? calculateProfileCompletion(profile) : 0;
+  const name = displayName?.trim() || "Ứng viên";
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
       <ProfileCard className="flex flex-col items-center px-6 pb-6 pt-6 text-center">
         <div className="relative mb-4">
           <div className="flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#f2f3fc] shadow-sm">
-            <User className="size-10 text-muted-foreground" />
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt={name} className="size-full object-cover" />
+            ) : (
+              <User className="size-10 text-muted-foreground" />
+            )}
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-foreground">{displayName}</h3>
+        <h3 className="text-lg font-semibold text-foreground">{name}</h3>
         <p className="mt-1 text-xs font-semibold text-[#0045b2]">Ứng viên</p>
         <div className="mt-4 w-full space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-muted">
@@ -65,9 +91,7 @@ export function CandidateSidebar({ profile, displayName = "Ứng viên" }: Candi
         <nav className="py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              item.active ||
-              (!item.disabled && pathname === item.href && item.label === "Tổng quan hồ sơ");
+            const isActive = !item.disabled && isNavActive(pathname, item.href, item.label);
 
             const content = (
               <span

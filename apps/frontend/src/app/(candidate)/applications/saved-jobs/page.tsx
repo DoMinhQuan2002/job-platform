@@ -1,1 +1,7 @@
-export { SavedJobsPage as default } from "@/modules/applications/pages/saved-jobs-page";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+
+/** Legacy `/applications/saved-jobs` → canonical */
+export default function Page() {
+  redirect(ROUTES.applications.savedJobs);
+}

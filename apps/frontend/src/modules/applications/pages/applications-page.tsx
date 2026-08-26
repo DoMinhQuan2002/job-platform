@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -73,7 +73,9 @@ export function ApplicationsPage() {
     setError(null);
     setUnauthorized(false);
     try {
-      const res = await applicationsApi.list();
+      const res = await applicationsApi.list(
+        activeTab === "ALL" ? undefined : { status: activeTab },
+      );
       const enriched = await enrichApplications(res.data ?? []);
       setItems(enriched);
     } catch (err) {
@@ -87,25 +89,22 @@ export function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const filteredItems = useMemo(() => {
-    if (activeTab === "ALL") return items;
-    return items.filter((item) => item.status === activeTab);
-  }, [items, activeTab]);
+  const filteredItems = items;
 
-  const counts = useMemo(() => {
-    const base: Record<string, number> = { ALL: items.length };
-    for (const filter of STATUS_FILTERS) {
-      if (filter.value === "ALL") continue;
-      base[filter.value] = items.filter((i) => i.status === filter.value).length;
+  const tabCountLabel = (value: ApplicationStatus | "ALL") => {
+    if (activeTab === "ALL") {
+      if (value === "ALL") return items.length;
+      return items.filter((i) => i.status === value).length;
     }
-    return base;
-  }, [items]);
+    if (value === activeTab) return items.length;
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
@@ -136,7 +135,9 @@ export function ApplicationsPage() {
 
             <div className="space-y-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
               <div className="flex flex-wrap items-center gap-4 border-b border-slate-100 pb-3 text-xs sm:gap-6 sm:text-sm">
-                {STATUS_FILTERS.map((tab) => (
+                {STATUS_FILTERS.map((tab) => {
+                  const count = tabCountLabel(tab.value);
+                  return (
                   <button
                     key={tab.value}
                     type="button"
@@ -147,9 +148,11 @@ export function ApplicationsPage() {
                         : "border-transparent text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    {tab.label} ({counts[tab.value] ?? 0})
+                    {tab.label}
+                    {count != null ? ` (${count})` : ""}
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {loading ? (

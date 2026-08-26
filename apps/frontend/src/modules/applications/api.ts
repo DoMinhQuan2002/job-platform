@@ -2,17 +2,10 @@ import { http } from "@/services/http";
 import type { ApiSuccess } from "@/types/api";
 import type { Application, ApplyJobInput, SavedJobRecord } from "./types";
 
-export type ResumeOption = {
-  id: string;
-  name?: string;
-  title?: string;
-  fileName?: string;
-  fileSize?: string;
-  size?: string;
-  updatedAt?: string;
-  isDefault?: boolean;
-  fileUrl?: string;
-  storagePath?: string;
+type MediaAccessData = {
+  url: string;
+  storagePath: string;
+  assetType: string;
 };
 
 export const applicationsApi = {
@@ -41,9 +34,17 @@ export const applicationsApi = {
 
   listSavedJobs: () => http<ApiSuccess<SavedJobRecord[]>>("/saved-jobs"),
 
-  /** CV của candidate — dùng khi apply (module resume) */
-  getMyResumes: () => http<ApiSuccess<ResumeOption[]>>("/resumes"),
-
   /** Enrich title/company — G2 */
   getJobDetail: (jobId: string) => http<ApiSuccess<unknown>>(`/jobs/${jobId}`),
+
+  /**
+   * Contract: resumeSnapshotUrl = storagePath → signed URL qua media/access
+   */
+  getResumeSnapshotUrl: (storagePath: string) => {
+    const qs = new URLSearchParams({
+      storagePath,
+      assetType: "resume",
+    });
+    return http<{ data: MediaAccessData }>(`/media/access?${qs.toString()}`);
+  },
 };

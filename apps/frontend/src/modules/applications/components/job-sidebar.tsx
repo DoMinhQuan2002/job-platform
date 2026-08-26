@@ -58,43 +58,53 @@ export function JobSidebar({ company, relatedJobs }: JobSidebarProps) {
               <CheckCircle className="h-4 w-4 fill-emerald-500 text-white shrink-0" />
             </div>
             <p className="text-xs text-slate-500">
-              {company.industry || "Công nghệ thông tin"} • {company.size || "1.000+ nhân viên"}
+              {company.industry || "Doanh nghiệp"}
+              {company.size ? ` • ${company.size}` : ""}
             </p>
-            <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-bold text-slate-800">{company.rating || 4.6}</span>
-              <span>({company.reviewCount || 328} đánh giá)</span>
-            </div>
+            {company.rating != null ? (
+              <div className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <span className="font-bold text-slate-800">{company.rating}</span>
+                {company.reviewCount != null ? (
+                  <span>({company.reviewCount} đánh giá)</span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
-        {/* About snippet */}
         <p className="mt-4 text-xs leading-relaxed text-slate-600">
-          {company.about ||
-            "FPT Software là công ty công nghệ hàng đầu Việt Nam, thành viên của Tập đoàn FPT. Chúng tôi cung cấp các dịch vụ và giải pháp phần mềm đẳng cấp thế giới cho hàng trăm khách hàng toàn cầu."}
+          {company.about || "Chưa có mô tả công ty."}
         </p>
 
-        {/* Company contact info */}
         <div className="mt-4 space-y-2.5 border-t border-slate-100 pt-4 text-xs text-slate-600">
-          <div className="flex items-center gap-2.5">
-            <Globe className="h-4 w-4 shrink-0 text-slate-400" />
-            <a
-              href={`https://${company.website || "www.fpt-software.com"}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-slate-700 hover:text-primary hover:underline truncate"
-            >
-              {company.website || "www.fpt-software.com"}
-            </a>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Phone className="h-4 w-4 shrink-0 text-slate-400" />
-            <span className="text-slate-700">{company.phone || "024 7300 9999"}</span>
-          </div>
+          {company.website ? (
+            <div className="flex items-center gap-2.5">
+              <Globe className="h-4 w-4 shrink-0 text-slate-400" />
+              <a
+                href={
+                  company.website.startsWith("http")
+                    ? company.website
+                    : `https://${company.website}`
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="truncate text-slate-700 hover:text-primary hover:underline"
+              >
+                {company.website}
+              </a>
+            </div>
+          ) : null}
+          {company.phone ? (
+            <div className="flex items-center gap-2.5">
+              <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+              <span className="text-slate-700">{company.phone}</span>
+            </div>
+          ) : null}
           <div className="flex items-start gap-2.5">
-            <MapPin className="h-4 w-4 shrink-0 text-slate-400 mt-0.5" />
-            <span className="text-slate-700 leading-snug">
-              {company.address || "Khu Công nghệ cao Hòa Lạc, Thạch Thất, Hà Nội"}
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <span className="leading-snug text-slate-700">
+              {company.address || "Chưa cập nhật địa chỉ"}
             </span>
           </div>
         </div>

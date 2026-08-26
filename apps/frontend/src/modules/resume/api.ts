@@ -1,6 +1,14 @@
 import { http } from "@/services/http";
 import type { ApiSuccess } from "@/types/api";
-import type { CandidateSkill, Resume, Skill, UpsertMySkillInput } from "./types";
+import { normalizeCandidateSkill } from "./lib/skills";
+import type {
+  AggregateSkillItem,
+  CandidateSkill,
+  Resume,
+  Skill,
+  UpdateMySkillLevelInput,
+  UpsertMySkillInput,
+} from "./types";
 
 export const resumeApi = {
   list: () => http<ApiSuccess<Resume[]>>("/resumes"),
@@ -21,21 +29,67 @@ export const resumeApi = {
 
   remove: (id: string) => http<ApiSuccess<null>>(`/resumes/${id}`, { method: "DELETE" }),
 
-  getAccessUrl: (id: string) =>
-    http<ApiSuccess<{ url: string }>>(`/resumes/${id}/access`),
+  /**
+   * Contract: GET /media/access?storagePath=&assetType=resume
+   * `fileUrl` trên resume = storagePath (không phải URL dài hạn).
+   */
+  getAccessUrl: (storagePath: string) => {
+    const qs = new URLSearchParams({
+      storagePath,
+      assetType: "resume",
+    });
+    return http<{ data: { url: string; storagePath: string; assetType: string } }>(
+      `/media/access?${qs.toString()}`,
+    );
+  },
 };
+
+async function mapMineList(
+  promise: Promise<ApiSuccess<AggregateSkillItem[]>>,
+): Promise<ApiSuccess<CandidateSkill[]>> {
+  const res = await promise;
+  if (!res.success || res.data == null) {
+    return { ...res, data: [] };
+  }
+  return { ...res, data: res.data.map(normalizeCandidateSkill) };
+}
+
+async function mapMineOne(
+  promise: Promise<ApiSuccess<AggregateSkillItem>>,
+): Promise<ApiSuccess<CandidateSkill>> {
+  const res = await promise;
+  if (!res.success || res.data == null) {
+    return { ...res, data: undefined as unknown as CandidateSkill };
+  }
+  return { ...res, data: normalizeCandidateSkill(res.data) };
+}
 
 export const skillsApi = {
   listCatalog: (query?: { category?: string; q?: string }) => {
-    const qs = query ? `?${new URLSearchParams(query as Record<string, string>).toString()}` : "";
+    const qs = query
+      ? `?${new URLSearchParams(query as Record<string, string>).toString()}`
+      : "";
     return http<ApiSuccess<Skill[]>>(`/skills${qs}`);
   },
 
-  listMine: () => http<ApiSuccess<CandidateSkill[]>>("/skills/me"),
+  listMine: () => mapMineList(http<ApiSuccess<AggregateSkillItem[]>>("/skills/me")),
 
-  upsertMine: (body: UpsertMySkillInput) =>
-    http<ApiSuccess<CandidateSkill>>("/skills/me", { method: "POST", body }),
+  attachMine: (body: UpsertMySkillInput) =>
+    mapMineOne(
+      http<ApiSuccess<AggregateSkillItem>>("/skills/me", { method: "POST", body }),
+    ),
 
-  removeMine: (skillId: string) =>
-    http<ApiSuccess<null>>(`/skills/me/${skillId}`, { method: "DELETE" }),
+  /** @deprecated dùng attachMine */
+  upsertMine: (body: UpsertMySkillInput) => skillsApi.attachMine(body),
+
+  updateLevel: (candidateSkillId: string, body: UpdateMySkillLevelInput) =>
+    mapMineOne(
+      http<ApiSuccess<AggregateSkillItem>>(`/skills/me/${candidateSkillId}`, {
+        method: "PUT",
+        body,
+      }),
+    ),
+
+  removeMine: (candidateSkillId: string) =>
+    http<ApiSuccess<null>>(`/skills/me/${candidateSkillId}`, { method: "DELETE" }),
 };
