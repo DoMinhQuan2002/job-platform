@@ -53,7 +53,7 @@ export function HomeDiscovery() {
   return (
     <>
       <section className="py-16">
-        <div className="mx-auto container px-4 sm:px-6 2xl:px-0">
+        <div className="mx-auto container px-4 sm:px-6">
           <SectionHeading title="Công ty nổi bật" href="/companies" />
           {loading ? (
             <CardSkeleton count={5} />
@@ -88,7 +88,7 @@ export function HomeDiscovery() {
       </section>
 
       <section className="bg-slate-50 pb-16 pt-10">
-        <div className="mx-auto container px-4 sm:px-6 2xl:px-0">
+        <div className="mx-auto container px-4 sm:px-6">
           <SectionHeading title="Việc làm mới nhất" href={ROUTES.jobs} />
           {loading ? (
             <CardSkeleton count={4} grid />

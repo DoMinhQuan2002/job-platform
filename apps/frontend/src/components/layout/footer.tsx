@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import Image from "next/image";
 
 const candidateLinks = [
   ["Tìm việc làm", ROUTES.jobs],
@@ -56,7 +57,7 @@ function FooterLinks({ title, links }: { title: string; links: string[][] }) {
 export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-[#f7f8ff] text-slate-700">
-      <div className="mx-auto w-full container px-4 sm:px-6  2xl:px-0 py-14 ">
+      <div className="mx-auto w-full container px-4 py-14 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1.1fr_1fr_1.2fr] lg:gap-12">
           <section>
             <Link
@@ -64,9 +65,13 @@ export function Footer() {
               className="flex items-center gap-2"
               aria-label="JobPlatform - Trang chủ"
             >
-              <span className="text-2xl font-extrabold tracking-[-0.08em] text-[#3367d6]">
-                JP
-              </span>
+              <Image
+                src="/logo.png"
+                alt="JobPlatform"
+                width={40}
+                height={40}
+                priority
+              />
               <span className="text-base font-bold text-slate-900">
                 JobPlatform
               </span>

@@ -66,7 +66,7 @@ export default function JobsPage() {
   const changePage = (page: number) => { const next = { ...appliedFilters, page }; setFilters((current) => ({ ...current, page })); setAppliedFilters(next); syncUrl(next); window.scrollTo({ top: 300, behavior: "smooth" }); };
   const changeSort = (sort: JobSort) => { const next = { ...appliedFilters, sort, page: 1 }; setFilters((current) => ({ ...current, sort, page: 1 })); setAppliedFilters(next); syncUrl(next); };
 
-  return <main className="bg-background pb-12"><div className="mx-auto container px-4 sm:px-6 2xl:px-0 py-6">
+  return <main className="bg-background pb-12"><div className="mx-auto container px-4 py-6 sm:px-6">
     <nav className="mb-5 text-xs text-muted" aria-label="Breadcrumb"><span>Trang chủ</span><span className="mx-2">›</span><strong className="font-medium text-text">Việc làm</strong></nav>
     <JobsSearchBanner keyword={filters.keyword} location={filters.location} categoryId={filters.categoryId} categories={categories} categoriesLoading={categoriesLoading} onChange={changeFilter} onSubmit={applyFilters} />
     <Button variant="outline" className="mb-4 w-full lg:hidden" onClick={() => setFilterOpen((open) => !open)}><Filter />{filterOpen ? "Ẩn bộ lọc" : "Hiện bộ lọc"}</Button>

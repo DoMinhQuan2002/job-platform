@@ -43,13 +43,13 @@ export function HomeHeroSearch() {
 
   return <>
     <section className="relative overflow-hidden bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] pb-32 pt-14 lg:pt-16">
-      <div className="relative z-10 mx-auto grid w-full container items-center gap-8 px-4 sm:px-6 2xl:px-0 md:grid-cols-2">
+      <div className="relative z-10 mx-auto grid w-full container items-center gap-8 px-4 sm:px-6 md:grid-cols-2">
         <div><h1 className="text-4xl font-bold leading-10 tracking-[-0.01em] text-text sm:text-5xl sm:leading-[60px]">Tìm công việc phù hợp,<br />bứt phá <span className="text-primary">sự nghiệp</span></h1><p className="mt-6 max-w-md text-[15px] leading-6 text-muted">Hàng ngàn cơ hội việc làm từ các công ty uy tín đang chờ đón bạn.</p></div>
         <div className="relative hidden md:block"><Image className="ml-auto h-auto w-full max-w-lg rounded-xl object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpW4UsSSGgKllkxmrLQQwj1trOhc-PJum2oOdTQvR8a9D5-K2zjUC4Rkt87YkM_g2ytY8s64xDZYw23rUki1qPFtugJfhOD0bHRjXY4ngLfwoioOOMC8I1eLKC62aprt9iPs3g5dghvNzC8uWppMsLL11Tyk9MnUX_CZQDcA1dXovHVpZDD8sfo6rY980p5Fo5-5yNxOTh1QpX7p8H1gQITGY-2tc7wP0g2JD9S3CtSYU4TP43pNcblA" alt="Ứng viên chuyên nghiệp đang cầm máy tính bảng" width={512} height={340} priority /></div>
       </div>
     </section>
 
-    <section className="relative z-20 mx-auto -mt-20 w-full container px-4 sm:px-6 2xl:px-0">
+    <section className="relative z-20 mx-auto -mt-20 w-full container px-4 sm:px-6">
       <form className="w-full rounded-xl bg-white p-5 shadow-[0_4px_15px_rgb(15_23_42/0.04)] sm:p-6" onSubmit={(event) => { event.preventDefault(); submit(); }}>
         <div className="grid gap-4 md:grid-cols-3">
           <label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 z-10 size-5 -translate-y-1/2 text-slate-500" /><Input value={search.keyword} onChange={(event) => update("keyword", event.target.value)} className="h-14 pl-10" aria-label="Từ khóa tìm kiếm" placeholder="VD: Kế toán, Marketing, IT, ..." /></label>
