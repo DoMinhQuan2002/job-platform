@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { authenticate } from "../../common/middlewares/authenticate.middleware";
-import { resumesController } from "./resumes.controller";
-import { acceptOptionalUpload } from "../../common/middlewares/upload.middleware";
 import { authenticate } from "@/common/middlewares/authenticate.middleware";
+import { acceptOptionalUpload } from "../../common/middlewares/upload.middleware";
+import { resumesController } from "./resumes.controller";
 
 /** Owner: Nguyễn Văn Lợi — Base: /api/v1/resumes */
 
