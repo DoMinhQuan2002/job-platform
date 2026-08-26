@@ -1,6 +1,7 @@
 import { Brackets, In } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
 import {
+  COMPANY_STATUS,
   JOB_CATEGORY_STATUS,
   JOB_MODE,
   JOB_STATUS,
@@ -188,8 +189,8 @@ const validateCompanyAccess = async (companyId: string, currentUser: CurrentUser
   if (!company) {
     throw new AppError(404, "COMPANY_NOT_FOUND", "Công ty không tồn tại.");
   }
-  if (company.status !== "ACTIVE") {
-    throw new AppError(403, "COMPANY_BLOCKED", "Công ty hiện đang bị khóa.");
+  if (company.status !== COMPANY_STATUS.ACTIVE) {
+    throw new AppError(403, "COMPANY_NOT_ACTIVE", "Công ty chưa được duyệt hoặc đang bị khóa.");
   }
   if (currentUser.role !== "ADMIN" && company.userId !== currentUser.id) {
     throw new AppError(403, "COMPANY_ACCESS_DENIED", "Bạn không có quyền quản lý công ty này.");
@@ -595,8 +596,8 @@ export const jobService = {
       throw new AppError(403, "JOB_ACCESS_DENIED", "Bạn không có quyền cập nhật tin này.");
     }
 
-    if (company.status !== "ACTIVE") {
-      throw new AppError(403, "COMPANY_BLOCKED", "Công ty hiện đang bị khóa.");
+    if (company.status !== COMPANY_STATUS.ACTIVE) {
+      throw new AppError(403, "COMPANY_BLOCKED", "Công ty hiện đang bị khóa hoặc chưa được duyệt.");
     }
 
     if (job.status === input.status) {

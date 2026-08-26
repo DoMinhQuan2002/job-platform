@@ -1,13 +1,23 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import request from "supertest";
+import express from "express";
 import { AppDataSource } from "../../data-source";
 import { Company } from "../../database/entities/company.entity";
 import { companiesService } from "./companies.service";
 import { companiesController } from "./companies.controller";
+import companiesRouter from "./companies.route";
+import { errorMiddleware } from "../../common/middlewares/error.middleware";
+import { requireRecruiter } from "../../common/middlewares/require-recruiter.middleware";
 import { AppError } from "../../common/errors/app-error";
 import { signAccessToken } from "../../common/security/jwt";
 import type { Request, Response, NextFunction } from "express";
 
 describe("Companies Module", () => {
+  const testApp = express();
+  testApp.use(express.json());
+  testApp.use("/api/v1/companies", companiesRouter);
+  testApp.use(errorMiddleware);
+
   beforeEach(() => {
     process.env.JWT_ACCESS_SECRET = "test-jwt-secret-key-1234567890";
     vi.clearAllMocks();
@@ -34,6 +44,7 @@ describe("Companies Module", () => {
         companySize: "500+",
         address: "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
         description: "Tập đoàn công nghệ hàng đầu Việt Nam",
+        rejectReason: null,
         status: "ACTIVE",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -81,7 +92,6 @@ describe("Companies Module", () => {
 
   describe("requireRecruiter Middleware", () => {
     it("should call next with AppError 401 when req.user is missing", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: undefined } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
@@ -96,7 +106,6 @@ describe("Companies Module", () => {
     });
 
     it("should call next with AppError 403 when req.user.role is not RECRUITER", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: { id: "10", role: "CANDIDATE" } } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
@@ -111,7 +120,6 @@ describe("Companies Module", () => {
     });
 
     it("should call next with no error when req.user.role is RECRUITER", async () => {
-      const { requireRecruiter } = await import("../../common/middlewares/require-recruiter.middleware");
       const req = { user: { id: "10", role: "RECRUITER" } } as unknown as Request;
       const res = {} as Response;
       const next = vi.fn() as NextFunction;
@@ -147,6 +155,7 @@ describe("Companies Module", () => {
         userId: "10",
         name: "Công ty Cổ phần Công nghệ FPT",
         slug: "cong-ty-co-phan-cong-nghe-fpt",
+        rejectReason: null,
         status: "ACTIVE",
       } as unknown as Company;
 
@@ -192,16 +201,6 @@ describe("Companies Module", () => {
 
   describe("GET /api/v1/companies/me (HTTP Endpoint)", () => {
     it("should return 401 UNAUTHORIZED when no user session/token is provided", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp).get("/api/v1/companies/me");
 
       expect(res.status).toBe(401);
@@ -213,16 +212,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 403 FORBIDDEN when user has CANDIDATE role", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp)
         .get("/api/v1/companies/me")
         .set("Authorization", `Bearer ${candidateToken()}`);
@@ -235,11 +224,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 200 with full company data when recruiter is authenticated", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       const mockCompany = {
         id: "1",
         userId: "10",
@@ -253,17 +237,13 @@ describe("Companies Module", () => {
         companySize: "500+",
         address: "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
         description: "Tập đoàn công nghệ hàng đầu Việt Nam",
+        rejectReason: null,
         status: "ACTIVE",
         createdAt: "2026-08-20T08:30:00.000Z",
         updatedAt: "2026-08-21T09:15:00.000Z",
       };
 
       vi.spyOn(companiesService, "getMyCompany").mockResolvedValue(mockCompany as any);
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
 
       const res = await request(testApp)
         .get("/api/v1/companies/me")
@@ -278,19 +258,9 @@ describe("Companies Module", () => {
     });
 
     it("should return 404 NOT_FOUND when company does not exist for the recruiter", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       vi.spyOn(companiesService, "getMyCompany").mockRejectedValue(
         new AppError(404, "NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty")
       );
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
 
       const res = await request(testApp)
         .get("/api/v1/companies/me")
@@ -305,19 +275,9 @@ describe("Companies Module", () => {
     });
 
     it("should return 500 INTERNAL_SERVER_ERROR on unexpected server error", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       vi.spyOn(companiesService, "getMyCompany").mockRejectedValue(
         new Error("Unexpected crash")
       );
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
 
       const res = await request(testApp)
         .get("/api/v1/companies/me")
@@ -448,7 +408,8 @@ describe("Companies Module", () => {
       expect(result.id).toBe("100");
       expect(result.name).toBe("Công ty Cổ phần Công nghệ FPT");
       expect(result.slug).toBe("cong-ty-co-phan-cong-nghe-fpt");
-      expect(result.status).toBe("ACTIVE");
+      expect(result.status).toBe("PENDING");
+      expect(result.rejectReason).toBeNull();
       expect(saveMock).toHaveBeenCalled();
     });
   });
@@ -495,7 +456,8 @@ describe("Companies Module", () => {
         userId: "10",
         name: "Công ty FPT",
         slug: "cong-ty-fpt",
-        status: "ACTIVE",
+        rejectReason: null,
+        status: "PENDING",
       } as unknown as Company;
 
       vi.spyOn(companiesService, "createCompany").mockResolvedValue(mockCreated);
@@ -530,16 +492,6 @@ describe("Companies Module", () => {
 
   describe("POST /api/v1/companies (HTTP Endpoint)", () => {
     it("should return 401 UNAUTHORIZED when no token is provided", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp).post("/api/v1/companies").send({
         name: "Công ty FPT",
         email: "hr@fpt.com",
@@ -557,16 +509,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 400 BAD_REQUEST on invalid phone/email or missing taxCode", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp)
         .post("/api/v1/companies")
         .set("Authorization", `Bearer ${recruiterToken()}`)
@@ -589,11 +531,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 201 CREATED when request is valid", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       const mockCompany = {
         id: "1",
         userId: "10",
@@ -603,15 +540,11 @@ describe("Companies Module", () => {
         phone: "02473007300",
         taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
-        status: "ACTIVE",
+        rejectReason: null,
+        status: "PENDING",
       };
 
       vi.spyOn(companiesService, "createCompany").mockResolvedValue(mockCompany as any);
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
 
       const res = await request(testApp)
         .post("/api/v1/companies")
@@ -704,6 +637,8 @@ describe("Companies Module", () => {
         phone: "02473007300",
         taxCode: "0101248141",
         address: "Hà Nội",
+        status: "ACTIVE",
+        rejectReason: null,
       };
 
       const saveMock = vi.fn().mockImplementation((c) => Promise.resolve(c));
@@ -739,6 +674,8 @@ describe("Companies Module", () => {
         phone: "02473007300",
         taxCode: "0101248141",
         address: "Hà Nội",
+        status: "ACTIVE",
+        rejectReason: null,
       };
 
       const saveMock = vi.fn().mockImplementation((c) => Promise.resolve(c));
@@ -764,6 +701,77 @@ describe("Companies Module", () => {
 
       expect(result.name).toBe("Công ty FPT Mới");
       expect(result.slug).toBe("cong-ty-fpt-moi");
+    });
+
+    it("should transition from REJECTED to PENDING and clear rejectReason when updated", async () => {
+      const existingCompany = {
+        id: "1",
+        userId: "10",
+        name: "Công ty FPT",
+        slug: "cong-ty-fpt",
+        email: "hr@fpt.com",
+        phone: "02473007300",
+        taxCode: "0101248141",
+        address: "Hà Nội",
+        status: "REJECTED",
+        rejectReason: "Mã số thuế không hợp lệ",
+      };
+
+      const saveMock = vi.fn().mockImplementation((c) => Promise.resolve(c));
+      const findOneMock = vi.fn().mockResolvedValue(existingCompany);
+
+      vi.spyOn(AppDataSource, "getRepository").mockReturnValue({
+        findOne: findOneMock,
+        save: saveMock,
+      } as any);
+
+      const dto = {
+        name: "Công ty FPT",
+        email: "hr@fpt.com",
+        phone: "02473007300",
+        taxCode: "0101248141",
+        address: "Hà Nội Mới",
+      };
+
+      const result = await companiesService.updateMyCompany("10", dto as any);
+
+      expect(result.status).toBe("PENDING");
+      expect(result.rejectReason).toBeNull();
+    });
+
+    it("should maintain ACTIVE status when updating already active company", async () => {
+      const existingCompany = {
+        id: "1",
+        userId: "10",
+        name: "Công ty FPT",
+        slug: "cong-ty-fpt",
+        email: "hr@fpt.com",
+        phone: "02473007300",
+        taxCode: "0101248141",
+        address: "Hà Nội",
+        status: "ACTIVE",
+        rejectReason: null,
+      };
+
+      const saveMock = vi.fn().mockImplementation((c) => Promise.resolve(c));
+      const findOneMock = vi.fn().mockResolvedValue(existingCompany);
+
+      vi.spyOn(AppDataSource, "getRepository").mockReturnValue({
+        findOne: findOneMock,
+        save: saveMock,
+      } as any);
+
+      const dto = {
+        name: "Công ty FPT",
+        email: "hr@fpt.com",
+        phone: "02473007300",
+        taxCode: "0101248141",
+        address: "Hà Nội Mới",
+      };
+
+      const result = await companiesService.updateMyCompany("10", dto as any);
+
+      expect(result.status).toBe("ACTIVE");
     });
   });
 
@@ -808,6 +816,7 @@ describe("Companies Module", () => {
         name: "Công ty FPT Đã Cập Nhật",
         slug: "cong-ty-fpt-da-cap-nhat",
         taxCode: "0101248141",
+        rejectReason: null,
         status: "ACTIVE",
       } as unknown as Company;
 
@@ -843,16 +852,6 @@ describe("Companies Module", () => {
 
   describe("PUT /api/v1/companies/me (HTTP Endpoint)", () => {
     it("should return 401 UNAUTHORIZED when no token is provided", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp).put("/api/v1/companies/me").send({
         name: "Công ty FPT",
         email: "hr@fpt.com",
@@ -869,11 +868,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 200 OK when update request is valid", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       const mockCompany = {
         id: "1",
         userId: "10",
@@ -883,15 +877,11 @@ describe("Companies Module", () => {
         phone: "02473007300",
         taxCode: "0101248141",
         address: "Cầu Giấy, Hà Nội",
+        rejectReason: null,
         status: "ACTIVE",
       };
 
       vi.spyOn(companiesService, "updateMyCompany").mockResolvedValue(mockCompany as any);
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
 
       const res = await request(testApp)
         .put("/api/v1/companies/me")
@@ -929,6 +919,7 @@ describe("Companies Module", () => {
           companySize: "500+",
           address: "Hà Nội",
           description: "Mô tả công ty",
+          rejectReason: null,
           status: "ACTIVE",
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -1051,11 +1042,6 @@ describe("Companies Module", () => {
 
   describe("GET /api/v1/companies (Public HTTP Endpoint)", () => {
     it("should return 200 OK without requiring authentication", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
       const mockData = {
         items: [
           {
@@ -1070,6 +1056,7 @@ describe("Companies Module", () => {
             companySize: "500+",
             address: "Hà Nội",
             description: "Tập đoàn công nghệ",
+            rejectReason: null,
             status: "ACTIVE",
             createdAt: "2026-08-21T09:30:00.000Z",
             updatedAt: "2026-08-21T09:30:00.000Z",
@@ -1085,11 +1072,6 @@ describe("Companies Module", () => {
 
       vi.spyOn(companiesService, "getPublicCompanies").mockResolvedValue(mockData as any);
 
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp).get("/api/v1/companies?page=1&limit=10");
 
       expect(res.status).toBe(200);
@@ -1102,16 +1084,6 @@ describe("Companies Module", () => {
     });
 
     it("should return 400 BAD_REQUEST on invalid query param", async () => {
-      const request = (await import("supertest")).default;
-      const express = (await import("express")).default;
-      const companiesRouter = (await import("./companies.route")).default;
-      const { errorMiddleware } = await import("../../common/middlewares/error.middleware");
-
-      const testApp = express();
-      testApp.use(express.json());
-      testApp.use("/api/v1/companies", companiesRouter);
-      testApp.use(errorMiddleware);
-
       const res = await request(testApp).get("/api/v1/companies?page=-1");
 
       expect(res.status).toBe(400);

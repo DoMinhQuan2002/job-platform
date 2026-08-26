@@ -124,7 +124,8 @@ export class CompaniesService {
       companySize: dto.companySize ?? null,
       address: dto.address,
       description: dto.description ?? null,
-      status: COMPANY_STATUS.ACTIVE,
+      rejectReason: null,
+      status: COMPANY_STATUS.PENDING,
     });
 
     return await companyRepo.save(newCompany);
@@ -176,6 +177,13 @@ export class CompaniesService {
     company.companySize = dto.companySize !== undefined ? dto.companySize : company.companySize;
     company.address = dto.address;
     company.description = dto.description !== undefined ? dto.description : company.description;
+
+    // 5. Nếu công ty đang bị REJECTED, khi cập nhật lại sẽ chuyển về PENDING và xóa rejectReason để chờ duyệt lại
+    if (company.status === COMPANY_STATUS.REJECTED) {
+      company.status = COMPANY_STATUS.PENDING;
+      company.rejectReason = null;
+    }
+
     company.updatedAt = new Date();
 
     return await companyRepo.save(company);
