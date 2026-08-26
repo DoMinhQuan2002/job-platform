@@ -1,6 +1,8 @@
 // 1. Company Status
 export const COMPANY_STATUS = {
+  PENDING: 'PENDING',
   ACTIVE: 'ACTIVE',
+  REJECTED: 'REJECTED',
   BLOCKED: 'BLOCKED',
 } as const;
 export type CompanyStatusValue = (typeof COMPANY_STATUS)[keyof typeof COMPANY_STATUS];

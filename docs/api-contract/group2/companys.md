@@ -35,7 +35,7 @@ Auth: `RECRUITER`
 | Tên | Tạo mới hồ sơ công ty cho nhà tuyển dụng |
 | Method / URL | `POST /api/v1/companies` |
 | Quyền | `RECRUITER` |
-| Nghiệp vụ | 1. Mỗi tài khoản `RECRUITER` chỉ được tạo tối đa 1 công ty (`companies.user_id` unique).<br>2. Tự động liên kết `userId = req.user.id`.<br>3. Tự động sinh `slug` từ `name` (kèm unique suffix nếu cần).<br>4. Trạng thái mặc định: `status = "ACTIVE"`. |
+| Nghiệp vụ | 1. Mỗi tài khoản `RECRUITER` chỉ được tạo tối đa 1 công ty (`companies.user_id` unique).<br>2. Tự động liên kết `userId = req.user.id`.<br>3. Tự động sinh `slug` từ `name` (kèm unique suffix nếu cần).<br>4. Trạng thái mặc định: `status = "PENDING"`, `rejectReason = null` (chờ Admin duyệt hồ sơ). |
 
 **Request**
 
@@ -84,7 +84,8 @@ Auth: `RECRUITER`
     "companySize": "500+",
     "address": "Tòa nhà FPT, Phố Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội",
     "description": "FPT là tập đoàn công nghệ toàn cầu hàng đầu Việt Nam...",
-    "status": "ACTIVE",
+    "rejectReason": null,
+    "status": "PENDING",
     "createdAt": "2026-08-21T09:30:00.000Z",
     "updatedAt": "2026-08-21T09:30:00.000Z"
   }
@@ -132,6 +133,7 @@ Auth: `RECRUITER`
     "companySize": "500+",
     "address": "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
     "description": "Tập đoàn công nghệ hàng đầu Việt Nam cung cấp dịch vụ CNTT...",
+    "rejectReason": null,
     "status": "ACTIVE",
     "createdAt": "2026-08-20T08:30:00.000Z",
     "updatedAt": "2026-08-21T09:15:00.000Z"
@@ -157,6 +159,7 @@ Auth: `RECRUITER`
 | Tên | Cập nhật thông tin chi tiết hồ sơ công ty |
 | Method / URL | `PUT /api/v1/companies/me` |
 | Quyền | `RECRUITER` |
+| Nghiệp vụ | 1. Cập nhật các trường thông tin hồ sơ doanh nghiệp.<br>2. Nếu công ty đang ở trạng thái `REJECTED`, khi cập nhật lại sẽ tự động chuyển về `status = "PENDING"` và reset `rejectReason = null` để Admin kiểm duyệt lại.<br>3. Nếu công ty đang ở trạng thái `ACTIVE`, giữ nguyên trạng thái `ACTIVE`. |
 
 **Request**
 
@@ -205,6 +208,7 @@ Auth: `RECRUITER`
     "companySize": "500+",
     "address": "Tòa nhà FPT, Phố Duy Tân, Dịch Vọng Hậu, Cầu Giấy, Hà Nội",
     "description": "FPT là tập đoàn công nghệ toàn cầu hàng đầu Việt Nam...",
+    "rejectReason": null,
     "status": "ACTIVE",
     "createdAt": "2026-08-20T08:30:00.000Z",
     "updatedAt": "2026-08-21T09:30:00.000Z"
