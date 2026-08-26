@@ -21,18 +21,13 @@ export const useSkills = () => {
     }
   }, []);
 
-  const addSkill = async (skillId: string, level?: string | null) => {
-    try {
-      const res = await skillsApi.upsertMine({ skillId, level });
-      if (res.success && res.data) {
-        // Refetch to get the updated list properly populated
-        await fetchMySkills();
-        return res;
-      }
-      throw new Error(res.message);
-    } catch (err: any) {
-      throw err;
+  const addSkill = async (skillId: string, level?: string | null): Promise<void> => {
+    const res = await skillsApi.upsertMine({ skillId, level });
+    if (res.success && res.data) {
+      await fetchMySkills();
+      return;
     }
+    throw new Error(res.message || "Thêm kỹ năng thất bại");
   };
 
   const removeSkill = async (id: string) => {
