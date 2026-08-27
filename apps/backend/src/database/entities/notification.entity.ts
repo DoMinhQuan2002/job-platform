@@ -11,6 +11,8 @@ export type NotificationType =
   | "ACCOUNT_UNLOCKED"
   | "COMPANY_LOCKED"
   | "COMPANY_UNLOCKED"
+  | "COMPANY_APPROVED"
+  | "COMPANY_REJECTED"
   | "JOB_APPROVED"
   | "JOB_REJECTED"
   | "JOB_DELETED"

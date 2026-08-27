@@ -1,8 +1,11 @@
-// Validation zod cho 3 API quản lý công ty của admin (list/detail/khóa-mở khóa).
+// Validation zod cho 5 API quản lý công ty của admin (list/detail/khóa-mở khóa/duyệt/từ chối).
 import { z } from "zod";
 import { AppError } from "@/common/errors/app-error";
 
-const STATUSES = ["ACTIVE", "BLOCKED"] as const;
+/** Dùng cho filter list — company có thể ở bất kỳ trạng thái nào trong 4 giá trị. */
+const FILTER_STATUSES = ["PENDING", "ACTIVE", "REJECTED", "BLOCKED"] as const;
+/** Dùng cho khóa/mở khóa — chỉ chuyển đổi giữa ACTIVE/BLOCKED, không đi qua PENDING/REJECTED. */
+const LOCK_STATUSES = ["ACTIVE", "BLOCKED"] as const;
 
 type ValidationError = { field: string; message: string };
 
@@ -27,7 +30,7 @@ const listQuerySchema = z.object({
     .max(100, "limit phải từ 1 đến 100")
     .default(20),
   search: z.string().trim().min(1).optional(),
-  status: z.enum(STATUSES, { error: "Giá trị status không hợp lệ" }).optional(),
+  status: z.enum(FILTER_STATUSES, { error: "Giá trị status không hợp lệ" }).optional(),
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
@@ -52,7 +55,7 @@ export const validateIdParam = (params: Record<string, unknown>): string => {
 
 const statusBodySchema = z
   .object({
-    status: z.enum(STATUSES, { error: "Giá trị status không hợp lệ" }),
+    status: z.enum(LOCK_STATUSES, { error: "Giá trị status không hợp lệ" }),
     reason: z
       .string()
       .min(10, "Lý do phải từ 10 đến 500 ký tự")
@@ -71,4 +74,18 @@ export const validateStatusBody = (body: unknown): StatusBody => {
   const result = statusBodySchema.safeParse(body);
   if (!result.success) throw fail(result.error);
   return result.data;
+};
+
+const reasonBodySchema = z.object({
+  reason: z
+    .string({ error: "Lý do phải từ 10 đến 500 ký tự" })
+    .min(10, "Lý do phải từ 10 đến 500 ký tự")
+    .max(500, "Lý do phải từ 10 đến 500 ký tự"),
+});
+
+/** Validate body của PUT /admin/companies/{id}/reject. */
+export const validateReasonBody = (body: unknown): string => {
+  const result = reasonBodySchema.safeParse(body);
+  if (!result.success) throw fail(result.error);
+  return result.data.reason;
 };
