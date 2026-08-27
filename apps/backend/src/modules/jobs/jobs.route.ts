@@ -6,7 +6,7 @@ import { jobsController } from "./jobs.controller";
 const jobsRouter = Router();
 
 /** POST /api/v1/jobs - Recruiter tạo tin; service kiểm tra quyền sở hữu company. */
-jobsRouter.post("/", authenticate, jobsController.createJob);
+jobsRouter.post("/", authenticate, requireRecruiter, jobsController.createJob);
 
 /** GET /api/v1/jobs - Danh sách job đã duyệt, còn hạn (public). */
 jobsRouter.get("/", jobsController.getJobs);
@@ -15,7 +15,7 @@ jobsRouter.get("/", jobsController.getJobs);
 jobsRouter.get("/:id", jobsController.getJobById);
 
 /** PUT /api/v1/jobs/:id - Chỉ chủ company hoặc admin được cập nhật. */
-jobsRouter.put("/:id", authenticate, jobsController.updateJob);
+jobsRouter.put("/:id", authenticate, requireRecruiter, jobsController.updateJob);
 
 jobsRouter.patch("/:id", authenticate, requireRecruiter, jobsController.updateJobStatus);
 

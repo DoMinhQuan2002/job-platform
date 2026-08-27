@@ -73,7 +73,7 @@ export function Footer() {
                 priority
               />
               <span className="text-base font-bold text-slate-900">
-                JobPlatform
+                Job Platform
               </span>
             </Link>
             <p className="mt-7 max-w-47.5 text-xs leading-5 text-slate-600">
@@ -192,7 +192,9 @@ export function Footer() {
           </nav>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <ShieldCheck className="size-5" />
-            <span className="mr-2 max-w-12 leading-4 text-">Bảo mật thông tin</span>
+            <span className="mr-2 max-w-12 leading-4 text-">
+              Bảo mật thông tin
+            </span>
           </div>
         </div>
       </div>
