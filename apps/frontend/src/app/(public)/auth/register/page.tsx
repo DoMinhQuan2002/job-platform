@@ -66,7 +66,6 @@ function getPasswordStrength(password: string) {
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const {
@@ -237,27 +236,6 @@ export default function RegisterPage() {
               Độ mạnh mật khẩu: {strengthLabel}
             </p>
           </div>
-
-          <Field
-            label="Xác nhận mật khẩu"
-            htmlFor="confirmPassword"
-            error={errors.confirmPassword?.message}
-          >
-            <InputIcon icon={LockKeyhole} />
-            <input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Nhập lại mật khẩu"
-              aria-invalid={Boolean(errors.confirmPassword)}
-              className={`${inputClassName} pr-10`}
-              {...register("confirmPassword")}
-            />
-            <PasswordToggle
-              visible={showConfirmPassword}
-              onToggle={() => setShowConfirmPassword((current) => !current)}
-            />
-          </Field>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-text">
