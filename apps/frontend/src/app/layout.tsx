@@ -26,10 +26,8 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnamPro.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Header />
         <div className="flex-1">{children}</div>
         <Toaster position="top-right" richColors />
-        <Footer />
       </body>
     </html>
   );

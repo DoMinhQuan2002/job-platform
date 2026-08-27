@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   BadgeCheck,
@@ -63,8 +64,8 @@ function getPasswordStrength(password: string) {
 }
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const {
@@ -105,6 +106,11 @@ export default function RegisterPage() {
         response.message ||
         "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
       );
+      const query = new URLSearchParams({
+        email: response.data.email,
+        expiresIn: String(response.data.otpExpiresIn),
+      });
+      router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
     } catch (error) {
       setSubmitError(
         error instanceof Error
@@ -157,7 +163,7 @@ export default function RegisterPage() {
       </section>
 
       <section
-        className="mx-auto w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 shadow-sm md:p-10"
+        className="mx-auto w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 py- shadow-sm md:p-10"
         aria-labelledby="register-title"
       >
         <div className="mb-8 text-center">
@@ -230,27 +236,6 @@ export default function RegisterPage() {
               Độ mạnh mật khẩu: {strengthLabel}
             </p>
           </div>
-
-          <Field
-            label="Xác nhận mật khẩu"
-            htmlFor="confirmPassword"
-            error={errors.confirmPassword?.message}
-          >
-            <InputIcon icon={LockKeyhole} />
-            <input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Nhập lại mật khẩu"
-              aria-invalid={Boolean(errors.confirmPassword)}
-              className={`${inputClassName} pr-10`}
-              {...register("confirmPassword")}
-            />
-            <PasswordToggle
-              visible={showConfirmPassword}
-              onToggle={() => setShowConfirmPassword((current) => !current)}
-            />
-          </Field>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-text">
@@ -326,7 +311,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-muted">
           Đã có tài khoản?{" "}
-          <Link href={ROUTES.login} className="font-medium text-primary hover:underline">
+          <Link href={ROUTES.auth.login} className="font-medium text-primary hover:underline">
             Đăng nhập
           </Link>
         </p>

@@ -39,7 +39,7 @@ export function CandidateProfilePage() {
   }
 
   if (error || !profile) {
-    const loginHref = `${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.candidate.profile)}`;
+    const loginHref = `${ROUTES.auth.login}?redirect=${encodeURIComponent(ROUTES.candidate.profile)}`;
 
     return (
       <main className="mx-auto w-full max-w-lg px-4 py-16">
