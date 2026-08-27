@@ -26,10 +26,14 @@ export default function JobsPage() {
   const [filtersReady, setFiltersReady] = useState(false);
 
   useEffect(() => {
-    const next = filtersFromUrl(new URLSearchParams(window.location.search));
-    setFilters(next);
-    setAppliedFilters(next);
-    setFiltersReady(true);
+    const timer = window.setTimeout(() => {
+      const next = filtersFromUrl(new URLSearchParams(window.location.search));
+      setFilters(next);
+      setAppliedFilters(next);
+      setFiltersReady(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -92,6 +96,7 @@ function filtersFromUrl(query: URLSearchParams): JobFilters {
 
   return {
     keyword: query.get("keyword") ?? "",
+    companyId: query.get("companyId") ?? "",
     location: query.get("location") ?? "",
     categoryId: query.get("categoryId") ?? "",
     jobMode: query.get("jobMode") ?? "",
