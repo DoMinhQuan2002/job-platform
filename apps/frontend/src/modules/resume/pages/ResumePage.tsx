@@ -10,7 +10,7 @@ import { CandidateSkillsSection } from "../components/CandidateSkillsSection";
 export function ResumePage() {
   return (
     <main className="min-h-screen bg-[#f8fafc]">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5 px-4 py-6 lg:flex-row lg:px-[30px] lg:py-[30px]">
+      <div className="mx-auto flex w-full container flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:py-[30px] 2xl:px-0">
         <ConnectedCandidateSidebar />
 
         <div className="min-w-0 flex-1 space-y-8">

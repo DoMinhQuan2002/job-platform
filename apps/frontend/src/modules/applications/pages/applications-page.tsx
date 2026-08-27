@@ -108,7 +108,7 @@ export function ApplicationsPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-3">
             <CandidateNavSidebar />

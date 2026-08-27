@@ -97,7 +97,7 @@ export function JobApplyPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
         <nav className="flex items-center gap-1.5 text-xs text-slate-500">
           <Link href={ROUTES.home} className="flex items-center gap-1 transition hover:text-primary">
             <Home className="h-3.5 w-3.5" />
