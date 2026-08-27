@@ -1,5 +1,6 @@
 import { Brackets, In } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
+import { ApplicationStatus } from "../../common/constants";
 import {
   COMPANY_STATUS,
   JOB_CATEGORY_STATUS,
@@ -14,6 +15,7 @@ import { Company } from "../../database/entities/company.entity";
 import { JobCategory } from "../../database/entities/job-category.entity";
 import { JobSkill } from "../../database/entities/job-skill.entity";
 import { Job } from "../../database/entities/job.entity";
+import { ApplicationEntity } from "../../database/entities/application.entity";
 import { SkillEntity } from "../../database/entities/skill.entity";
 import type {
   CreateJobInput,
@@ -541,6 +543,14 @@ export const jobService = {
     const queryBuilder = getJobRepository()
       .createQueryBuilder("job")
       .innerJoinAndSelect("job.category", "category")
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select("COUNT(application.id)")
+            .from(ApplicationEntity, "application")
+            .where("application.jobId = job.id"),
+        "applicantCount",
+      )
       .where("job.companyId = :companyId", { companyId: company.id });
 
     if (query.keyword) {
@@ -562,22 +572,96 @@ export const jobService = {
       queryBuilder.andWhere("job.categoryId = :categoryId", { categoryId: query.category });
     }
 
-    const [jobs, totalItems] = await queryBuilder
+    const totalItems = await queryBuilder.getCount();
+    const { entities: jobs, raw } = await queryBuilder
       .orderBy("job.createdAt", "DESC")
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
-      .getManyAndCount();
+      .getRawAndEntities();
+
+    const rawStatusCounts = await getJobRepository()
+      .createQueryBuilder("job")
+      .select("job.status", "status")
+      .addSelect("COUNT(job.id)", "count")
+      .where("job.companyId = :companyId", { companyId: company.id })
+      .groupBy("job.status")
+      .getRawMany<{ status: string; count: string }>();
+
+    const statusCounts = Object.fromEntries(
+      Object.values(JOB_STATUS).map((status) => [status, 0]),
+    ) as Record<string, number>;
+    for (const row of rawStatusCounts) {
+      statusCounts[row.status] = Number(row.count);
+    }
 
     return {
-      items: jobs.map(serializeRecruiterJob),
+      items: jobs.map((job, index) => ({
+        ...serializeRecruiterJob(job),
+        applicantCount: Number(raw[index]?.applicantCount ?? 0),
+      })),
       pagination: {
         page: query.page,
         limit: query.limit,
         totalItems,
         totalPages: Math.ceil(totalItems / query.limit),
       },
+      statusCounts,
     };
   },
+  async getRecruiterJobById(currentUser: CurrentUser, id: string) {
+    if (currentUser.role !== "RECRUITER") {
+      throw new AppError(403, "FORBIDDEN", "Chỉ nhà tuyển dụng mới có quyền xem tin này.");
+    }
+
+    const company = await getCompanyRepository().findOneBy({ userId: currentUser.id });
+    if (!company) {
+      throw new AppError(404, "COMPANY_NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty.");
+    }
+
+    const job = await getJobRepository().findOne({
+      where: { id, companyId: company.id },
+      relations: ["category", "jobSkills", "jobSkills.skill"],
+    });
+    if (!job) {
+      throw new AppError(
+        404,
+        "JOB_NOT_FOUND",
+        "Tin tuyển dụng không tồn tại hoặc không thuộc công ty của bạn.",
+      );
+    }
+
+    const rawApplicationStats = await AppDataSource.getRepository(ApplicationEntity)
+      .createQueryBuilder("application")
+      .select("application.status", "status")
+      .addSelect("COUNT(application.id)", "count")
+      .where("application.jobId = :jobId", { jobId: id })
+      .groupBy("application.status")
+      .getRawMany<{ status: string; count: string }>();
+
+    const byStatus = Object.fromEntries(
+      Object.values(ApplicationStatus).map((status) => [status, 0]),
+    ) as Record<string, number>;
+    for (const row of rawApplicationStats) {
+      byStatus[row.status] = Number(row.count);
+    }
+
+    return {
+      ...serializeRecruiterJob(job),
+      description: job.description,
+      requirements: job.requirements,
+      benefits: job.benefits,
+      skills: job.jobSkills.map((jobSkill) => ({
+        id: jobSkill.skill.id,
+        name: jobSkill.skill.name,
+        isRequired: jobSkill.isRequired,
+      })),
+      applicationStats: {
+        total: Object.values(byStatus).reduce((sum, count) => sum + count, 0),
+        byStatus,
+      },
+    };
+  },
+
   async updateJobStatus(currentUser: CurrentUser, id: string, input: UpdateJobStatusInput) {
     if (currentUser.role !== "RECRUITER") {
       throw new AppError(403, "FORBIDDEN", "Chỉ nhà tuyển dụng mới có quyền cập nhật trạng thái job.");

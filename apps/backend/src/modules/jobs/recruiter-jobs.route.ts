@@ -6,5 +6,6 @@ import { jobsController } from "./jobs.controller";
 const recruiterJobsRouter = Router();
 
 recruiterJobsRouter.get("/jobs", authenticate, requireRecruiter, jobsController.getRecruiterJobs);
+recruiterJobsRouter.get("/jobs/:id", authenticate, requireRecruiter, jobsController.getRecruiterJobById);
 
 export default recruiterJobsRouter;

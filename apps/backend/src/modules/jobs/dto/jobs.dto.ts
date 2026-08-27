@@ -73,6 +73,8 @@ export const recruiterJobsQuerySchema = z.object({
       [
         JOB_STATUS.PENDING,
         JOB_STATUS.APPROVED,
+        JOB_STATUS.OPEN,
+        JOB_STATUS.HIDDEN,
         JOB_STATUS.REJECTED,
         JOB_STATUS.CLOSED,
       ],
@@ -102,7 +104,7 @@ export type RecruiterJobsQuery = z.infer<typeof recruiterJobsQuerySchema>;
 
 export const updateJobStatusSchema = z
   .object({
-    status: z.enum([JOB_STATUS.OPEN, JOB_STATUS.CLOSED, JOB_STATUS.HIDDEN, JOB_STATUS.APPROVED], {
+    status: z.enum([JOB_STATUS.OPEN, JOB_STATUS.CLOSED, JOB_STATUS.HIDDEN], {
       error: "Recruiter chỉ được cập nhật trạng thái OPEN, CLOSED hoặc HIDDEN",
     }),
   })

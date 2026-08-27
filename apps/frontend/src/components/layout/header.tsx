@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Bell, Bookmark, ChevronDown, Menu, Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, Bookmark, ChevronDown, LogOut, Menu, Search, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import {
   getAccessToken,
@@ -11,6 +11,7 @@ import {
   type StoredUser,
 } from "@/lib/auth-token";
 import { cn } from "@/lib/utils";
+import { authApi } from "@/services/auth.service";
 import Image from "next/image";
 
 type Session = StoredUser & { role: "CANDIDATE" | "RECRUITER" | "ADMIN" };
@@ -48,8 +49,12 @@ function readSession(): Session | null {
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Session data only exists in the browser; update once hydration is complete.
@@ -63,6 +68,43 @@ export function Header() {
       window.removeEventListener("jp-auth-change", syncSession);
     };
   }, []);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await authApi.logout();
+    } catch {
+      // authApi always clears local credentials; continue to the login page
+      // even when the server-side session has already expired.
+    } finally {
+      setAccountMenuOpen(false);
+      setMenuOpen(false);
+      setSession(null);
+      setIsLoggingOut(false);
+      router.replace(ROUTES.auth.login);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -83,7 +125,7 @@ export function Header() {
             priority
           />
           <span className="text-[18px] font-bold tracking-[-0.03em] text-slate-950">
-            JobPlatform
+            Job Platform
           </span>
         </Link>
 
@@ -157,22 +199,46 @@ export function Header() {
                   3
                 </span>
               </button>
-              <Link
-                href={
-                  session.role === "CANDIDATE"
-                    ? ROUTES.candidate.profile
-                    : ROUTES.recruiter.root
-                }
-                className="ml-1 flex items-center gap-2"
-              >
-                <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
-                  {session.fullName.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="max-w-28 truncate text-xs font-medium text-slate-900">
-                  {session.fullName}
-                </span>
-                <ChevronDown className="size-3.5 text-slate-500" />
-              </Link>
+              <div ref={accountMenuRef} className="relative ml-1">
+                <button
+                  type="button"
+                  onClick={() => setAccountMenuOpen((open) => !open)}
+                  className="flex items-center gap-2 rounded-md px-1.5 py-1 transition hover:bg-slate-100"
+                  aria-expanded={accountMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
+                    {session.fullName.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="max-w-28 truncate text-xs font-medium text-slate-900">
+                    {session.fullName}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 text-slate-500 transition-transform",
+                      accountMenuOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+
+                {accountMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <LogOut className="size-4" />
+                      {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -216,16 +282,28 @@ export function Header() {
                 </Link>
               </div>
             ) : (
-              <Link
-                href={
-                  session.role === "CANDIDATE"
-                    ? ROUTES.candidate.profile
-                    : ROUTES.recruiter.root
-                }
-                className="mt-3 border-t border-slate-100 px-3 pt-4 text-sm font-medium"
-              >
-                {session.fullName}
-              </Link>
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <Link
+                  href={
+                    session.role === "CANDIDATE"
+                      ? ROUTES.candidate.profile
+                      : ROUTES.recruiter.root
+                  }
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-slate-50"
+                >
+                  {session.fullName}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                >
+                  <LogOut className="size-4" />
+                  {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+                </button>
+              </div>
             )}
           </div>
         </div>

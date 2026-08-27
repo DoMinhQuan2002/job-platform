@@ -320,6 +320,23 @@ export const jobsController = {
     }
   },
 
+  /** GET /recruiter/jobs/:id - Chi tiết tin thuộc công ty của recruiter. */
+  getRecruiterJobById: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = requireCurrentUser(req);
+      const id = parseBigIntId(req.params.id, "id");
+      const data = await jobService.getRecruiterJobById(user, id);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy chi tiết tin tuyển dụng thành công.",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   /** PATCH /jobs/:id - Recruiter cập nhật trạng thái job. */
   updateJobStatus: async (req: Request, res: Response, next: NextFunction) => {
     try {
