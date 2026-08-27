@@ -1,6 +1,7 @@
 import { http } from "@/services/http";
 import type { ApiSuccess } from "@/types/api";
 import type {
+  AccountUser,
   CandidateProfile,
   Education,
   UpdateCandidateProfileInput,
@@ -8,6 +9,9 @@ import type {
 } from "./types";
 
 export const candidateApi = {
+  /** G1 account — fullName / avatar (không lẫn vào PUT /candidates/me) */
+  getAccountMe: () => http<ApiSuccess<AccountUser>>("/users/me"),
+
   getMe: () => http<ApiSuccess<CandidateProfile>>("/candidates/me"),
 
   updateMe: (body: UpdateCandidateProfileInput) =>

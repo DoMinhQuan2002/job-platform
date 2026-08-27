@@ -18,6 +18,16 @@ import {
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ROUTES } from "@/constants/routes";
 import { authApi } from "@/services/auth.service";
 import { loginSchema, type LoginFormValues } from "./login.schema";
@@ -201,19 +211,6 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {submitError ? (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-lg bg-danger/10 px-3 py-2.5 text-sm text-danger"
-              >
-                <AlertCircle
-                  className="mt-0.5 size-4 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>{submitError}</span>
-              </div>
-            ) : null}
-
             <Button
               type="submit"
               size="lg"
@@ -243,6 +240,27 @@ export default function LoginPage() {
         </section>
       </div>
 
+      <AlertDialog
+        open={Boolean(submitError)}
+        onOpenChange={(open) => {
+          if (!open) setSubmitError("");
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-danger/10 text-danger">
+              <AlertCircle aria-hidden="true" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Đăng nhập thất bại</AlertDialogTitle>
+            <AlertDialogDescription>{submitError}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="w-full sm:w-auto">
+              Đóng
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

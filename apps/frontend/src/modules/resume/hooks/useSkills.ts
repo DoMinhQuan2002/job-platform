@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { skillsApi } from "../api";
-import type { CandidateSkill, SkillCategory } from "../types";
+import type { CandidateSkill, SkillLevel } from "../types";
 
 export const useSkills = () => {
   const [skills, setSkills] = useState<CandidateSkill[]>([]);
@@ -10,49 +10,49 @@ export const useSkills = () => {
   const fetchMySkills = useCallback(async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const res = await skillsApi.listMine();
       if (res.success && res.data) {
         setSkills(res.data);
       }
-    } catch (err: any) {
-      setError(err);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to load skills"));
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const addSkill = async (skillId: string, level?: string | null) => {
-    try {
-      const res = await skillsApi.upsertMine({ skillId, level });
-      if (res.success && res.data) {
-        // Refetch to get the updated list properly populated
-        await fetchMySkills();
-        return res;
-      }
-      throw new Error(res.message);
-    } catch (err: any) {
-      throw err;
+  const addSkill = async (skillId: string, level: SkillLevel): Promise<void> => {
+    const res = await skillsApi.attachMine({ skillId, level });
+    if (res.success && res.data) {
+      await fetchMySkills();
+      return;
     }
+    throw new Error(res.message || "Thêm kỹ năng thất bại");
   };
 
-  const removeSkill = async (id: string) => {
-    try {
-      const res = await skillsApi.removeMine(id);
-      if (res.success) {
-        setSkills((prev) => prev.filter((s) => s.id !== id));
-      } else {
-        throw new Error(res.message);
-      }
-    } catch (err: any) {
-      throw err;
+  const updateSkillLevel = async (id: string, level: SkillLevel): Promise<void> => {
+    const res = await skillsApi.updateLevel(id, { level });
+    if (res.success && res.data) {
+      setSkills((prev) => prev.map((s) => (s.id === id ? res.data! : s)));
+      return;
     }
+    throw new Error(res.message || "Cập nhật cấp độ thất bại");
+  };
+
+  const removeSkill = async (id: string): Promise<void> => {
+    const res = await skillsApi.removeMine(id);
+    if (res.success) {
+      setSkills((prev) => prev.filter((s) => s.id !== id));
+      return;
+    }
+    throw new Error(res.message || "Xóa kỹ năng thất bại");
   };
 
   useEffect(() => {
-    fetchMySkills();
+    void fetchMySkills();
   }, [fetchMySkills]);
 
-  // Derived state to separate into columns
   const categorizedSkills = {
     SKILL: skills.filter((s) => s.category === "SKILL"),
     LANGUAGE: skills.filter((s) => s.category === "LANGUAGE"),
@@ -65,6 +65,7 @@ export const useSkills = () => {
     isLoading,
     error,
     addSkill,
+    updateSkillLevel,
     removeSkill,
     refetch: fetchMySkills,
   };

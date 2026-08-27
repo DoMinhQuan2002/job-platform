@@ -114,12 +114,13 @@ Base: `/api/v1/jobs`
 
 | Param | Validation / Note |
 |-------|-------------------|
-| `keyword` | Tìm theo tên job / công ty |
-| `category` | `job_categories.id` |
+| `keyword` | Tìm theo tên job / công ty / mô tả |
+| `companyId` | `companies.id` (lấy danh sách job của một công ty cụ thể) |
+| `category` / `categoryId` | `job_categories.id` |
 | `location` | string |
 | `salaryMin`, `salaryMax` | number `>= 0`; lọc theo khoảng giao nhau |
 | `page` | integer `>= 1`, mặc định `1` |
-| `limit` | integer `1..100`, mặc định `20` |
+| `limit` / `size` | integer `1..100`, mặc định `20` |
 
 **Behavior**
 

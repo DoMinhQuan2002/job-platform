@@ -21,19 +21,13 @@ export const useResumes = () => {
     }
   }, []);
 
-  const uploadResume = async (file: File) => {
-    try {
-      // First resume is default automatically if it's the only one, handled by backend.
-      const res = await resumeApi.upload(file);
-      if (res.success && res.data) {
-        // Optimistic update or refetch
-        await fetchResumes();
-        return res;
-      }
-      throw new Error(res.message);
-    } catch (err: any) {
-      throw err;
+  const uploadResume = async (file: File): Promise<void> => {
+    const res = await resumeApi.upload(file);
+    if (res.success && res.data) {
+      await fetchResumes();
+      return;
     }
+    throw new Error(res.message || "Upload CV thất bại");
   };
 
   const setDefault = async (id: string) => {

@@ -1,5 +1,7 @@
-import { ResumePage } from "@/modules/resume/pages/ResumePage";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
 
+/** Legacy `/resume` → `/candidate/resume` */
 export default function Page() {
-  return <ResumePage />;
+  redirect(ROUTES.resume.root);
 }

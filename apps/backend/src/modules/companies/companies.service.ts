@@ -124,7 +124,8 @@ export class CompaniesService {
       companySize: dto.companySize ?? null,
       address: dto.address,
       description: dto.description ?? null,
-      status: COMPANY_STATUS.ACTIVE,
+      rejectReason: null,
+      status: COMPANY_STATUS.PENDING,
     });
 
     return await companyRepo.save(newCompany);
@@ -176,6 +177,13 @@ export class CompaniesService {
     company.companySize = dto.companySize !== undefined ? dto.companySize : company.companySize;
     company.address = dto.address;
     company.description = dto.description !== undefined ? dto.description : company.description;
+
+    // 5. Nếu công ty đang bị REJECTED, khi cập nhật lại sẽ chuyển về PENDING và xóa rejectReason để chờ duyệt lại
+    if (company.status === COMPANY_STATUS.REJECTED) {
+      company.status = COMPANY_STATUS.PENDING;
+      company.rejectReason = null;
+    }
+
     company.updatedAt = new Date();
 
     return await companyRepo.save(company);
@@ -185,10 +193,11 @@ export class CompaniesService {
    * Lấy chi tiết công ty công khai theo ID.
    * @param id ID công ty đã được validate từ controller
    */
-  async getPublicCompanyById(id: string) {
-    const company = await AppDataSource.getRepository(Company).findOneBy({
-      id,
-      status: COMPANY_STATUS.ACTIVE,
+  async getPublicCompanyById(idOrSlug: string) {
+    const company = await AppDataSource.getRepository(Company).findOne({
+      where: /^\d+$/.test(idOrSlug)
+        ? { id: idOrSlug, status: COMPANY_STATUS.ACTIVE }
+        : { slug: idOrSlug, status: COMPANY_STATUS.ACTIVE },
     });
 
     if (!company) {
@@ -228,11 +237,16 @@ export class CompaniesService {
       name: company.name,
       slug: company.slug,
       logo: company.logo,
+      companySize: company.companySize,
+      taxCode: company.taxCode,
       description: company.description,
       address: company.address,
       website: company.website,
       email: company.email,
       phone: company.phone,
+      status: company.status,
+      createdAt: company.createdAt,
+      updatedAt: company.updatedAt,
     };
   }
 }

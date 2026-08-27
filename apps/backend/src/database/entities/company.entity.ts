@@ -82,9 +82,16 @@ export class Company {
   description!: string | null;
 
   @Column({
+    type: "text",
+    nullable: true,
+    name: "reject_reason",
+  })
+  rejectReason!: string | null;
+
+  @Column({
     type: "varchar",
     length: 30,
-    default: COMPANY_STATUS.ACTIVE,
+    default: COMPANY_STATUS.PENDING,
   })
   status!: CompanyStatusValue;
 

@@ -8,6 +8,7 @@ export const ROUTES = {
     forgotPassword: "/auth/forgot-password",
   },
   jobs: "/jobs",
+  companies: "/companies",
   candidate: {
     root: "/candidate",
     profile: "/candidate/profile",
