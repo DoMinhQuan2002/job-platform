@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { RouteFooter } from "@/components/layout/RouteFooter";
 import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -26,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnamPro.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <Header />
         <div className="flex-1">{children}</div>
         <Toaster position="top-right" richColors />
+        <RouteFooter />
       </body>
     </html>
   );
