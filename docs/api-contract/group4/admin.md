@@ -1,6 +1,6 @@
 # API Contract — Nhóm 4 — Quản trị hệ thống
 
-**Số lượng API:** 17 · **Quyền:** ADMIN
+**Số lượng API:** 19 · **Quyền:** ADMIN
 
 Quy ước chung (Response/HTTP Status/phân trang): xem `system-logs.md` mục 0.
 
@@ -253,7 +253,7 @@ Validation: `id` (path) — number, phải tồn tại
 | page   | number |          | >= 1, mặc định 1          |
 | limit  | number |          | 1–100, mặc định 20        |
 | search | string |          | Tìm theo `name` / `email` |
-| status | string |          | `ACTIVE` / `BLOCKED`      |
+| status | string |          | `PENDING` / `ACTIVE` / `REJECTED` / `BLOCKED` |
 | sort   | string |          | Tên cột cho phép          |
 
 **HTTP Status:** 200 · 400 · 401 · 403
@@ -276,7 +276,8 @@ Validation: `id` (path) — number, phải tồn tại
         "taxCode": "string",
         "companySize": "string",
         "address": "string",
-        "status": "ACTIVE",
+        "status": "PENDING",
+        "rejectReason": null,
         "owner": { "id": 1, "fullName": "string", "email": "string" },
         "totalJobs": 0,
         "createdAt": "datetime"
@@ -345,7 +346,8 @@ Validation: `id` (path) — number, phải tồn tại
     "taxCode": "string",
     "companySize": "string",
     "address": "string",
-    "status": "ACTIVE",
+    "status": "PENDING",
+    "rejectReason": null,
     "owner": { "id": 1, "fullName": "string", "email": "string" },
     "totalJobs": 0,
     "website": "string",
@@ -389,6 +391,8 @@ Validation: `id` (path) — number, phải tồn tại
 ### 2.3 Khóa / mở khóa công ty
 
 `PUT /api/v1/admin/companies/{id}/status` · Quyền: ADMIN
+
+Chỉ áp dụng cho công ty đã qua duyệt (`status` hiện tại là `ACTIVE` hoặc `BLOCKED`). Công ty đang `PENDING`/`REJECTED` phải đi qua 2.4/2.5, gọi endpoint này sẽ trả `409`.
 
 **Validation (body)**
 
@@ -468,13 +472,174 @@ Validation: `id` (path) — number, phải tồn tại
 { "success": false, "message": "Không tìm thấy công ty", "errors": [] }
 ```
 
-`409`:
+`409` — công ty đã ở đúng trạng thái đích:
 
 ```json
 { "success": false, "message": "Công ty đã ở trạng thái này", "errors": [] }
 ```
 
+`409` — công ty chưa qua duyệt (`PENDING`/`REJECTED`):
+
+```json
+{
+  "success": false,
+  "message": "Chỉ khóa/mở khóa được công ty đã qua duyệt (ACTIVE hoặc BLOCKED)",
+  "errors": []
+}
+```
+
 **Side effect:** log `LOCK_COMPANY`/`UNLOCK_COMPANY` · noti `COMPANY_LOCKED`/`COMPANY_UNLOCKED` → recruiter (`companies.user_id`)
+
+---
+
+### 2.4 Duyệt hồ sơ công ty
+
+`PUT /api/v1/admin/companies/{id}/approve` · Quyền: ADMIN
+
+Validation: `id` (path) — number, công ty phải đang ở `PENDING`. Không có body.
+
+**HTTP Status:** 200 · 401 · 403 · 404 · 409
+
+**200 OK**
+
+```json
+{
+  "success": true,
+  "message": "Đã duyệt hồ sơ công ty",
+  "data": {
+    "id": 1,
+    "name": "string",
+    "status": "ACTIVE",
+    "updatedAt": "datetime"
+  }
+}
+```
+
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`403`:
+
+```json
+{
+  "success": false,
+  "message": "Bạn không có quyền thực hiện thao tác này",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy công ty", "errors": [] }
+```
+
+`409`:
+
+```json
+{
+  "success": false,
+  "message": "Chỉ duyệt được hồ sơ đang ở trạng thái chờ duyệt",
+  "errors": []
+}
+```
+
+**Side effect:** log `APPROVE_COMPANY` · noti `COMPANY_APPROVED` → recruiter (`companies.user_id`, không kèm lý do)
+
+---
+
+### 2.5 Từ chối hồ sơ công ty
+
+`PUT /api/v1/admin/companies/{id}/reject` · Quyền: ADMIN
+
+**Validation (body)**
+
+| Field  | Kiểu   | Bắt buộc | Ràng buộc    |
+| ------ | ------ | -------- | ------------ |
+| reason | string | ✅       | 10–500 ký tự |
+
+```json
+{ "reason": "string (10-500 ký tự, bắt buộc)" }
+```
+
+**HTTP Status:** 200 · 400 · 401 · 403 · 404 · 409
+
+**200 OK**
+
+```json
+{
+  "success": true,
+  "message": "Đã từ chối hồ sơ công ty",
+  "data": {
+    "id": 1,
+    "name": "string",
+    "status": "REJECTED",
+    "rejectReason": "string",
+    "updatedAt": "datetime"
+  }
+}
+```
+
+**Response lỗi**
+
+`400`:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "reason", "message": "Lý do phải từ 10 đến 500 ký tự" }]
+}
+```
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`403`:
+
+```json
+{
+  "success": false,
+  "message": "Bạn không có quyền thực hiện thao tác này",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy công ty", "errors": [] }
+```
+
+`409`:
+
+```json
+{
+  "success": false,
+  "message": "Chỉ từ chối được hồ sơ đang ở trạng thái chờ duyệt",
+  "errors": []
+}
+```
+
+Recruiter vẫn xem lại được lý do sau này qua `GET /api/v1/companies/me` (API của Nhóm 2) — `rejectReason` lưu trực tiếp trên `companies.reject_reason`, không mất khi không có notification riêng.
+
+**Side effect:** cập nhật `companies.reject_reason` · log `REJECT_COMPANY` (description = lý do) · noti `COMPANY_REJECTED` → recruiter (kèm lý do)
 
 ---
 
@@ -1254,6 +1419,8 @@ Validation: không có tham số
 | UNLOCK_USER         | BANNED           | ACTIVE            | —           |
 | LOCK_COMPANY        | ACTIVE           | BLOCKED           | lý do       |
 | UNLOCK_COMPANY      | BLOCKED          | ACTIVE            | —           |
+| APPROVE_COMPANY     | PENDING          | ACTIVE            | —           |
+| REJECT_COMPANY      | PENDING          | REJECTED          | lý do       |
 | APPROVE_JOB         | PENDING          | APPROVED          | —           |
 | REJECT_JOB          | PENDING          | REJECTED          | lý do       |
 | DELETE_JOB          | trạng thái trước khi xóa | —         | lý do       |
@@ -1267,6 +1434,7 @@ Validation: không có tham số
 | ---------------------------------------------------- | ------------------ | ------------------------------------------------------------------------ |
 | Khóa / mở khóa tài khoản.                            | Chủ tài khoản      | `users.id`                                                               |
 | Khóa / mở khóa công ty.                              | Recruiter          | `companies.user_id`                                                      |
+| Duyệt / từ chối hồ sơ công ty.                       | Recruiter          | `companies.user_id` (từ chối có kèm lý do)                               |
 | Duyệt / từ chối / xóa tin.                           | Recruiter          | `jobs.company_id → companies.user_id`                                    |
 | Ngành nghề.                                          | — không noti       | —                                                                        |
 | Có ứng viên mới nộp hồ sơ (`NEW_APPLICATION`).       | Recruiter đăng tin | `applications.job_id → jobs.company_id → companies.user_id` — Nhóm 3 gọi |
