@@ -9,6 +9,7 @@ export type JobCategory = {
 
 export type JobFilters = {
   keyword: string;
+  companyId?: string;
   location: string;
   categoryId: string;
   jobMode: string;
