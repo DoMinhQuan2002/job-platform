@@ -3,7 +3,7 @@ import { AppError } from "@/common/errors/app-error";
 import { LogAction } from "@/database/entities/system-log.entity";
 
 /**
- * 11 giá trị đang dùng thật (đã tài liệu hóa). `UPDATE_APPLICATION_STATUS` vẫn còn
+ * 13 giá trị đang dùng thật (đã tài liệu hóa). `UPDATE_APPLICATION_STATUS` vẫn còn
  * khai báo trong entity để dành sẵn cho Nhóm 2/3, nhưng chưa đưa vào phạm vi lọc này.
  */
 const LOG_ACTIONS = [
@@ -11,6 +11,8 @@ const LOG_ACTIONS = [
   "UNLOCK_USER",
   "LOCK_COMPANY",
   "UNLOCK_COMPANY",
+  "APPROVE_COMPANY",
+  "REJECT_COMPANY",
   "APPROVE_JOB",
   "REJECT_JOB",
   "DELETE_JOB",

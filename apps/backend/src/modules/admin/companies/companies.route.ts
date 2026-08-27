@@ -7,5 +7,7 @@ const companiesRouter = Router();
 companiesRouter.get("/", companiesController.list);
 companiesRouter.get("/:id", companiesController.detail);
 companiesRouter.put("/:id/status", companiesController.updateStatus);
+companiesRouter.put("/:id/approve", companiesController.approve);
+companiesRouter.put("/:id/reject", companiesController.reject);
 
 export default companiesRouter;

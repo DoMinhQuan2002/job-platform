@@ -12,6 +12,8 @@ export type LogAction =
   | "UNLOCK_USER"
   | "LOCK_COMPANY"
   | "UNLOCK_COMPANY"
+  | "APPROVE_COMPANY"
+  | "REJECT_COMPANY"
   | "APPROVE_JOB"
   | "REJECT_JOB"
   | "DELETE_JOB"
