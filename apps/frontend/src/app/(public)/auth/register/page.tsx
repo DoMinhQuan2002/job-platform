@@ -326,7 +326,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-muted">
           Đã có tài khoản?{" "}
-          <Link href={ROUTES.login} className="font-medium text-primary hover:underline">
+          <Link href={ROUTES.auth.login} className="font-medium text-primary hover:underline">
             Đăng nhập
           </Link>
         </p>

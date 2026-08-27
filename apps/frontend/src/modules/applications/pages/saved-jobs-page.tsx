@@ -195,7 +195,7 @@ export function SavedJobsPage() {
                 </div>
                 {unauthorized ? (
                   <Link
-                    href={`${ROUTES.login}?redirect=${encodeURIComponent(ROUTES.applications.savedJobs)}`}
+                    href={`${ROUTES.auth.login}?redirect=${encodeURIComponent(ROUTES.applications.savedJobs)}`}
                     className="inline-flex rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white"
                   >
                     Đăng nhập
