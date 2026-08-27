@@ -18,7 +18,7 @@ type SavedJobPreview = {
 };
 
 const savedJobsHref = ROUTES.applications.savedJobs;
-const loginHref = `${ROUTES.login}?redirect=${encodeURIComponent(savedJobsHref)}`;
+const loginHref = `${ROUTES.auth.login}?redirect=${encodeURIComponent(savedJobsHref)}`;
 
 export function JobsSidePanel() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
