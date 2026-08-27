@@ -26,48 +26,19 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { jobsApi } from "@/modules/jobs/api";
+import type { Job } from "@/modules/jobs/types";
 import { companiesApi1 } from "../api";
 import type { Company } from "../types";
 
 const DEFAULT_REVIEW_COUNT = "1.234";
-const DEFAULT_OPEN_JOBS = 28;
+const COMPANY_JOBS_LIMIT = 4;
 
 const reasonItems = [
     { icon: Trophy, label: "Môi trường quốc tế, năng động" },
     { icon: BriefcaseBusiness, label: "Cơ hội phát triển và đào tạo liên tục" },
     { icon: CircleDollarSign, label: "Chính sách đãi ngộ cạnh tranh" },
     { icon: Heart, label: "Nhiều hoạt động văn hóa, thể thao" },
-];
-
-const sampleJobs = [
-    {
-        title: "Lập trình viên Backend (Java)",
-        location: "Hà Nội",
-        salary: "25 - 35 triệu VND",
-        tags: ["Java", "Spring Boot", "MySQL"],
-        posted: "2 giờ trước",
-    },
-    {
-        title: "Kỹ sư DevOps",
-        location: "Hà Nội",
-        salary: "30 - 45 triệu VND",
-        tags: ["Docker", "Kubernetes", "AWS"],
-        posted: "5 giờ trước",
-    },
-    {
-        title: "Chuyên viên Phân tích dữ liệu",
-        location: "Hà Nội",
-        salary: "15 - 26 triệu VND",
-        tags: ["SQL", "Python", "Power BI"],
-        posted: "1 ngày trước",
-    },
-    {
-        title: "Lập trình viên Frontend (React)",
-        location: "Hà Nội",
-        salary: "20 - 30 triệu VND",
-        tags: ["React", "TypeScript", "Tailwind CSS"],
-        posted: "2 ngày trước",
-    },
 ];
 
 function getCompanyMark(name: string) {
@@ -103,6 +74,13 @@ function formatDate(value?: string | null) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
     return date.toLocaleDateString("vi-VN");
+}
+
+function formatSalary(job: Job) {
+    if (job.isNegotiable || (!job.salaryMin && !job.salaryMax)) return "Thỏa thuận";
+    const format = (value: string | null) =>
+        value ? `${Math.round(Number(value) / 1_000_000)} triệu` : "";
+    return [format(job.salaryMin), format(job.salaryMax)].filter(Boolean).join(" - ");
 }
 
 function CompanyLogo({ company }: { company: Company }) {
@@ -148,6 +126,8 @@ export default function CompanyDetailPage() {
     const params = useParams();
     const companyId = String(params?.id ?? "");
     const [company, setCompany] = useState<Company | null>(null);
+    const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
+    const [totalCompanyJobs, setTotalCompanyJobs] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -155,11 +135,36 @@ export default function CompanyDetailPage() {
         if (!companyId) return;
         setLoading(true);
         setError(null);
+        setCompanyJobs([]);
+        setTotalCompanyJobs(0);
         try {
             const res = await companiesApi1.getById(companyId);
             setCompany(res.data);
+            try {
+                const jobsRes = await jobsApi.list({
+                    keyword: "",
+                    companyId: res.data.id,
+                    location: "",
+                    categoryId: "",
+                    jobMode: "",
+                    jobType: "",
+                    minSalary: "",
+                    maxSalary: "",
+                    maxExperience: "",
+                    sort: "newest",
+                    page: 1,
+                    size: COMPANY_JOBS_LIMIT,
+                });
+                setCompanyJobs(jobsRes.data);
+                setTotalCompanyJobs(jobsRes.pagination.total);
+            } catch {
+                setCompanyJobs([]);
+                setTotalCompanyJobs(0);
+            }
         } catch (err) {
             setCompany(null);
+            setCompanyJobs([]);
+            setTotalCompanyJobs(0);
             setError(err instanceof Error ? err.message : "Không tải được thông tin công ty.");
         } finally {
             setLoading(false);
@@ -304,7 +309,7 @@ export default function CompanyDetailPage() {
                                     Giới thiệu
                                 </button>
                                 <button type="button" className="px-1 py-3 hover:text-slate-800">
-                                    Việc làm ({DEFAULT_OPEN_JOBS})
+                                    Việc làm ({totalCompanyJobs})
                                 </button>
                                 <button type="button" className="px-1 py-3 hover:text-slate-800">
                                     Đánh giá ({DEFAULT_REVIEW_COUNT})
@@ -356,9 +361,17 @@ export default function CompanyDetailPage() {
 
                         <section className="pb-8">
                             <h2 className="mb-4 text-base font-bold text-slate-950 sm:text-lg">Các tin đang tuyển</h2>
+                            {companyJobs.length > 0 ? (
+                                <>
                             <div className="grid gap-4 lg:grid-cols-2">
-                                {sampleJobs.map((job) => (
-                                    <article key={job.title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                                {companyJobs.map((job) => {
+                                    const skills = job.jobSkills
+                                        ?.slice(0, 3)
+                                        .map((item) => item.skill?.name)
+                                        .filter(Boolean) ?? [];
+
+                                    return (
+                                    <article key={job.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="min-w-0">
                                                 <div className="flex flex-wrap items-center gap-2">
@@ -372,7 +385,7 @@ export default function CompanyDetailPage() {
                                                 <p className="mt-1 text-xs font-medium text-slate-500">{company.name}</p>
                                             </div>
                                             <Link
-                                                href={ROUTES.jobs}
+                                                href={`${ROUTES.jobs}/${job.id}`}
                                                 aria-label={`Xem ${job.title}`}
                                                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:border-blue-200 hover:text-primary"
                                             >
@@ -383,16 +396,16 @@ export default function CompanyDetailPage() {
                                         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
                                             <span className="inline-flex items-center gap-1">
                                                 <MapPin className="h-3.5 w-3.5" />
-                                                {job.location}
+                                                {job.address}
                                             </span>
                                             <span className="inline-flex items-center gap-1">
                                                 <CircleDollarSign className="h-3.5 w-3.5" />
-                                                {job.salary}
+                                                {formatSalary(job)}
                                             </span>
                                         </div>
 
                                         <div className="mt-3 flex flex-wrap gap-2">
-                                            {job.tags.map((tag) => (
+                                            {skills.map((tag) => (
                                                 <span
                                                     key={tag}
                                                     className="rounded bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600"
@@ -403,22 +416,25 @@ export default function CompanyDetailPage() {
                                         </div>
 
                                         <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
-                                            <p className="text-xs text-slate-500">{job.posted}</p>
+                                            <p className="text-xs text-slate-500">{formatDate(job.createdAt)}</p>
                                             <Sparkles className="h-3.5 w-3.5 text-slate-300" />
                                         </div>
                                     </article>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             <div className="mt-5 flex justify-center">
                                 <Link
-                                    href={ROUTES.jobs}
+                                    href={`${ROUTES.jobs}?companyId=${company.id}`}
                                     className="inline-flex h-9 items-center justify-center gap-1.5 rounded border border-primary bg-white px-4 text-xs font-semibold text-primary transition hover:bg-blue-50 sm:text-sm"
                                 >
-                                    Xem tất cả {DEFAULT_OPEN_JOBS} tin tuyển dụng
+                                    Xem tất cả {totalCompanyJobs} tin tuyển dụng
                                     <ArrowRight className="h-3.5 w-3.5" />
                                 </Link>
                             </div>
+                                </>
+                            ) : null}
                         </section>
                     </>
                 ) : null}
