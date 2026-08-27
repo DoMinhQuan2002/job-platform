@@ -6,12 +6,9 @@ import { useParams } from "next/navigation";
 import {
     AlertCircle,
     ArrowLeft,
-    ArrowRight,
-    BriefcaseBusiness,
     Building2,
     CalendarDays,
     ChevronRight,
-    CircleDollarSign,
     ExternalLink,
     Globe2,
     Heart,
@@ -20,164 +17,169 @@ import {
     Mail,
     MapPin,
     Phone,
-    Sparkles,
-    Trophy,
     Users,
-    type LucideIcon,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { jobsApi } from "@/modules/jobs/api";
-import type { Job } from "@/modules/jobs/types";
+import type { Job, JobSort } from "@/modules/jobs/types";
 import { companiesApi1 } from "../api";
+import {
+    ABOUT_SECTION_ID,
+    COMPANY_JOBS_PAGE_SIZE,
+    COMPANY_JOBS_PREVIEW_LIMIT,
+    COMPANY_JOBS_SECTION_ID,
+    CompanyAboutSection,
+    CompanyJobsPreviewSection,
+    CompanyJobsSection,
+    CompanyLogo,
+    DEFAULT_REVIEW_COUNT,
+    displayWebsite,
+    formatDate,
+    normalizeLogo,
+    normalizeWebsite,
+} from "../components/company-detail-ui";
 import type { Company } from "../types";
 
-const DEFAULT_REVIEW_COUNT = "1.234";
-const COMPANY_JOBS_LIMIT = 4;
-
-const reasonItems = [
-    { icon: Trophy, label: "Môi trường quốc tế, năng động" },
-    { icon: BriefcaseBusiness, label: "Cơ hội phát triển và đào tạo liên tục" },
-    { icon: CircleDollarSign, label: "Chính sách đãi ngộ cạnh tranh" },
-    { icon: Heart, label: "Nhiều hoạt động văn hóa, thể thao" },
-];
-
-function getCompanyMark(name: string) {
-    return name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase();
-}
-
-function normalizeLogo(logo?: string | null) {
-    if (!logo) return "";
-    if (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/")) {
-        return logo;
-    }
-    return "";
-}
-
-function normalizeWebsite(website?: string | null) {
-    if (!website) return "";
-    if (website.startsWith("http://") || website.startsWith("https://")) return website;
-    return `https://${website}`;
-}
-
-function displayWebsite(website?: string | null) {
-    return website?.replace(/^https?:\/\//, "").replace(/\/$/, "") || "Chưa cập nhật";
-}
-
-function formatDate(value?: string | null) {
-    if (!value) return "Chưa cập nhật";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Chưa cập nhật";
-    return date.toLocaleDateString("vi-VN");
-}
-
-function formatSalary(job: Job) {
-    if (job.isNegotiable || (!job.salaryMin && !job.salaryMax)) return "Thỏa thuận";
-    const format = (value: string | null) =>
-        value ? `${Math.round(Number(value) / 1_000_000)} triệu` : "";
-    return [format(job.salaryMin), format(job.salaryMax)].filter(Boolean).join(" - ");
-}
-
-function CompanyLogo({ company }: { company: Company }) {
-    const logo = normalizeLogo(company.logo);
-
-    return (
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white text-sm font-bold text-primary shadow-sm">
-            {logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={company.name} className="h-full w-full object-contain p-2" />
-            ) : (
-                getCompanyMark(company.name)
-            )}
-        </div>
-    );
-}
-
-function FactItem({
-    icon: Icon,
-    label,
-    value,
-}: {
-    icon: LucideIcon;
-    label: string;
-    value: string;
-}) {
-    return (
-        <div className="flex gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-primary">
-                <Icon className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-500">{label}</p>
-                <p className="mt-1 break-words text-sm font-medium leading-5 text-slate-700">
-                    {value}
-                </p>
-            </div>
-        </div>
-    );
-}
+type DetailTab = "about" | "jobs" | "reviews";
 
 export default function CompanyDetailPage() {
     const params = useParams();
     const companyId = String(params?.id ?? "");
     const [company, setCompany] = useState<Company | null>(null);
+    const [companyPreviewJobs, setCompanyPreviewJobs] = useState<Job[]>([]);
     const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [totalCompanyJobs, setTotalCompanyJobs] = useState(0);
+    const [totalCompanyJobPages, setTotalCompanyJobPages] = useState(1);
+    const [previewJobsLoading, setPreviewJobsLoading] = useState(true);
+    const [previewJobsError, setPreviewJobsError] = useState<string | null>(null);
+    const [jobsLoading, setJobsLoading] = useState(true);
+    const [jobsError, setJobsError] = useState<string | null>(null);
+    const [jobKeyword, setJobKeyword] = useState("");
+    const [jobLocation, setJobLocation] = useState("");
+    const [jobExperience, setJobExperience] = useState("");
+    const [jobType, setJobType] = useState("");
+    const [jobSort, setJobSort] = useState<JobSort>("newest");
+    const [jobPage, setJobPage] = useState(1);
+    const [activeTab, setActiveTab] = useState<DetailTab>("about");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const resolvedCompanyId = company?.id ?? "";
 
-    const load = useCallback(async () => {
+    const scrollToSection = useCallback((sectionId: string, tab: DetailTab) => {
+        setActiveTab(tab);
+        window.setTimeout(() => {
+            document.getElementById(sectionId)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 0);
+    }, []);
+
+    const loadCompany = useCallback(async () => {
         if (!companyId) return;
         setLoading(true);
         setError(null);
-        setCompanyJobs([]);
-        setTotalCompanyJobs(0);
         try {
             const res = await companiesApi1.getById(companyId);
             setCompany(res.data);
-            try {
-                const jobsRes = await jobsApi.list({
-                    keyword: "",
-                    companyId: res.data.id,
-                    location: "",
-                    categoryId: "",
-                    jobMode: "",
-                    jobType: "",
-                    minSalary: "",
-                    maxSalary: "",
-                    maxExperience: "",
-                    sort: "newest",
-                    page: 1,
-                    size: COMPANY_JOBS_LIMIT,
-                });
-                setCompanyJobs(jobsRes.data);
-                setTotalCompanyJobs(jobsRes.pagination.total);
-            } catch {
-                setCompanyJobs([]);
-                setTotalCompanyJobs(0);
-            }
         } catch (err) {
             setCompany(null);
+            setCompanyPreviewJobs([]);
             setCompanyJobs([]);
             setTotalCompanyJobs(0);
+            setTotalCompanyJobPages(1);
             setError(err instanceof Error ? err.message : "Không tải được thông tin công ty.");
         } finally {
             setLoading(false);
         }
     }, [companyId]);
 
+    const loadCompanyJobPreview = useCallback(async () => {
+        if (!resolvedCompanyId) return;
+        setPreviewJobsLoading(true);
+        setPreviewJobsError(null);
+        try {
+            const jobsRes = await jobsApi.list({
+                keyword: "",
+                companyId: resolvedCompanyId,
+                location: "",
+                categoryId: "",
+                jobMode: "",
+                jobType: "",
+                minSalary: "",
+                maxSalary: "",
+                maxExperience: "",
+                sort: "newest",
+                page: 1,
+                size: COMPANY_JOBS_PREVIEW_LIMIT,
+            });
+            setCompanyPreviewJobs(jobsRes.data);
+            setTotalCompanyJobs(jobsRes.pagination.total);
+        } catch (err) {
+            setCompanyPreviewJobs([]);
+            setPreviewJobsError(err instanceof Error ? err.message : "Không tải được danh sách việc làm.");
+        } finally {
+            setPreviewJobsLoading(false);
+        }
+    }, [resolvedCompanyId]);
+
+    const loadCompanyJobs = useCallback(async () => {
+        if (!resolvedCompanyId) return;
+        setJobsLoading(true);
+        setJobsError(null);
+        try {
+            const jobsRes = await jobsApi.list({
+                keyword: jobKeyword,
+                companyId: resolvedCompanyId,
+                location: jobLocation,
+                categoryId: "",
+                jobMode: "",
+                jobType,
+                minSalary: "",
+                maxSalary: "",
+                maxExperience: jobExperience,
+                sort: jobSort,
+                page: jobPage,
+                size: COMPANY_JOBS_PAGE_SIZE,
+            });
+            setCompanyJobs(jobsRes.data);
+            setTotalCompanyJobs(jobsRes.pagination.total);
+            setTotalCompanyJobPages(jobsRes.pagination.totalPages || 1);
+        } catch (err) {
+            setCompanyJobs([]);
+            setTotalCompanyJobs(0);
+            setTotalCompanyJobPages(1);
+            setJobsError(err instanceof Error ? err.message : "Không tải được danh sách việc làm.");
+        } finally {
+            setJobsLoading(false);
+        }
+    }, [resolvedCompanyId, jobExperience, jobKeyword, jobLocation, jobPage, jobSort, jobType]);
+
     useEffect(() => {
         const timer = window.setTimeout(() => {
-            void load();
+            void loadCompany();
         }, 0);
 
         return () => window.clearTimeout(timer);
-    }, [load]);
+    }, [loadCompany]);
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            void loadCompanyJobPreview();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [loadCompanyJobPreview]);
+
+    useEffect(() => {
+        if (activeTab !== "jobs") return;
+
+        const timer = window.setTimeout(() => {
+            void loadCompanyJobs();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [activeTab, loadCompanyJobs]);
 
     const websiteHref = useMemo(() => normalizeWebsite(company?.website), [company?.website]);
     const logo = normalizeLogo(company?.logo);
@@ -198,6 +200,42 @@ export default function CompanyDetailPage() {
             { icon: CalendarDays, label: "Ngày tạo hồ sơ", value: formatDate(company.createdAt) },
         ];
     }, [company]);
+
+    const updateJobKeyword = useCallback((value: string) => {
+        setJobKeyword(value);
+        setJobPage(1);
+    }, []);
+
+    const updateJobLocation = useCallback((value: string) => {
+        setJobLocation(value);
+        setJobPage(1);
+    }, []);
+
+    const updateJobExperience = useCallback((value: string) => {
+        setJobExperience(value);
+        setJobPage(1);
+    }, []);
+
+    const updateJobType = useCallback((value: string) => {
+        setJobType(value);
+        setJobPage(1);
+    }, []);
+
+    const updateJobSort = useCallback((value: JobSort) => {
+        setJobSort(value);
+        setJobPage(1);
+    }, []);
+
+    const tabClass = useCallback(
+        (tab: DetailTab) =>
+            [
+                "px-1 py-3 transition",
+                activeTab === tab
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-slate-500 hover:text-slate-800",
+            ].join(" "),
+        [activeTab],
+    );
 
     return (
         <main className="min-h-screen bg-slate-50">
@@ -231,7 +269,7 @@ export default function CompanyDetailPage() {
                         <div className="flex flex-wrap gap-2">
                             <button
                                 type="button"
-                                onClick={() => void load()}
+                                onClick={() => void loadCompany()}
                                 className="rounded border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
                             >
                                 Thử lại
@@ -305,137 +343,62 @@ export default function CompanyDetailPage() {
 
                         <div className="border-b border-slate-200">
                             <div className="flex gap-8 text-xs font-semibold text-slate-500 sm:text-sm">
-                                <button type="button" className="border-b-2 border-primary px-1 py-3 text-primary">
+                                <button
+                                    type="button"
+                                    onClick={() => scrollToSection(ABOUT_SECTION_ID, "about")}
+                                    className={tabClass("about")}
+                                >
                                     Giới thiệu
                                 </button>
-                                <button type="button" className="px-1 py-3 hover:text-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={() => scrollToSection(COMPANY_JOBS_SECTION_ID, "jobs")}
+                                    className={tabClass("jobs")}
+                                >
                                     Việc làm ({totalCompanyJobs})
                                 </button>
-                                <button type="button" className="px-1 py-3 hover:text-slate-800">
+                                <button type="button" className={tabClass("reviews")}>
                                     Đánh giá ({DEFAULT_REVIEW_COUNT})
                                 </button>
                             </div>
                         </div>
 
-                        <section className="grid gap-5 py-7 lg:grid-cols-[minmax(0,1fr)_380px]">
-                            <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                                <h2 className="text-base font-bold text-slate-950 sm:text-lg">Giới thiệu công ty</h2>
-                                <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-600">
-                                    {company.description || "Thông tin giới thiệu đang được cập nhật."}
-                                </p>
-
-                                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                                    {companyFacts.map((fact) => (
-                                        <FactItem
-                                            key={fact.label}
-                                            icon={fact.icon}
-                                            label={fact.label}
-                                            value={fact.value}
-                                        />
-                                    ))}
-                                </div>
-                            </article>
-
-                            <aside className="rounded-lg border border-blue-100 bg-blue-50 p-6">
-                                <h2 className="text-base font-bold leading-6 text-blue-950">
-                                    Tại sao làm việc tại {company.name}?
-                                </h2>
-                                <div className="mt-5 grid gap-4">
-                                    {reasonItems.map((item) => {
-                                        const Icon = item.icon;
-
-                                        return (
-                                            <div key={item.label} className="flex items-start gap-3">
-                                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-white text-primary shadow-sm">
-                                                    <Icon className="h-4 w-4" />
-                                                </span>
-                                                <p className="pt-1 text-xs font-semibold leading-5 text-slate-700 sm:text-sm">
-                                                    {item.label}
-                                                </p>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </aside>
-                        </section>
-
-                        <section className="pb-8">
-                            <h2 className="mb-4 text-base font-bold text-slate-950 sm:text-lg">Các tin đang tuyển</h2>
-                            {companyJobs.length > 0 ? (
-                                <>
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {companyJobs.map((job) => {
-                                    const skills = job.jobSkills
-                                        ?.slice(0, 3)
-                                        .map((item) => item.skill?.name)
-                                        .filter(Boolean) ?? [];
-
-                                    return (
-                                    <article key={job.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <h3 className="line-clamp-1 text-sm font-bold text-slate-950">
-                                                        {job.title}
-                                                    </h3>
-                                                    <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-primary">
-                                                        Mới
-                                                    </span>
-                                                </div>
-                                                <p className="mt-1 text-xs font-medium text-slate-500">{company.name}</p>
-                                            </div>
-                                            <Link
-                                                href={`${ROUTES.jobs}/${job.id}`}
-                                                aria-label={`Xem ${job.title}`}
-                                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:border-blue-200 hover:text-primary"
-                                            >
-                                                <ArrowRight className="h-3.5 w-3.5" />
-                                            </Link>
-                                        </div>
-
-                                        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-500">
-                                            <span className="inline-flex items-center gap-1">
-                                                <MapPin className="h-3.5 w-3.5" />
-                                                {job.address}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1">
-                                                <CircleDollarSign className="h-3.5 w-3.5" />
-                                                {formatSalary(job)}
-                                            </span>
-                                        </div>
-
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            {skills.map((tag) => (
-                                                <span
-                                                    key={tag}
-                                                    className="rounded bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600"
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-
-                                        <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-3">
-                                            <p className="text-xs text-slate-500">{formatDate(job.createdAt)}</p>
-                                            <Sparkles className="h-3.5 w-3.5 text-slate-300" />
-                                        </div>
-                                    </article>
-                                    );
-                                })}
+                        {activeTab === "jobs" ? (
+                            <div className="pt-5">
+                                <CompanyJobsSection
+                                    company={company}
+                                    jobs={companyJobs}
+                                    total={totalCompanyJobs}
+                                    totalPages={totalCompanyJobPages}
+                                    page={jobPage}
+                                    keyword={jobKeyword}
+                                    location={jobLocation}
+                                    maxExperience={jobExperience}
+                                    jobType={jobType}
+                                    sort={jobSort}
+                                    loading={jobsLoading}
+                                    error={jobsError}
+                                    onKeywordChange={updateJobKeyword}
+                                    onLocationChange={updateJobLocation}
+                                    onMaxExperienceChange={updateJobExperience}
+                                    onJobTypeChange={updateJobType}
+                                    onSortChange={updateJobSort}
+                                    onPageChange={setJobPage}
+                                />
                             </div>
-
-                            <div className="mt-5 flex justify-center">
-                                <Link
-                                    href={`${ROUTES.jobs}?companyId=${company.id}`}
-                                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded border border-primary bg-white px-4 text-xs font-semibold text-primary transition hover:bg-blue-50 sm:text-sm"
-                                >
-                                    Xem tất cả {totalCompanyJobs} tin tuyển dụng
-                                    <ArrowRight className="h-3.5 w-3.5" />
-                                </Link>
-                            </div>
-                                </>
-                            ) : null}
-                        </section>
+                        ) : (
+                            <>
+                                <CompanyAboutSection company={company} companyFacts={companyFacts} />
+                                <CompanyJobsPreviewSection
+                                    company={company}
+                                    jobs={companyPreviewJobs}
+                                    total={totalCompanyJobs}
+                                    loading={previewJobsLoading}
+                                    error={previewJobsError}
+                                    onViewAll={() => scrollToSection(COMPANY_JOBS_SECTION_ID, "jobs")}
+                                />
+                            </>
+                        )}
                     </>
                 ) : null}
             </div>
