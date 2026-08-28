@@ -664,3 +664,184 @@ GET /api/v1/jobs
 GET /api/v1/recruiter/jobs
 → danh sách job nội bộ để Recruiter quản lý
 ```
+
+---
+
+## 1.9 Recruiter Statistics (`/api/v1/recruiter/statistics/*`)
+
+### 1.9.1 GET `/api/v1/recruiter/statistics/overview`
+- **Mục đích**: Lấy các chỉ số tổng quan cho dashboard (tin đang tuyển, tổng tin, ứng viên mới trong kỳ, tổng ứng viên, và so sánh kỳ trước).
+- **Quyền**: `RECRUITER`
+- **Query parameters**:
+  - `days` (number, optional, mặc định `30`): Số ngày trong kỳ thống kê.
+  - `startDate` & `endDate` (string `YYYY-MM-DD`, optional): Khoảng ngày tùy chỉnh.
+- **Response 200**:
+```json
+{
+  "success": true,
+  "message": "Lấy thống kê tổng quan thành công",
+  "data": {
+    "activeJobs": 12,
+    "totalJobs": 25,
+    "newCandidates": 48,
+    "totalCandidates": 156,
+    "comparison": {
+      "periodDays": 30,
+      "startDate": "2026-07-29",
+      "endDate": "2026-08-28",
+      "prevStartDate": "2026-06-29",
+      "prevEndDate": "2026-07-29",
+      "prevNewCandidates": 33,
+      "diffNewCandidates": 15,
+      "diffTotalCandidates": 48
+    }
+  }
+}
+```
+
+### 1.9.2 GET `/api/v1/recruiter/statistics/applications-by-status`
+- **Mục đích**: Thống kê số lượng ứng viên theo từng trạng thái (`APPLIED`, `VIEWED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, `WITHDRAWN`).
+- **Quyền**: `RECRUITER`
+- **Query parameters**:
+  - `jobId` (string, optional): Lọc theo tin tuyển dụng cụ thể.
+  - `days` / `startDate` & `endDate` (optional): Lọc trong khoảng thời gian.
+- **Response 200**:
+```json
+{
+  "success": true,
+  "message": "Lấy thống kê trạng thái ứng viên thành công",
+  "data": {
+    "total": 156,
+    "byStatus": {
+      "APPLIED": 78,
+      "VIEWED": 32,
+      "INTERVIEW": 18,
+      "ACCEPTED": 12,
+      "REJECTED": 16,
+      "WITHDRAWN": 0
+    }
+  }
+}
+```
+
+### 1.9.3 GET `/api/v1/recruiter/statistics/recent-jobs`
+- **Mục đích**: Lấy danh sách tin tuyển dụng mới nhất của công ty kèm số lượng ứng viên đã nộp.
+- **Quyền**: `RECRUITER`
+- **Query parameters**:
+  - `limit` (number, optional, mặc định `5`, tối đa `50`).
+- **Response 200**:
+```json
+{
+  "success": true,
+  "message": "Lấy danh sách tin tuyển dụng gần đây thành công",
+  "data": [
+    {
+      "id": "10",
+      "title": "Chuyên viên Digital Marketing",
+      "status": "APPROVED",
+      "applicantCount": 18,
+      "deadline": "2026-09-30",
+      "createdAt": "2026-08-20T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 1.9.4 GET `/api/v1/recruiter/statistics/candidate-trend`
+- **Mục đích**: Lấy dữ liệu chuỗi thời gian để vẽ 2 đường xu hướng: Kỳ này vs Kỳ trước (Candidate Trend Chart).
+- **Quyền**: `RECRUITER`
+- **Query parameters**:
+  - `days` (number, optional, mặc định `30`).
+  - `startDate` & `endDate` (string `YYYY-MM-DD`, optional).
+  - `groupBy` (`day` | `week` | `month`, mặc định `day`).
+- **Response 200**:
+```json
+{
+  "success": true,
+  "message": "Lấy biểu đồ xu hướng ứng viên thành công",
+  "data": {
+    "groupBy": "day",
+    "summary": {
+      "totalCurrent": 48,
+      "totalPrevious": 33,
+      "diff": 15
+    },
+    "points": [
+      {
+        "label": "24/05",
+        "current": 6,
+        "previous": 4,
+        "currentDate": "2026-05-24",
+        "prevDate": "2026-04-24"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 1.9.5 Hướng dẫn sử dụng cho Frontend (Frontend Integration Guide)
+
+#### 1. Ánh xạ Component Dashboard ↔ API Endpoint
+
+| UI Component | Endpoint cần gọi | Dữ liệu chính sử dụng |
+|---|---|---|
+| **3 Thẻ Tổng quan** (`DashboardCard`) | `GET /api/v1/recruiter/statistics/overview` | `activeJobs`, `newCandidates`, `totalCandidates`, `comparison.diffNewCandidates` |
+| **Biểu đồ Tròn** (`CandidateStatusChart`) | `GET /api/v1/recruiter/statistics/applications-by-status` | `total`, `byStatus` (`APPLIED`, `VIEWED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, `WITHDRAWN`) |
+| **Biểu đồ Đường 2 Kỳ** (`CandidateTrendChart`) | `GET /api/v1/recruiter/statistics/candidate-trend` | `summary`, `points` (`label`, `current`, `previous`) |
+| **Bảng Tin Đăng Gần Đây** (`RecentJobs`) | `GET /api/v1/recruiter/statistics/recent-jobs` | Danh sách tin: `id`, `title`, `status`, `applicantCount`, `deadline` |
+
+---
+
+#### 2. Quy tắc truyền tham số lọc thời gian (Time Filter)
+
+Frontend có thể hỗ trợ người dùng lọc thời gian linh hoạt theo 2 cách:
+
+1. **Chọn nhanh theo số ngày (`days`)**:
+   - Mặc định: `30` ngày gần nhất.
+   - Các mốc thông dụng: `?days=7` (7 ngày), `?days=14` (14 ngày), `?days=30` (30 ngày), `?days=90` (quý).
+   - Backend sẽ tự động lấy kỳ hiện tại là `N` ngày qua, và kỳ trước là `N` ngày liền kề trước đó.
+
+2. **Chọn khoảng ngày từ DatePicker (`startDate` & `endDate`)**:
+   - Định dạng: `YYYY-MM-DD` (Ví dụ: `?startDate=2026-08-01&endDate=2026-08-28`).
+   - Yêu cầu: `startDate` phải nhỏ hơn hoặc bằng `endDate` và phải truyền đủ cả 2 tham số.
+
+3. **Gom nhóm biểu đồ xu hướng (`groupBy`)**:
+   - `day` (mặc định - theo ngày)
+   - `week` (theo tuần)
+   - `month` (theo tháng)
+
+---
+
+#### 3. Quy tắc hiển thị và xử lý dữ liệu ở Frontend
+
+- **Hiển thị thẻ chỉ số (Dashboard Cards)**:
+  - **Tin đăng đang tuyển**: `data.activeJobs`
+  - **Ứng viên mới**: `data.newCandidates` (chi tiết: `+{data.comparison.diffNewCandidates} so với kỳ trước`)
+  - **Tổng ứng viên**: `data.totalCandidates`
+
+- **Hiển thị Biểu đồ tròn trạng thái (Donut Chart)**:
+  - Lấy số lượng từ `data.byStatus[STATUS]`.
+  - Frontend tính tỷ lệ phần trăm: $\text{Tỷ lệ } (\%) = \frac{\text{count}}{\text{total}} \times 100\%$.
+  - Nếu `total === 0`, hiển thị biểu đồ rỗng (0%).
+
+- **Hiển thị Biểu đồ đường xu hướng (Trend Chart)**:
+  - **Trục hoành (X-Axis)**: Lấy `point.label` (ví dụ: `24/05`, `28/05`, `01/06`...).
+  - **Đường 1 (Kỳ này - nét liền)**: Lấy `point.current`.
+  - **Đường 2 (Kỳ trước - nét đứt)**: Lấy `point.previous`.
+  - Dữ liệu `points` đã được Backend tự động bù số `0` cho các ngày không có ứng viên, Frontend không cần xử lý bù mảng.
+
+- **Bảng Tin đăng gần đây**:
+  - `applicantCount`: Số lượng hồ sơ đã nộp vào tin đó.
+  - `deadline`: Hạn nộp hồ sơ.
+
+---
+
+#### 4. Quy ước xử lý lỗi (HTTP Error Handling)
+
+- **`401 UNAUTHORIZED`**: Chưa đăng nhập hoặc token hết hạn $\rightarrow$ Điều hướng người dùng về trang `/login`.
+- **`403 FORBIDDEN`**: Tài khoản không có vai trò `RECRUITER` $\rightarrow$ Chặn và thông báo không có quyền truy cập.
+- **`404 COMPANY_NOT_FOUND`**: Nhà tuyển dụng chưa khởi tạo hồ sơ công ty $\rightarrow$ Điều hướng hoặc hiển thị popup yêu cầu hoàn tất tạo hồ sơ công ty trước.
+- **`400 BAD_REQUEST`**: Tham số truyền lên sai định dạng (ví dụ `startDate > endDate`) $\rightarrow$ Hiển thị thông báo lỗi từ mảng `errors`.
+
