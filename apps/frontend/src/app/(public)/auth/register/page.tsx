@@ -25,6 +25,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
+import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ROUTES } from "@/constants/routes";
 import {
   registerSchema,
@@ -66,6 +67,7 @@ function getPasswordStrength(password: string) {
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const {
@@ -121,7 +123,7 @@ export default function RegisterPage() {
   });
 
   return (
-    <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-0 lg:grid-cols-2 lg:gap-16 lg:py-12">
+    <div className=" container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
       <section
         className="hidden flex-col pb-8 pt-8 lg:flex"
         aria-labelledby="register-introduction"
@@ -163,7 +165,7 @@ export default function RegisterPage() {
       </section>
 
       <section
-        className="mx-auto w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 py- shadow-sm md:p-10"
+        className="justify-self-end w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 shadow-sm md:p-10"
         aria-labelledby="register-title"
       >
         <div className="mb-8 text-center">
@@ -216,6 +218,27 @@ export default function RegisterPage() {
             <PasswordToggle
               visible={showPassword}
               onToggle={() => setShowPassword((current) => !current)}
+            />
+          </Field>
+
+          <Field
+            label="Xác nhận mật khẩu"
+            htmlFor="confirmPassword"
+            error={errors.confirmPassword?.message}
+          >
+            <InputIcon icon={LockKeyhole} />
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Nhập lại mật khẩu"
+              aria-invalid={Boolean(errors.confirmPassword)}
+              className={`${inputClassName} pr-10`}
+              {...register("confirmPassword")}
+            />
+            <PasswordToggle
+              visible={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword((current) => !current)}
             />
           </Field>
 
@@ -316,6 +339,18 @@ export default function RegisterPage() {
           </Link>
         </p>
       </section>
+
+      <AppAlertDialog
+        open={Boolean(submitError)}
+        onOpenChange={(open) => {
+          if (!open) setSubmitError("");
+        }}
+        tone="error"
+        title="Đăng ký thất bại"
+        description={submitError}
+        confirmLabel="Đóng"
+        showCancel={false}
+      />
     </div>
   );
 }

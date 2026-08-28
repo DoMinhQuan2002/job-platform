@@ -73,8 +73,46 @@ export default function VerifyOtpPage({ searchParams }: VerifyOtpPageProps) {
       : 300;
 
   return (
-    <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-0 lg:grid-cols-2 lg:gap-16 lg:py-12">
-      <AuthMarketing />
+    <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
+      <section
+        className="hidden flex-col pb-8 pt-8 lg:flex "
+        aria-labelledby="auth-introduction"
+      >
+        <div className="mb-6 inline-flex w-max items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
+          <BadgeCheck className="size-4" aria-hidden="true" />
+          <span className="text-sm font-medium">Nền tảng tuyển dụng uy tín</span>
+        </div>
+
+        <h1
+          id="auth-introduction"
+          className="mb-4 text-4xl font-bold leading-tight tracking-tight text-text"
+        >
+          Tạo tài khoản để
+          <br />
+          khám phá cơ hội nghề nghiệp
+          <br />
+          phù hợp với <span className="text-primary">bạn</span>
+        </h1>
+
+        <p className="mb-10 max-w-lg leading-relaxed text-muted">
+          Tham gia Job Platform để ứng tuyển việc làm, lưu tin tuyển dụng và kết
+          nối với nhà tuyển dụng dễ dàng hơn.
+        </p>
+
+        <ul className="space-y-6">
+          {features.map(({ icon: Icon, title, description }) => (
+            <li key={title} className="flex items-start gap-4">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Icon className="size-6" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-text">{title}</h2>
+                <p className="mt-0.5 text-sm text-muted">{description}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
       <VerifyOtpForm
         email={params.email?.trim() || ""}
         initialExpiresIn={initialExpiresIn}
@@ -83,49 +121,6 @@ export default function VerifyOtpPage({ searchParams }: VerifyOtpPageProps) {
   );
 }
 
-function AuthMarketing() {
-  return (
-    <section
-      className="hidden flex-col pb-8 pt-8 lg:flex"
-      aria-labelledby="auth-introduction"
-    >
-      <div className="mb-6 inline-flex w-max items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
-        <BadgeCheck className="size-4" aria-hidden="true" />
-        <span className="text-sm font-medium">Nền tảng tuyển dụng uy tín</span>
-      </div>
-
-      <h1
-        id="auth-introduction"
-        className="mb-4 text-4xl font-bold leading-tight tracking-tight text-text"
-      >
-        Tạo tài khoản để
-        <br />
-        khám phá cơ hội nghề nghiệp
-        <br />
-        phù hợp với <span className="text-primary">bạn</span>
-      </h1>
-
-      <p className="mb-10 max-w-lg leading-relaxed text-muted">
-        Tham gia Job Platform để ứng tuyển việc làm, lưu tin tuyển dụng và kết
-        nối với nhà tuyển dụng dễ dàng hơn.
-      </p>
-
-      <ul className="space-y-6">
-        {features.map(({ icon: Icon, title, description }) => (
-          <li key={title} className="flex items-start gap-4">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Icon className="size-6" aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-text">{title}</h2>
-              <p className="mt-0.5 text-sm text-muted">{description}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 type VerifyOtpFormProps = {
   email: string;
@@ -265,7 +260,7 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
 
   return (
     <section
-      className="mx-auto w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 shadow-sm md:p-10"
+      className="justify-self-end w-full max-w-lg rounded-2xl border border-border/70 bg-white p-6 shadow-sm md:p-10"
       aria-labelledby="verify-otp-title"
     >
       <Link
@@ -390,11 +385,10 @@ function StatusMessage({
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={`mt-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
-        tone === "error"
-          ? "bg-danger/10 text-danger"
-          : "bg-success/10 text-success"
-      }`}
+      className={`mt-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${tone === "error"
+        ? "bg-danger/10 text-danger"
+        : "bg-success/10 text-success"
+        }`}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>
