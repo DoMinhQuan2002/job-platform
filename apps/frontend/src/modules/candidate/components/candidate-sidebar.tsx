@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   Bookmark,
-  Briefcase,
   FileText,
   Headphones,
   LayoutDashboard,
@@ -30,7 +29,6 @@ type CandidateSidebarProps = {
 const navItems = [
   { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
   { href: ROUTES.candidate.profile, label: "Thông tin tài khoản", icon: User, disabled: true },
-  { href: ROUTES.candidate.profile, label: "Hồ sơ nghề nghiệp", icon: Briefcase, disabled: true },
   { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
   { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
   { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
