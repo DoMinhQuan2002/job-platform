@@ -219,6 +219,23 @@ export default function RegisterPage() {
             />
           </Field>
 
+          <Field
+            label="Xác nhận mật khẩu"
+            htmlFor="confirmPassword"
+            error={errors.confirmPassword?.message}
+          >
+            <InputIcon icon={LockKeyhole} />
+            <input
+              id="confirmPassword"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Nhập lại mật khẩu"
+              aria-invalid={Boolean(errors.confirmPassword)}
+              className={`${inputClassName} pr-10`}
+              {...register("confirmPassword")}
+            />
+          </Field>
+
           <div className="-mt-2">
             <p className="mb-2 text-xs text-muted">
               Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường và số
