@@ -56,7 +56,7 @@ function toJobDetail(jobId: string, raw: unknown): JobDetail {
       required: summary.tags,
       optional: [],
     },
-    isSaved: false,
+    isSaved: summary.isSaved,
   };
 }
 

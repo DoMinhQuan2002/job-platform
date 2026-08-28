@@ -8,6 +8,7 @@ import type { PublicCompany } from "@/modules/companies/types";
 import { jobsApi } from "@/modules/jobs/api";
 import type { Job, JobFilters } from "@/modules/jobs/types";
 import { ROUTES } from "@/constants/routes";
+import { getAccessTokenRole } from "@/lib/auth-token";
 
 const latestJobFilters: JobFilters = {
   keyword: "",
@@ -22,11 +23,39 @@ const latestJobFilters: JobFilters = {
   page: 1,
   size: 4,
 };
+function CompactCompanyLogo({ company }: { company: Job["company"] }) {
+  const [failed, setFailed] = useState(false);
+  const logo = company?.logo;
+  const logoSrc = logo && (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/"))
+    ? logo
+    : undefined;
 
+  if (logoSrc && !failed) {
+    return (
+      <img
+        src={logoSrc}
+        alt={`Logo ${company.name}`}
+        className="size-full object-contain "
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return <span aria-hidden="true">{initials(company?.name)}</span>;
+}
 export function HomeDiscovery() {
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRecruiter, setIsRecruiter] = useState(false);
+
+  useEffect(() => {
+    const syncRole = () => setIsRecruiter(getAccessTokenRole() === "RECRUITER");
+    syncRole();
+    window.addEventListener("jp-auth-change", syncRole);
+    return () => window.removeEventListener("jp-auth-change", syncRole);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -67,9 +96,9 @@ export function HomeDiscovery() {
                   key={company.id}
                   className="flex min-w-[220px] flex-1 snap-start items-center gap-4 rounded-xl border border-border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <span className="grid size-12 shrink-0 place-items-center rounded border border-border bg-slate-50 text-xs font-bold text-primary">
-                    {initials(company.name)}
-                  </span>
+                  <div className="grid size-12 shrink-0 place-items-center rounded border border-border bg-slate-50 text-xs font-bold text-primary">
+                    <CompactCompanyLogo company={company} />
+                  </div>
                   <span className="min-w-0">
                     <strong className="block truncate text-sm text-text">
                       {company.name}
@@ -105,9 +134,9 @@ export function HomeDiscovery() {
                     Mới
                   </span>
                   <div className="mb-4 flex items-center gap-2">
-                    <span className="grid size-8 place-items-center rounded border border-border bg-slate-50 text-[9px] font-bold text-primary">
-                      {initials(job.company?.name)}
-                    </span>
+                    <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded border border-border bg-slate-50 text-[9px] font-bold text-primary">
+                      <CompactCompanyLogo company={job.company} />
+                    </div>
                     <span className="max-w-[65%] truncate text-[11px] font-semibold text-muted">
                       {job.company?.name}
                     </span>
@@ -146,12 +175,14 @@ export function HomeDiscovery() {
                     <span className="text-[10px] text-slate-500">
                       {postedDate(job.createdAt)}
                     </span>
-                    <button
-                      aria-label={`Lưu việc làm ${job.title}`}
-                      className="text-slate-500 hover:text-primary"
-                    >
-                      <Bookmark className="size-5" />
-                    </button>
+                    {!isRecruiter && (
+                      <button
+                        aria-label={`Lưu việc làm ${job.title}`}
+                        className="text-slate-500 hover:text-primary"
+                      >
+                        <Bookmark className="size-5" />
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}

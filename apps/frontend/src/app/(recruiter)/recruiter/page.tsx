@@ -2,12 +2,13 @@ import { BriefcaseBusiness, FileText, Users } from "lucide-react";
 import { DashboardCard } from "@/modules/recruiter/components/dashboard-card";
 import { CandidateStatusChart, CandidateTrendChart } from "@/modules/recruiter/components/dashboard-charts";
 import { RecentActivity, RecentJobs } from "@/modules/recruiter/components/dashboard-lists";
+import { DashboardWelcome } from "@/modules/recruiter/components/dashboard-welcome";
 
 export default function RecruiterPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <section>
-        <div><h1 className="text-xl font-bold">Chào mừng trở lại, Công ty TNHH ABC! 👋</h1><p className="mt-1 text-xs text-muted">Dưới đây là tổng quan hoạt động tuyển dụng của bạn hôm nay.</p></div>
+        <DashboardWelcome />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

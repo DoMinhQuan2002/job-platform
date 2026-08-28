@@ -15,6 +15,7 @@ type SavedJobPreview = {
   jobId: string;
   title: string;
   companyName: string;
+  companyLogoUrl?: string;
 };
 
 const savedJobsHref = ROUTES.applications.savedJobs;
@@ -50,6 +51,7 @@ export function JobsSidePanel() {
             jobId: record.jobId,
             title: job.title,
             companyName: job.companyName,
+            companyLogoUrl: job.companyLogoUrl,
           } satisfies SavedJobPreview;
         }),
       );
@@ -71,9 +73,11 @@ export function JobsSidePanel() {
     const syncAuth = () => void loadSavedJobs();
     window.addEventListener("storage", syncAuth);
     window.addEventListener("jp-auth-change", syncAuth);
+    window.addEventListener("jp-saved-jobs-change", syncAuth);
     return () => {
       window.removeEventListener("storage", syncAuth);
       window.removeEventListener("jp-auth-change", syncAuth);
+      window.removeEventListener("jp-saved-jobs-change", syncAuth);
     };
   }, [loadSavedJobs]);
 
@@ -110,10 +114,13 @@ export function JobsSidePanel() {
               <Link
                 key={job.id}
                 href={`/jobs/${job.jobId}`}
-                className="block rounded-lg bg-slate-50 px-3 py-2.5 transition-colors hover:bg-primary/5"
+                className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2.5 transition-colors hover:bg-primary/5"
               >
-                <p className="line-clamp-1 text-xs font-semibold text-text">{job.title}</p>
-                <p className="mt-1 line-clamp-1 text-[10px] text-muted">{job.companyName}</p>
+                <CompanyLogo name={job.companyName} src={job.companyLogoUrl} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold text-text">{job.title}</span>
+                  <span className="mt-1 block truncate text-[10px] text-muted">{job.companyName}</span>
+                </span>
               </Link>
             ))}
           </div>
@@ -131,6 +138,45 @@ export function JobsSidePanel() {
         </Link>
       </section>
     </aside>
+  );
+}
+
+function CompanyLogo({ name, src }: { name: string; src?: string }) {
+  const [failed, setFailed] = useState(false);
+  const logoSrc = src && (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/"))
+    ? src
+    : undefined;
+
+  if (logoSrc && !failed) {
+    return (
+      <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoSrc}
+          alt={`Logo ${name}`}
+          className="h-full w-full object-contain p-0.5"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-10 shrink-0 place-items-center rounded-md border border-border bg-white text-[10px] font-bold text-primary"
+    >
+      {initials || "JP"}
+    </span>
   );
 }
 

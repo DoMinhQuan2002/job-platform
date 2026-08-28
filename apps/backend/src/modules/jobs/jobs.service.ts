@@ -17,6 +17,8 @@ import { JobSkill } from "../../database/entities/job-skill.entity";
 import { Job } from "../../database/entities/job.entity";
 import { ApplicationEntity } from "../../database/entities/application.entity";
 import { SkillEntity } from "../../database/entities/skill.entity";
+import { CandidateProfileEntity } from "../../database/entities/candidate-profile.entity";
+import { SavedJobEntity } from "../../database/entities/saved-job.entity";
 import type {
   CreateJobInput,
   CurrentUser,
@@ -46,6 +48,26 @@ const getJobRepository = () => AppDataSource.getRepository(Job);
 const getCompanyRepository = () => AppDataSource.getRepository(Company);
 const getCategoryRepository = () => AppDataSource.getRepository(JobCategory);
 const getSkillRepository = () => AppDataSource.getRepository(SkillEntity);
+
+const getSavedJobIds = async (userId: string | undefined, jobIds: string[]) => {
+  if (!userId || jobIds.length === 0) return new Set<string>();
+
+  const candidate = await AppDataSource.getRepository(CandidateProfileEntity).findOne({
+    where: { userId },
+    select: { id: true },
+  });
+  if (!candidate) return new Set<string>();
+
+  const savedJobs = await AppDataSource.getRepository(SavedJobEntity).find({
+    where: {
+      candidateId: candidate.id,
+      jobId: In(jobIds),
+    },
+    select: { jobId: true },
+  });
+
+  return new Set(savedJobs.map((savedJob) => savedJob.jobId));
+};
 
 // Chuẩn hóa trường text bắt buộc và loại bỏ giá trị chỉ chứa khoảng trắng.
 const requireNonEmpty = (value: string, field: string) => {
@@ -332,7 +354,7 @@ export const jobService = {
   },
 
   /** Lấy danh sách job công khai, còn hạn với bộ lọc và phân trang. */
-  async getJobs(query: JobQuery) {
+  async getJobs(query: JobQuery, userId?: string) {
     const page = Number.isInteger(query.page) && (query.page as number) > 0 ? (query.page as number) : 1;
     const requestedSize =
       Number.isInteger(query.size) && (query.size as number) > 0 ? (query.size as number) : 20;
@@ -404,12 +426,18 @@ export const jobService = {
         qb.orderBy("job.createdAt", "DESC");
     }
 
-    const [items, total] = await qb.skip((page - 1) * size).take(size).getManyAndCount();
+    const [jobs, total] = await qb.skip((page - 1) * size).take(size).getManyAndCount();
+    const savedJobIds = await getSavedJobIds(userId, jobs.map((job) => job.id));
+    const items = jobs.map((job) => ({
+      ...job,
+      isSaved: savedJobIds.has(job.id),
+    }));
+
     return { items, pagination: { page, size, total, totalPages: Math.ceil(total / size) } };
   },
 
   /** Lấy chi tiết một job đã duyệt và chưa hết hạn. */
-  async getJobById(id: string) {
+  async getJobById(id: string, userId?: string) {
     const job = await getJobRepository()
       .createQueryBuilder("job")
       .leftJoinAndSelect("job.company", "company")
@@ -428,7 +456,8 @@ export const jobService = {
         "Tin tuyển dụng không tồn tại hoặc không còn được công khai.",
       );
     }
-    return job;
+    const savedJobIds = await getSavedJobIds(userId, [job.id]);
+    return { ...job, isSaved: savedJobIds.has(job.id) };
   },
 
   /** Cập nhật job thuộc quyền quản lý của recruiter hoặc admin. */

@@ -81,6 +81,7 @@ export type JobSummary = {
   requirements: string[];
   benefits: string[];
   tags: string[];
+  isSaved: boolean;
 };
 
 export function summarizeJob(raw: unknown): JobSummary {
@@ -132,5 +133,6 @@ export function summarizeJob(raw: unknown): JobSummary {
     requirements: splitTextBlocks(job.requirements),
     benefits: splitTextBlocks(job.benefits),
     tags: skillNames,
+    isSaved: job.isSaved === true,
   };
 }

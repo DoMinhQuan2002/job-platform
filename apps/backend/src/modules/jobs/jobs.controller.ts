@@ -237,7 +237,10 @@ export const jobsController = {
   /** GET /jobs - API public. */
   getJobs: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await jobService.getJobs(parseQuery(req.query));
+      const query = parseQuery(req.query);
+      const result = req.user?.role === "CANDIDATE"
+        ? await jobService.getJobs(query, req.user.id)
+        : await jobService.getJobs(query);
       res.status(200).json({
         success: true,
         data: result.items,
@@ -252,7 +255,9 @@ export const jobsController = {
   getJobById: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = parseBigIntId(req.params.id, "id");
-      const data = await jobService.getJobById(id);
+      const data = req.user?.role === "CANDIDATE"
+        ? await jobService.getJobById(id, req.user.id)
+        : await jobService.getJobById(id);
       res.status(200).json({ success: true, data });
     } catch (error) {
       next(error);

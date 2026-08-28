@@ -3,12 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Bookmark, ChevronDown, LogOut, Menu, Search } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Search, UserRound } from "lucide-react";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import { authApi } from "@/services/auth.service";
+import { useRecruiterCompany } from "./recruiter-company-context";
 
 type RecruiterHeaderProps = {
+  menuOpen: boolean;
   onOpenMenu: () => void;
 };
 
@@ -18,10 +20,19 @@ const navItems = [
   { href: ROUTES.companies, label: "Công ty" },
 ];
 
-export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
+export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) {
   const router = useRouter();
+  const { company, loading: companyLoading } = useRecruiterCompany();
   const [accountOpen, setAccountOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const companyName = companyLoading ? "Đang tải..." : company?.name ?? "Chưa có công ty";
+  const companyInitials = company?.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase() || "CT";
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -41,11 +52,14 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
         className="flex h-[68px] w-full items-center px-4 sm:px-6"
         aria-label="Điều hướng chính"
       >
+        {/* Mobile: nút mở recruiter sidebar, ẩn từ breakpoint lg. */}
         <button
           type="button"
           onClick={onOpenMenu}
           className="mr-2 rounded-md p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
           aria-label="Mở menu quản trị"
+          aria-controls="recruiter-mobile-navigation"
+          aria-expanded={menuOpen}
         >
           <Menu className="size-5" />
         </button>
@@ -61,6 +75,7 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
           </span>
         </Link>
 
+        {/* Desktop/tablet: menu điều hướng chính, ẩn trên mobile. */}
         <div className="mx-auto hidden h-full items-center gap-10 md:flex lg:gap-16">
           {navItems.map((item) => (
             <Link
@@ -73,7 +88,9 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
           ))}
         </div>
 
+        {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
         <div className="ml-auto flex items-center gap-3">
+          {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
           <label className="relative hidden xl:block">
             <span className="sr-only">Tìm kiếm việc làm hoặc công ty</span>
             <input
@@ -82,14 +99,6 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
             />
             <Search className="absolute right-3 top-2 size-4 text-slate-600" />
           </label>
-
-          <Link
-            href={ROUTES.applications.savedJobs}
-            className="hidden rounded-md p-1.5 text-slate-700 hover:bg-slate-100 sm:block"
-            aria-label="Việc làm đã lưu"
-          >
-            <Bookmark className="size-[18px]" />
-          </Link>
 
           <button
             type="button"
@@ -102,6 +111,7 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
             </span>
           </button>
 
+          {/* Mobile chỉ hiện avatar; từ sm trở lên hiện thêm tên và mũi tên. */}
           <div className="relative ml-1">
             <button
               type="button"
@@ -111,10 +121,13 @@ export function RecruiterHeader({ onOpenMenu }: RecruiterHeaderProps) {
               aria-haspopup="menu"
             >
               <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
-                CT
+                {companyInitials}
               </span>
-              <span className="hidden max-w-32 truncate text-xs font-medium text-slate-900 sm:block">
-                Công ty TNHH ABC
+              <span
+                className="hidden max-w-32 truncate text-xs font-medium text-slate-900 sm:block"
+                title={company?.name}
+              >
+                {companyName}
               </span>
               <ChevronDown
                 className={`hidden size-3.5 text-slate-500 transition-transform sm:block ${accountOpen ? "rotate-180" : ""}`}
