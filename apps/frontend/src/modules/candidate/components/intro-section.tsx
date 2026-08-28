@@ -51,11 +51,11 @@ export function IntroSection({ profile, saving, onSave }: IntroSectionProps) {
             <h3 className="text-sm font-bold text-foreground">Giới thiệu bản thân</h3>
             <button
               type="button"
-              className="text-primary hover:text-primary/80"
+              className="rounded-md p-1.5 text-primary transition hover:bg-primary/5 hover:text-primary/80"
               onClick={() => setEditingBio((value) => !value)}
               aria-label="Chỉnh sửa giới thiệu"
             >
-              <Pencil className="size-3" />
+              <Pencil className="size-4" />
             </button>
           </div>
           {editingBio ? (
@@ -81,11 +81,11 @@ export function IntroSection({ profile, saving, onSave }: IntroSectionProps) {
             <h3 className="text-sm font-bold text-foreground">Mục tiêu nghề nghiệp</h3>
             <button
               type="button"
-              className="text-primary hover:text-primary/80"
+              className="rounded-md p-1.5 text-primary transition hover:bg-primary/5 hover:text-primary/80"
               onClick={() => setEditingObjective((value) => !value)}
               aria-label="Chỉnh sửa mục tiêu"
             >
-              <Pencil className="size-3" />
+              <Pencil className="size-4" />
             </button>
           </div>
           {editingObjective ? (

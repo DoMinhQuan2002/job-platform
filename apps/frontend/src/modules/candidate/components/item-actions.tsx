@@ -15,10 +15,10 @@ export function ItemActions({ onEdit, onDelete, deleting }: ItemActionsProps) {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-auto gap-1 px-0 text-xs font-semibold text-primary hover:bg-transparent hover:text-primary/80"
+          className="h-auto gap-1.5 px-1.5 py-1 text-xs font-semibold text-primary hover:bg-primary/5 hover:text-primary/80"
           onClick={onEdit}
         >
-          <Pencil className="size-3" />
+          <Pencil className="size-4" />
           Sửa
         </Button>
       ) : null}
@@ -27,11 +27,11 @@ export function ItemActions({ onEdit, onDelete, deleting }: ItemActionsProps) {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-auto gap-1 px-0 text-xs font-semibold text-destructive hover:bg-transparent hover:text-destructive/80"
+          className="h-auto gap-1.5 px-1.5 py-1 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive/80"
           onClick={onDelete}
           disabled={deleting}
         >
-          <Trash2 className="size-3" />
+          <Trash2 className="size-4" />
           Xóa
         </Button>
       ) : null}

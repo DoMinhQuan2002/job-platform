@@ -16,7 +16,7 @@ import {
 import { ApiError } from "@/lib/api-error";
 import { ROUTES } from "@/constants/routes";
 import type { SavedJob } from "../types";
-import { CandidateNavSidebar } from "../components/candidate-nav-sidebar";
+import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
 import { SavedJobCard } from "../components/saved-job-card";
 import { ApplyModal } from "../components/apply-modal";
 import { applicationsApi } from "../api";
@@ -131,33 +131,25 @@ export function SavedJobsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
-      <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-3">
-            <CandidateNavSidebar />
-          </div>
+    <>
+      <CandidateWorkspaceLayout>
+        <header className="space-y-2">
+          <nav className="flex items-center gap-1.5 text-[13px] text-muted">
+            <Link href={ROUTES.home} className="flex items-center gap-1 hover:text-primary">
+              <Home className="size-3.5" />
+              <span>Trang chủ</span>
+            </Link>
+            <ChevronRight className="size-3 text-muted" />
+            <span className="font-semibold text-foreground">Việc đã lưu</span>
+          </nav>
+          <h1 className="text-2xl font-bold text-foreground">Việc đã lưu</h1>
+          <p className="max-w-xl text-[15px] text-muted">
+            Danh sách các công việc bạn đã lưu để xem lại sau.
+          </p>
+        </header>
 
-          <div className="space-y-6 lg:col-span-9">
-            <nav className="flex items-center gap-1.5 text-xs text-slate-500">
-              <Link href={ROUTES.home} className="flex items-center gap-1 transition hover:text-primary">
-                <Home className="h-3.5 w-3.5" />
-                <span>Trang chủ</span>
-              </Link>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-              <span className="font-semibold text-slate-800">Việc đã lưu</span>
-            </nav>
-
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                Việc đã lưu
-              </h1>
-              <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                Danh sách các công việc bạn đã lưu để xem lại sau.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-5 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
+          <div className="flex flex-col gap-4 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 className="-mb-3 border-b-2 border-primary pb-3 text-xs font-bold text-primary sm:text-sm"
@@ -292,8 +284,7 @@ export function SavedJobsPage() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
+      </CandidateWorkspaceLayout>
 
       {applyingJob ? (
         <ApplyModal
@@ -307,6 +298,6 @@ export function SavedJobsPage() {
           onApplySuccess={() => setApplyingJob(null)}
         />
       ) : null}
-    </div>
+    </>
   );
 }

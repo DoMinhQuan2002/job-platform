@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertCircle, ChevronRight, Home, Loader2 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import type { JobDetail } from "../types";
+import type { JobDetail, RelatedJob } from "../types";
 import { JobHeaderCard } from "../components/job-header-card";
 import { JobContentSections } from "../components/job-content-sections";
 import { JobSidebar } from "../components/job-sidebar";
@@ -13,6 +13,9 @@ import { JobNewsletter } from "../components/job-newsletter";
 import { ApplyModal } from "../components/apply-modal";
 import { applicationsApi } from "../api";
 import { summarizeJob } from "../lib/job-summary";
+import { toRelatedJob } from "../lib/related-jobs";
+import { jobsApi } from "@/modules/jobs/api";
+import { useAuthSession } from "@/lib/use-auth-session";
 
 function toJobDetail(jobId: string, raw: unknown): JobDetail {
   const summary = summarizeJob(raw);
@@ -20,6 +23,7 @@ function toJobDetail(jobId: string, raw: unknown): JobDetail {
     id: jobId,
     title: summary.title,
     company: {
+      id: summary.companyId,
       name: summary.companyName,
       logoUrl: summary.companyLogoUrl || "",
       verified: true,
@@ -61,9 +65,11 @@ export function JobApplyPage() {
   const jobId = String(params?.id ?? "");
 
   const [job, setJob] = useState<JobDetail | null>(null);
+  const [relatedJobs, setRelatedJobs] = useState<RelatedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const { isCandidate, isRecruiter } = useAuthSession();
 
   useEffect(() => {
     if (!jobId) {
@@ -95,8 +101,47 @@ export function JobApplyPage() {
     };
   }, [jobId]);
 
+  useEffect(() => {
+    const companyId = job?.company.id;
+    if (!companyId || !job) {
+      setRelatedJobs([]);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchRelatedJobs = async () => {
+      try {
+        const res = await jobsApi.list({
+          keyword: "",
+          companyId,
+          location: "",
+          categoryId: "",
+          jobMode: "",
+          jobType: "",
+          minSalary: "",
+          maxSalary: "",
+          maxExperience: "",
+          sort: "newest",
+          page: 1,
+          size: 6,
+        });
+        if (cancelled) return;
+        setRelatedJobs(
+          res.data.filter((item) => item.id !== job.id).slice(0, 4).map(toRelatedJob),
+        );
+      } catch {
+        if (!cancelled) setRelatedJobs([]);
+      }
+    };
+
+    void fetchRelatedJobs();
+    return () => {
+      cancelled = true;
+    };
+  }, [job]);
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
+    <div className="min-h-screen bg-background py-6 sm:py-8">
       <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
         <nav className="flex items-center gap-1.5 text-xs text-slate-500">
           <Link href={ROUTES.home} className="flex items-center gap-1 transition hover:text-primary">
@@ -139,12 +184,18 @@ export function JobApplyPage() {
               <div className="space-y-6 lg:col-span-8">
                 <JobHeaderCard
                   job={job}
-                  onOpenApplyModal={() => setIsApplyModalOpen(true)}
+                  onOpenApplyModal={() => {
+                    if (!isRecruiter) setIsApplyModalOpen(true);
+                  }}
                 />
                 <JobContentSections job={job} />
               </div>
               <div className="lg:col-span-4">
-                <JobSidebar company={job.company} relatedJobs={[]} />
+                <JobSidebar
+                  company={job.company}
+                  relatedJobs={relatedJobs}
+                  jobTitle={job.title}
+                />
               </div>
             </div>
 
@@ -152,19 +203,21 @@ export function JobApplyPage() {
               <JobNewsletter />
             </div>
 
-            <ApplyModal
-              isOpen={isApplyModalOpen}
-              onClose={() => setIsApplyModalOpen(false)}
-              jobId={job.id}
-              jobTitle={job.title}
-              companyName={job.company.name}
-              companyLogoUrl={job.company.logoUrl}
-              location={job.location}
-              salary={job.salary}
-              onApplySuccess={() => {
-                setJob((prev) => (prev ? { ...prev, hasApplied: true } : prev));
-              }}
-            />
+            {!isRecruiter ? (
+              <ApplyModal
+                isOpen={isApplyModalOpen}
+                onClose={() => setIsApplyModalOpen(false)}
+                jobId={job.id}
+                jobTitle={job.title}
+                companyName={job.company.name}
+                companyLogoUrl={job.company.logoUrl}
+                location={job.location}
+                salary={job.salary}
+                onApplySuccess={() => {
+                  setJob((prev) => (prev ? { ...prev, hasApplied: true } : prev));
+                }}
+              />
+            ) : null}
           </>
         )}
       </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { CandidateSidebar } from "../components/candidate-sidebar";
+import { CandidateWorkspaceLayout } from "../components";
 import { EducationSection } from "../components/education-section";
 import { ExperienceSection } from "../components/experience-section";
 import { IntroSection } from "../components/intro-section";
@@ -64,21 +64,20 @@ export function CandidateProfilePage() {
   }
 
   return (
-    <main className="mx-auto flex w-full container flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:py-[30px] 2xl:px-0">
-      <CandidateSidebar
-        profile={profile}
-        displayName={account?.fullName}
-        avatarUrl={account?.avatar}
-      />
-
-      <div className="min-w-0 flex-1 space-y-5">
+    <CandidateWorkspaceLayout
+      sidebarProps={{
+        profile,
+        displayName: account?.fullName,
+        avatarUrl: account?.avatar,
+      }}
+    >
         <header className="space-y-2">
-          <nav className="flex items-center gap-2 text-[13px] text-muted">
+          <nav className="flex items-center gap-1.5 text-[13px] text-muted">
             <Link href={ROUTES.home} className="hover:text-primary">
               Trang chủ
             </Link>
             <ChevronRight className="size-3" />
-            <span>Hồ sơ của tôi</span>
+            <span className="font-semibold text-foreground">Hồ sơ của tôi</span>
           </nav>
           <h1 className="text-2xl font-bold text-foreground">Hồ sơ nghề nghiệp</h1>
           <p className="max-w-xl text-[15px] text-muted">
@@ -104,12 +103,7 @@ export function CandidateProfilePage() {
           onDelete={deleteWorkExperience}
         />
 
-        <SkillsOverview
-          skills={profile.skills}
-          languages={profile.languages}
-          certificates={profile.certificates}
-        />
-      </div>
-    </main>
+        <SkillsOverview />
+    </CandidateWorkspaceLayout>
   );
 }

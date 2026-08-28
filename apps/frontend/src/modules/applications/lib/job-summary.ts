@@ -61,6 +61,7 @@ function splitTextBlocks(value: unknown): string[] {
 
 export type JobSummary = {
   title: string;
+  companyId?: string;
   companyName: string;
   companyLogoUrl?: string;
   companyWebsite?: string;
@@ -102,6 +103,7 @@ export function summarizeJob(raw: unknown): JobSummary {
 
   return {
     title: String(job.title || "Tin tuyển dụng"),
+    companyId: company.id != null ? String(company.id) : undefined,
     companyName: String(company.name || job.companyName || "Nhà tuyển dụng"),
     companyLogoUrl:
       (company.logo as string | undefined) ||

@@ -54,6 +54,7 @@ export type ApplicationListItem = Application & {
 };
 
 export type CompanyDetail = {
+  id?: string;
   name: string;
   logoUrl?: string;
   verified?: boolean;

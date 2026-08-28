@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { useAuthSession } from "@/lib/use-auth-session";
 import { resumeApi } from "@/modules/resume/api";
 import type { Resume } from "@/modules/resume/types";
 import { applicationsApi } from "../api";
@@ -68,6 +69,7 @@ export function ApplyModal({
   salary = "20 - 30 triệu VND",
   onApplySuccess,
 }: ApplyModalProps) {
+  const { isRecruiter } = useAuthSession();
   const [resumeList, setResumeList] = useState<ResumeChoice[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState("");
   const [loadingResumes, setLoadingResumes] = useState(false);
@@ -110,6 +112,24 @@ export function ApplyModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  if (isRecruiter) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur-xs">
+        <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+          <h2 className="text-lg font-bold text-slate-900">Không thể ứng tuyển</h2>
+          <p className="mt-2 text-sm text-muted">
+            Tài khoản nhà tuyển dụng không thể ứng tuyển tin tuyển dụng này.
+          </p>
+          <div className="mt-5 flex justify-end">
+            <Button type="button" onClick={onClose}>
+              Đóng
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

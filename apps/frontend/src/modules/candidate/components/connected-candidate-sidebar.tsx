@@ -1,39 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { candidateApi } from "../api";
-import type { AccountUser, CandidateProfile } from "../types";
 import { CandidateSidebar } from "./candidate-sidebar";
+import { useCandidateSidebarData } from "../hooks/use-candidate-sidebar-data";
+import type { CandidateProfile } from "../types";
 
-/** Sidebar + GET /candidates/me + GET /users/me — dùng chung profile / resume / applications */
-export function ConnectedCandidateSidebar({
-  displayName = "Ứng viên",
-}: {
+export type ConnectedCandidateSidebarProps = {
+  /** Truyền từ page đã có data (vd. profile) để tránh fetch trùng */
+  profile?: CandidateProfile | null;
   displayName?: string;
-}) {
-  const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [account, setAccount] = useState<AccountUser | null>(null);
+  avatarUrl?: string | null;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all([
-      candidateApi.getMe().catch(() => null),
-      candidateApi.getAccountMe().catch(() => null),
-    ]).then(([profileRes, accountRes]) => {
-      if (cancelled) return;
-      if (profileRes?.success && profileRes.data) setProfile(profileRes.data);
-      if (accountRes?.success && accountRes.data) setAccount(accountRes.data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+/**
+ * Sidebar ứng viên dùng chung: profile, resume, applications, saved-jobs, ...
+ * Không truyền `profile` → tự gọi GET /candidates/me + GET /users/me.
+ */
+export function ConnectedCandidateSidebar({
+  profile: profileProp,
+  displayName: displayNameProp,
+  avatarUrl: avatarUrlProp,
+}: ConnectedCandidateSidebarProps = {}) {
+  const shouldFetch = profileProp === undefined;
+  const { profile, account, loading } = useCandidateSidebarData(shouldFetch);
+
+  if (shouldFetch && loading) {
+    return (
+      <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
+        <div className="skeleton h-64 rounded-xl" />
+        <div className="skeleton h-80 rounded-xl" />
+      </aside>
+    );
+  }
 
   return (
     <CandidateSidebar
-      profile={profile}
-      displayName={account?.fullName || displayName}
-      avatarUrl={account?.avatar}
+      profile={profileProp ?? profile}
+      displayName={displayNameProp ?? account?.fullName ?? "Ứng viên"}
+      avatarUrl={avatarUrlProp ?? account?.avatar}
     />
   );
 }

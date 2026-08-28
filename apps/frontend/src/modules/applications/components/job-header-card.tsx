@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Bookmark,
   Share2,
-  CheckCircle,
   Star,
   Banknote,
   MapPin,
@@ -17,8 +16,12 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useAuthSession } from "@/lib/use-auth-session";
 import type { JobDetail } from "../types";
 import { applicationsApi } from "../api";
+import { CompanyVerifiedBadge } from "./company-verified-badge";
 
 interface JobHeaderCardProps {
   job: JobDetail;
@@ -26,6 +29,9 @@ interface JobHeaderCardProps {
 }
 
 export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
+  const { isCandidate, isRecruiter, isLoggedIn } = useAuthSession();
+  const canApply = isCandidate;
+  const canSaveJob = isCandidate;
   const [isSaved, setIsSaved] = useState(job.isSaved || false);
   const [saving, setSaving] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -82,14 +88,10 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
             <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-[26px]">
               {job.title}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-slate-800 hover:text-primary transition cursor-pointer">
-                {job.company.name}
-              </span>
-              {job.company.verified !== false && (
-                <CheckCircle className="h-4 w-4 fill-emerald-500 text-white" />
-              )}
-            </div>
+            <span className="mt-1.5 inline-flex max-w-full flex-wrap items-center gap-1 font-semibold text-slate-800">
+              {job.company.name}
+              {job.company.verified !== false ? <CompanyVerifiedBadge /> : null}
+            </span>
 
             {/* Rating — chỉ hiện khi API có data */}
             {job.company.rating != null ? (
@@ -110,33 +112,32 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
 
         {/* Action icons (Bookmark & Share) */}
         <div className="flex items-center gap-2 self-end sm:self-start">
-          <button
-            onClick={handleToggleSave}
-            disabled={saving}
-            title={isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
-            className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-              isSaved
-                ? "border-primary bg-blue-50 text-primary"
-                : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-            }`}
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Bookmark className={`h-4 w-4 ${isSaved ? "fill-primary" : ""}`} />
-            )}
-          </button>
-          <button
+          {canSaveJob ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={handleToggleSave}
+              disabled={saving}
+              title={isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
+              className={cn(isSaved && "border-primary bg-primary/5 text-primary")}
+            >
+              {saving ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Bookmark className={cn(isSaved && "fill-primary")} />
+              )}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={handleShare}
             title="Chia sẻ tin tuyển dụng"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
           >
-            {copiedShare ? (
-              <Check className="h-4 w-4 text-emerald-600" />
-            ) : (
-              <Share2 className="h-4 w-4" />
-            )}
-          </button>
+            {copiedShare ? <Check className="text-emerald-600" /> : <Share2 />}
+          </Button>
         </div>
       </div>
 
@@ -242,35 +243,58 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
         </div>
       </div>
 
-      {/* Big Action Buttons: Ứng tuyển ngay & Lưu tin */}
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        {/* Nút Ứng tuyển ngay */}
-        <button
-          onClick={onOpenApplyModal}
-          className="group relative flex-1 flex flex-col items-center justify-center rounded-xl bg-primary px-6 py-3.5 font-semibold text-white transition hover:bg-primary-hover shadow-sm active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-2 text-base font-bold">
-            <Send className="h-4 w-4 rotate-[-20deg] transition-transform group-hover:translate-x-0.5" />
-            <span>Ứng tuyển ngay</span>
+      <div className="mt-5 space-y-1.5 border-t border-slate-100 pt-4">
+        {canApply ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenApplyModal}
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <Send className="size-3 -rotate-12" />
+              Ứng tuyển ngay
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleToggleSave}
+              disabled={saving}
+              className={cn(isSaved && "border-primary bg-primary/5 text-primary")}
+            >
+              {saving ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Bookmark className={cn("size-3", isSaved && "fill-primary")} />
+              )}
+              {isSaved ? "Đã lưu tin" : "Lưu tin"}
+            </Button>
           </div>
-          <span className="text-[11px] font-normal text-blue-100">
-            Bạn cần đăng nhập để ứng tuyển
-          </span>
-        </button>
-
-        {/* Nút Lưu tin */}
-        <button
-          onClick={handleToggleSave}
-          disabled={saving}
-          className={`flex sm:w-48 items-center justify-center gap-2 rounded-xl border px-6 py-3.5 font-semibold transition ${
-            isSaved
-              ? "border-primary bg-blue-50/60 text-primary"
-              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-          }`}
-        >
-          <Bookmark className={`h-4 w-4 ${isSaved ? "fill-primary text-primary" : ""}`} />
-          <span>{isSaved ? "Đã lưu tin" : "Lưu tin"}</span>
-        </button>
+        ) : isRecruiter ? (
+          <p className="text-xs text-muted">
+            Tài khoản nhà tuyển dụng không thể ứng tuyển tin tuyển dụng này.
+          </p>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenApplyModal}
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <Send className="size-3 -rotate-12" />
+              Ứng tuyển ngay
+            </Button>
+          </div>
+        )}
+        {!isLoggedIn ? (
+          <p className="text-[11px] text-muted">
+            Bạn cần đăng nhập với tài khoản ứng viên để ứng tuyển.
+          </p>
+        ) : null}
       </div>
     </div>
   );

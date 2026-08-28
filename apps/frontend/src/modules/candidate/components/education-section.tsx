@@ -57,7 +57,7 @@ export function EducationSection({
               className="gap-1 text-primary hover:bg-primary/5 hover:text-primary"
               onClick={openCreate}
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-4" />
               Thêm học vấn
             </Button>
           }
@@ -78,9 +78,12 @@ export function EducationSection({
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold text-foreground">{item.school}</h3>
-                    <p className="text-sm text-muted">
-                      {[item.major, item.degree].filter(Boolean).join(" • ")}
-                    </p>
+                    {item.major ? (
+                      <p className="text-sm text-muted">{item.major}</p>
+                    ) : null}
+                    {item.degree ? (
+                      <p className="text-sm text-muted">{item.degree}</p>
+                    ) : null}
                     <div className="flex items-center gap-1 pt-1 text-xs font-semibold text-[#737686]">
                       <Calendar className="size-3" />
                       {formatDateRange(item.startDate, item.endDate, item.isCurrent)}
