@@ -29,7 +29,6 @@ export default function RootLayout({
         <Header />
         <div className="flex-1">{children}</div>
         <Toaster position="top-right" richColors />
-        <RouteFooter />
       </body>
     </html>
   );
