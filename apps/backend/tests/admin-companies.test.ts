@@ -57,6 +57,7 @@ describe("Admin Companies Module", () => {
       companySize: null,
       address: "123 Main St",
       description: null,
+      rejectReason: null,
       status: "ACTIVE",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -209,6 +210,28 @@ describe("Admin Companies Module", () => {
         expect(res.body.errors[0].code).toBe("VALIDATION_ERROR");
       });
 
+      it("returns 409 when company is still PENDING (must go through approve/reject)", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "PENDING" }));
+
+        const res = await request(testApp)
+          .put("/api/v1/admin/companies/5/status")
+          .send({ status: "BLOCKED", reason: "Vi phạm điều khoản sử dụng" });
+
+        expect(res.status).toBe(409);
+        expect(res.body.errors[0].code).toBe("CONFLICT");
+      });
+
+      it("returns 409 when company is REJECTED (must be resubmitted, not locked)", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "REJECTED" }));
+
+        const res = await request(testApp)
+          .put("/api/v1/admin/companies/5/status")
+          .send({ status: "ACTIVE" });
+
+        expect(res.status).toBe(409);
+        expect(res.body.errors[0].code).toBe("CONFLICT");
+      });
+
       it("returns 404 when company not found", async () => {
         mockCompanyRepo.findOne.mockResolvedValue(null);
 
@@ -277,6 +300,99 @@ describe("Admin Companies Module", () => {
         );
         expect(notificationService.create).toHaveBeenCalledWith(
           expect.objectContaining({ type: "COMPANY_UNLOCKED" }),
+          expect.anything(),
+        );
+      });
+    });
+
+    describe("PUT /api/v1/admin/companies/:id/approve", () => {
+      it("returns 404 when company not found", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(null);
+
+        const res = await request(testApp).put("/api/v1/admin/companies/999/approve");
+
+        expect(res.status).toBe(404);
+      });
+
+      it("returns 409 when company is not PENDING", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "ACTIVE" }));
+
+        const res = await request(testApp).put("/api/v1/admin/companies/5/approve");
+
+        expect(res.status).toBe(409);
+        expect(res.body.errors[0].code).toBe("CONFLICT");
+      });
+
+      it("approves PENDING company, logs and notifies owner", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "PENDING" }));
+        mockCompanyRepo.save.mockImplementation(async (c: Company) => c);
+
+        const res = await request(testApp).put("/api/v1/admin/companies/5/approve");
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe("ACTIVE");
+        expect(logService.write).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: "99",
+            action: "APPROVE_COMPANY",
+            target: { type: "COMPANY", id: "5" },
+            oldValue: "PENDING",
+            newValue: "ACTIVE",
+          }),
+          expect.anything(),
+        );
+        expect(notificationService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            userId: "50",
+            type: "COMPANY_APPROVED",
+            params: { companyName: "ACME Corp" },
+          }),
+          expect.anything(),
+        );
+      });
+    });
+
+    describe("PUT /api/v1/admin/companies/:id/reject", () => {
+      it("returns 400 when reason missing", async () => {
+        const res = await request(testApp).put("/api/v1/admin/companies/5/reject").send({});
+        expect(res.status).toBe(400);
+      });
+
+      it("returns 409 when company is not PENDING", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "BLOCKED" }));
+
+        const res = await request(testApp)
+          .put("/api/v1/admin/companies/5/reject")
+          .send({ reason: "Thiếu giấy phép kinh doanh hợp lệ" });
+
+        expect(res.status).toBe(409);
+      });
+
+      it("rejects PENDING company with reason, logs description and notifies with reason", async () => {
+        mockCompanyRepo.findOne.mockResolvedValue(buildCompany({ status: "PENDING" }));
+        mockCompanyRepo.save.mockImplementation(async (c: Company) => c);
+
+        const res = await request(testApp)
+          .put("/api/v1/admin/companies/5/reject")
+          .send({ reason: "Thiếu giấy phép kinh doanh hợp lệ" });
+
+        expect(res.status).toBe(200);
+        expect(res.body.data.status).toBe("REJECTED");
+        expect(res.body.data.rejectReason).toBe("Thiếu giấy phép kinh doanh hợp lệ");
+        expect(logService.write).toHaveBeenCalledWith(
+          expect.objectContaining({
+            action: "REJECT_COMPANY",
+            oldValue: "PENDING",
+            newValue: "REJECTED",
+            description: "Thiếu giấy phép kinh doanh hợp lệ",
+          }),
+          expect.anything(),
+        );
+        expect(notificationService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "COMPANY_REJECTED",
+            params: { companyName: "ACME Corp", reason: "Thiếu giấy phép kinh doanh hợp lệ" },
+          }),
           expect.anything(),
         );
       });

@@ -22,6 +22,8 @@ export type CreateNotificationInput =
   | Base<"ACCOUNT_UNLOCKED", "USER">
   | (Base<"COMPANY_LOCKED", "COMPANY"> & { params: { companyName: string } })
   | (Base<"COMPANY_UNLOCKED", "COMPANY"> & { params: { companyName: string } })
+  | (Base<"COMPANY_APPROVED", "COMPANY"> & { params: { companyName: string } })
+  | (Base<"COMPANY_REJECTED", "COMPANY"> & { params: { companyName: string; reason: string } })
   | (Base<"JOB_APPROVED", "JOB"> & { params: { jobTitle: string } })
   | (Base<"JOB_REJECTED", "JOB"> & { params: { jobTitle: string; reason: string } })
   | (Base<"JOB_DELETED", "JOB"> & { params: { jobTitle: string; reason: string } })
@@ -60,6 +62,14 @@ const TEMPLATES: { [K in NotificationType]: TemplateOf<K> } = {
   COMPANY_UNLOCKED: ({ params }) => ({
     title: "Công ty được mở khóa",
     content: `Công ty "${params.companyName}" đã được mở khóa. Các tin tuyển dụng sẽ hiển thị trở lại.`,
+  }),
+  COMPANY_APPROVED: ({ params }) => ({
+    title: "Hồ sơ công ty được duyệt",
+    content: `Hồ sơ công ty "${params.companyName}" đã được duyệt. Bạn có thể bắt đầu đăng tin tuyển dụng.`,
+  }),
+  COMPANY_REJECTED: ({ params }) => ({
+    title: "Hồ sơ công ty bị từ chối",
+    content: `Hồ sơ công ty "${params.companyName}" đã bị từ chối. Lý do: ${params.reason}`,
   }),
   JOB_APPROVED: ({ params }) => ({
     title: "Tin tuyển dụng được duyệt",

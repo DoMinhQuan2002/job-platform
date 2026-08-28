@@ -8,6 +8,7 @@ import { jobsController } from "./jobs.controller";
 import jobsRouter from "./jobs.route";
 import { errorMiddleware } from "../../common/middlewares/error.middleware";
 import { JOB_STATUS } from "../../common/constants/job";
+import { signAccessToken } from "../../common/security/jwt";
 
 describe("Jobs Module - Public Query", () => {
   const testApp = express();
@@ -16,8 +17,15 @@ describe("Jobs Module - Public Query", () => {
   testApp.use(errorMiddleware);
 
   beforeEach(() => {
+    process.env.JWT_ACCESS_SECRET = "test-jwt-secret-key-1234567890";
     vi.clearAllMocks();
   });
+
+  const candidateToken = () =>
+    signAccessToken({ sub: "10", email: "candidate@example.com", role: "CANDIDATE" });
+
+  const recruiterToken = () =>
+    signAccessToken({ sub: "20", email: "recruiter@example.com", role: "RECRUITER" });
 
   describe("jobService.getJobs", () => {
     it("should filter by companyId when companyId is provided in query", async () => {
@@ -113,6 +121,38 @@ describe("Jobs Module - Public Query", () => {
 
       expect(res.status).toBe(400);
       expect(res.body.errors[0].code).toBe("INVALID_ID");
+    });
+  });
+
+  describe("Recruiter job mutations authorization", () => {
+    it("should return 403 when a candidate creates a job", async () => {
+      const res = await request(testApp)
+        .post("/api/v1/jobs")
+        .set("Authorization", `Bearer ${candidateToken()}`)
+        .send({});
+
+      expect(res.status).toBe(403);
+      expect(res.body.errors[0].code).toBe("FORBIDDEN");
+    });
+
+    it("should return 403 when a candidate updates a job", async () => {
+      const res = await request(testApp)
+        .put("/api/v1/jobs/1")
+        .set("Authorization", `Bearer ${candidateToken()}`)
+        .send({ title: "Unauthorized update" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.errors[0].code).toBe("FORBIDDEN");
+    });
+
+    it("should not allow a recruiter to approve their own job", async () => {
+      const res = await request(testApp)
+        .patch("/api/v1/jobs/1")
+        .set("Authorization", `Bearer ${recruiterToken()}`)
+        .send({ status: "APPROVED" });
+
+      expect(res.status).toBe(400);
+      expect(res.body.errors[0].code).toBe("BAD_REQUEST");
     });
   });
 });

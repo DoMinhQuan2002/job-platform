@@ -2,7 +2,7 @@ import { AppDataSource } from "@/data-source";
 import { AppError } from "@/common/errors/app-error";
 import { Company } from "@/database/entities/company.entity";
 import { Job } from "@/database/entities/job.entity";
-import { CompanyStatusValue } from "@/common/constants/job";
+import { COMPANY_STATUS, CompanyStatusValue } from "@/common/constants/job";
 import { notificationService } from "@/modules/notifications/notification.service";
 import { logService } from "@/modules/system-logs/log.service";
 import { ListQuery, StatusBody } from "./companies.validation";
@@ -37,6 +37,7 @@ const toListItem = (company: Company, totalJobs: number) => ({
   companySize: company.companySize,
   address: company.address,
   status: company.status,
+  rejectReason: company.rejectReason,
   owner: { id: company.user.id, fullName: company.user.fullName, email: company.user.email },
   totalJobs,
   createdAt: company.createdAt,
@@ -108,6 +109,15 @@ export const adminCompaniesService = {
       if (!company) {
         throw new AppError(404, "NOT_FOUND", "Không tìm thấy công ty");
       }
+      // Chỉ khóa/mở khóa công ty đã qua duyệt (ACTIVE/BLOCKED) — công ty đang PENDING/REJECTED
+      // phải đi qua approve()/reject(), không được nhảy thẳng sang BLOCKED.
+      if (company.status !== COMPANY_STATUS.ACTIVE && company.status !== COMPANY_STATUS.BLOCKED) {
+        throw new AppError(
+          409,
+          "CONFLICT",
+          "Chỉ khóa/mở khóa được công ty đã qua duyệt (ACTIVE hoặc BLOCKED)",
+        );
+      }
       if (company.status === body.status) {
         throw new AppError(409, "CONFLICT", "Công ty đã ở trạng thái này");
       }
@@ -144,6 +154,99 @@ export const adminCompaniesService = {
         id: company.id,
         name: company.name,
         status: company.status,
+        updatedAt: company.updatedAt,
+      };
+    });
+  },
+
+  /** PUT /admin/companies/{id}/approve — chỉ duyệt được hồ sơ đang PENDING. */
+  async approve(actingUserId: string, id: string) {
+    return AppDataSource.transaction(async (manager) => {
+      const companyRepo = manager.getRepository(Company);
+      const company = await companyRepo.findOne({ where: { id }, relations: { user: true } });
+      if (!company) {
+        throw new AppError(404, "NOT_FOUND", "Không tìm thấy công ty");
+      }
+      if (company.status !== COMPANY_STATUS.PENDING) {
+        throw new AppError(409, "CONFLICT", "Chỉ duyệt được hồ sơ đang ở trạng thái chờ duyệt");
+      }
+
+      company.status = COMPANY_STATUS.ACTIVE;
+      await companyRepo.save(company);
+
+      await logService.write(
+        {
+          userId: actingUserId,
+          action: "APPROVE_COMPANY",
+          target: { type: "COMPANY", id: company.id },
+          oldValue: COMPANY_STATUS.PENDING,
+          newValue: COMPANY_STATUS.ACTIVE,
+        },
+        manager,
+      );
+
+      await notificationService.create(
+        {
+          userId: company.userId,
+          type: "COMPANY_APPROVED",
+          target: { type: "COMPANY", id: company.id },
+          params: { companyName: company.name },
+        },
+        manager,
+      );
+
+      return {
+        id: company.id,
+        name: company.name,
+        status: company.status,
+        updatedAt: company.updatedAt,
+      };
+    });
+  },
+
+  /** PUT /admin/companies/{id}/reject — chỉ từ chối được hồ sơ đang PENDING, ghi kèm lý do. */
+  async reject(actingUserId: string, id: string, reason: string) {
+    return AppDataSource.transaction(async (manager) => {
+      const companyRepo = manager.getRepository(Company);
+      const company = await companyRepo.findOne({ where: { id }, relations: { user: true } });
+      if (!company) {
+        throw new AppError(404, "NOT_FOUND", "Không tìm thấy công ty");
+      }
+      if (company.status !== COMPANY_STATUS.PENDING) {
+        throw new AppError(409, "CONFLICT", "Chỉ từ chối được hồ sơ đang ở trạng thái chờ duyệt");
+      }
+
+      company.status = COMPANY_STATUS.REJECTED;
+      company.rejectReason = reason;
+      await companyRepo.save(company);
+
+      await logService.write(
+        {
+          userId: actingUserId,
+          action: "REJECT_COMPANY",
+          target: { type: "COMPANY", id: company.id },
+          oldValue: COMPANY_STATUS.PENDING,
+          newValue: COMPANY_STATUS.REJECTED,
+          description: reason,
+        },
+        manager,
+      );
+
+      await notificationService.create(
+        {
+          userId: company.userId,
+          type: "COMPANY_REJECTED",
+          target: { type: "COMPANY", id: company.id },
+          params: { companyName: company.name, reason },
+        },
+        manager,
+      );
+
+      return {
+        id: company.id,
+        name: company.name,
+        status: company.status,
+        rejectReason: company.rejectReason,
         updatedAt: company.updatedAt,
       };
     });
