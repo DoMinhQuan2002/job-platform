@@ -25,6 +25,12 @@ vi.mock("../src/modules/notifications/notification.service", () => ({
   },
 }));
 
+vi.mock("../src/common/middlewares/authenticate.middleware", () => ({
+  authenticate: (_req: unknown, _res: unknown, next: () => void) => {
+    next();
+  },
+}));
+
 describe("Applications & Saved Jobs Module", () => {
   let currentUser: {
     id: string;
@@ -583,6 +589,17 @@ describe("Applications & Saved Jobs Module", () => {
   describe("With Mock Recruiter User", () => {
     beforeEach(() => {
       currentUser = { id: "user_rec_1", role: "RECRUITER" };
+    });
+
+    describe("POST /api/v1/jobs/:jobId/apply", () => {
+      it("returns 403 for recruiter accounts", async () => {
+        const res = await request(testApp)
+          .post("/api/v1/jobs/10/apply")
+          .send({ resumeId: "res_1" });
+
+        expect(res.status).toBe(403);
+        expect(res.body.errors[0].code).toBe("FORBIDDEN");
+      });
     });
 
     describe("PUT /api/v1/applications/:id/status", () => {

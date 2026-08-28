@@ -211,9 +211,10 @@ export function ApplicationsPage() {
                       <h4 className="truncate text-sm font-bold text-slate-900">
                         {item.jobTitle}
                       </h4>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {item.companyName} • {item.location}
-                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">{item.companyName}</p>
+                      {item.location && item.location !== "—" ? (
+                        <p className="text-xs text-slate-500">{item.location}</p>
+                      ) : null}
                       <p className="mt-1 text-xs font-semibold text-slate-700">
                         {item.salary}
                       </p>
