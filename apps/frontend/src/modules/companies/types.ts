@@ -33,7 +33,20 @@ export type CompanyListQuery = {
   page?: number;
   limit?: number;
   search?: string;
-  companySize?: CompanySize | "";}
+  companySize?: CompanySize | "";
+};
+
+export type CompanyProfileInput = {
+  name: string;
+  logo?: string | null;
+  website?: string | null;
+  email: string;
+  phone: string;
+  taxCode: string;
+  companySize?: CompanySize | "" | null;
+  address: string;
+  description?: string | null;
+};
   
 export type PublicCompany = {
   id: string;
