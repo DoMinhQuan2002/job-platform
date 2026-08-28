@@ -1,25 +1,24 @@
 import nodemailer, { type Transporter } from "nodemailer";
+import { formatSender, getMailConfig, type MailConfig } from "../../config/mail";
+import { sendViaBrevo } from "./brevo";
+
+type SmtpConfig = Extract<MailConfig, { provider: "smtp" }>;
 
 let transporter: Transporter | null = null;
 
-const isSmtpConfigured = () =>
-  Boolean(process.env.SMTP_HOST && process.env.SMTP_HOST.trim().length > 0);
-
-const getTransporter = () => {
+const getTransporter = (config: SmtpConfig) => {
   if (transporter) {
     return transporter;
   }
 
-  const port = Number(process.env.SMTP_PORT || 587);
-
   transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: port === 465,
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASSWORD
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
-        : undefined,
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+    auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+    // Host chan outbound SMTP -> fail nhanh thay vi treo request cua user.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
   });
 
   return transporter;
@@ -30,18 +29,27 @@ export const sendMail = async (input: {
   subject: string;
   text: string;
 }) => {
-  // Chua cau hinh SMTP (moi truong dev) -> in ra console de con test duoc luong OTP.
-  if (!isSmtpConfigured()) {
-    console.info(`[mailer:dev] to=${input.to} subject="${input.subject}"\n${input.text}`);
-    return;
-  }
+  const config = getMailConfig();
 
-  await getTransporter().sendMail({
-    from: process.env.SMTP_FROM || "no-reply@job-platform.local",
-    to: input.to,
-    subject: input.subject,
-    text: input.text,
-  });
+  switch (config.provider) {
+    // Chua cau hinh gi (moi truong dev) -> in ra console de con test duoc luong OTP.
+    case "console":
+      console.info(`[mailer:dev] to=${input.to} subject="${input.subject}"\n${input.text}`);
+      return;
+
+    case "brevo":
+      await sendViaBrevo(config, input);
+      return;
+
+    case "smtp":
+      await getTransporter(config).sendMail({
+        from: formatSender(config.from),
+        to: input.to,
+        subject: input.subject,
+        text: input.text,
+      });
+      return;
+  }
 };
 
 export const sendOtpMail = (to: string, code: string, purpose: "register" | "forgot_password") => {
