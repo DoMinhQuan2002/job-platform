@@ -20,46 +20,48 @@ export function JobNewsletter() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        {/* Left: Icon & Text */}
+    <div className="rounded-xl border border-border/30 bg-white p-5 shadow-[0_4px_7.5px_rgba(0,0,0,0.04)] sm:p-6">
+      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-primary">
-            <Bell className="h-6 w-6" />
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Bell className="size-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-900 sm:text-lg">
+            <h3 className="text-base font-semibold text-foreground">
               Nhận việc làm phù hợp qua email
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500">
+            <p className="text-sm text-muted">
               Đăng ký để nhận việc làm mới nhất phù hợp với bạn
             </p>
           </div>
         </div>
 
-        {/* Right: Form */}
         {subscribed ? (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-700">
-            <Check className="h-4 w-4" />
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+            <Check className="size-4" />
             <span>Đã đăng ký nhận tin tuyển dụng thành công!</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+          <form
+            onSubmit={handleSubmit}
+            className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
+          >
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Nhập email của bạn"
-              className="w-full min-w-[260px] rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="box-border h-9 w-full min-w-[220px] rounded-lg border border-border bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 sm:min-w-[260px]"
             />
             <Button
               type="submit"
+              size="lg"
               disabled={loading}
-              className="rounded-xl bg-primary px-6 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-primary-hover shadow-xs shrink-0"
+              className="h-9 w-full shrink-0 rounded-lg px-5 sm:w-auto"
             >
-              {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              <span>Đăng ký ngay</span>
+              {loading && <Loader2 className="size-4 animate-spin" />}
+              Đăng ký ngay
             </Button>
           </form>
         )}

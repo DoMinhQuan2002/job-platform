@@ -35,7 +35,7 @@ function readSession(): AuthSession | null {
 }
 
 export function useAuthSession() {
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(() => readSession());
 
   const refresh = useCallback(() => {
     setSession(readSession());

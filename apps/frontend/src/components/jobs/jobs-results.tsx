@@ -9,11 +9,17 @@ import {
   WalletCards,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
-import type { Job, JobSort } from "@/modules/jobs/types";
-import { CompanyLogo } from "@/modules/companies/components/company-detail-ui";
+import { Select } from "@/components/ui/select";
+import { ROUTES } from "@/constants/routes";
+import { cn } from "@/lib/utils";
 import type { AuthRole } from "@/lib/auth-token";
+import { CompanyLogo } from "@/modules/companies/components/company-detail-ui";
+import {
+  getAppliedApplicationId,
+  useAppliedJobsMap,
+} from "@/modules/applications/lib/use-applied-jobs";
+import type { Job, JobSort } from "@/modules/jobs/types";
 
 type Props = {
   jobs: Job[];
@@ -34,6 +40,7 @@ type Props = {
 
 export function JobsResults(props: Props) {
   const { jobs, total, page, totalPages, sort, loading, error } = props;
+  const appliedJobs = useAppliedJobsMap();
 
   return (
     <section className="min-w-0 flex-1">
@@ -81,6 +88,7 @@ export function JobsResults(props: Props) {
             <JobCard
               key={job.id}
               job={job}
+              applicationId={getAppliedApplicationId(appliedJobs, job.id)}
               handleSaveJob={props.handleSaveJob}
               saving={props.savingJobIds.has(job.id)}
               isRecruiter={props.viewerRole === "RECRUITER"}
@@ -88,7 +96,7 @@ export function JobsResults(props: Props) {
           ))}
         </div>
       )}
-      {!loading && !error && totalPages > 1 && (
+      {!loading && !error && (
         <Pagination page={page} totalPages={totalPages} onPageChange={props.onPage} />
       )}
     </section>
@@ -97,11 +105,13 @@ export function JobsResults(props: Props) {
 
 function JobCard({
   job,
+  applicationId,
   handleSaveJob,
   saving,
   isRecruiter,
 }: {
   job: Job;
+  applicationId?: string;
   handleSaveJob: (jobId: string) => void;
   saving: boolean;
   isRecruiter: boolean;
@@ -111,6 +121,7 @@ function JobCard({
       ?.slice(0, 4)
       .map((item) => item.skill?.name)
       .filter(Boolean) ?? [];
+
   return (
     <article className="rounded-lg border border-border bg-white p-4 transition hover:border-primary/50 hover:shadow-md sm:p-5">
       <div className="flex gap-3 sm:gap-4">
@@ -136,7 +147,9 @@ function JobCard({
                 disabled={saving}
                 onClick={() => handleSaveJob(job.id)}
               >
-                <Bookmark className={`size-4 transition-colors group-hover:fill-amber-400 group-hover:text-amber-400 ${job.isSaved ? "fill-amber-400 text-amber-400" : ""}`} />
+                <Bookmark
+                  className={`size-4 transition-colors group-hover:fill-amber-400 group-hover:text-amber-400 ${job.isSaved ? "fill-amber-400 text-amber-400" : ""}`}
+                />
               </Button>
             )}
           </div>
@@ -147,9 +160,7 @@ function JobCard({
             </span>
             <span className="flex items-center gap-1">
               <BriefcaseBusiness className="size-3.5" />
-              {job.experience == null
-                ? "Không yêu cầu"
-                : `${job.experience} năm`}
+              {job.experience == null ? "Không yêu cầu" : `${job.experience} năm`}
             </span>
             <strong className="flex items-center gap-1 text-text">
               <WalletCards className="size-3.5" />
@@ -171,17 +182,39 @@ function JobCard({
               <span className="text-[9px] text-muted">
                 Đăng ngày {postedDate(job.createdAt)}
               </span>
-              <Link
-                href={`/jobs/${job.id}`}
-                className={buttonVariants({
-                  variant: "outline",
-                  size: "sm",
-                  className:
-                    "border-primary  text-primary! hover:bg-primary/10!",
-                })}
-              >
-                {isRecruiter ? "Xem chi tiết" : "Ứng tuyển ngay"}
-              </Link>
+              {isRecruiter ? (
+                <Link
+                  href={`/jobs/${job.id}`}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className: "border-primary text-primary! hover:bg-primary/10!",
+                  })}
+                >
+                  Xem chi tiết
+                </Link>
+              ) : applicationId ? (
+                <Link
+                  href={`${ROUTES.applications.root}/${applicationId}`}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+                  )}
+                >
+                  Đã ứng tuyển
+                </Link>
+              ) : (
+                <Link
+                  href={`/jobs/${job.id}`}
+                  className={buttonVariants({
+                    variant: "outline",
+                    size: "sm",
+                    className: "border-primary text-primary! hover:bg-primary/10!",
+                  })}
+                >
+                  Ứng tuyển ngay
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -206,6 +239,7 @@ function LoadingCards() {
     </div>
   );
 }
+
 function StatePanel({
   icon,
   title,
@@ -224,31 +258,20 @@ function StatePanel({
           {icon}
         </span>
         <h3 className="font-semibold text-text">{title}</h3>
-        <p className="mx-auto mb-5 mt-2 max-w-sm text-sm text-muted">
-          {description}
-        </p>
+        <p className="mx-auto mb-5 mt-2 max-w-sm text-sm text-muted">{description}</p>
         {children}
       </div>
     </div>
   );
 }
-function initials(name = "JP") {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("")
-    .toUpperCase();
-}
+
 function salary(job: Job) {
-  if (job.isNegotiable || (!job.salaryMin && !job.salaryMax))
-    return "Thỏa thuận";
+  if (job.isNegotiable || (!job.salaryMin && !job.salaryMax)) return "Thỏa thuận";
   const format = (value: string | null) =>
     value ? `${Math.round(Number(value) / 1_000_000)} triệu` : "";
-  return [format(job.salaryMin), format(job.salaryMax)]
-    .filter(Boolean)
-    .join(" - ");
+  return [format(job.salaryMin), format(job.salaryMax)].filter(Boolean).join(" - ");
 }
+
 function postedDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
