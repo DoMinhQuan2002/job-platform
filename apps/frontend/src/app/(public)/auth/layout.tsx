@@ -13,7 +13,6 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       <main id="auth-content" className="flex-1">
         {children}
       </main>
-      <RouteFooter></RouteFooter>
     </div>
   );
 }
