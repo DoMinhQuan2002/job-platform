@@ -100,6 +100,7 @@ export type JobDetail = {
   };
   isSaved?: boolean;
   hasApplied?: boolean;
+  applicationId?: string;
 };
 
 export type ApplicationTimelineStep = {

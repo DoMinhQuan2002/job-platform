@@ -55,7 +55,8 @@ interface ApplyModalProps {
   companyLogoUrl?: string;
   location?: string;
   salary?: string;
-  onApplySuccess?: () => void;
+  onApplySuccess?: (applicationId?: string) => void;
+  hasApplied?: boolean;
 }
 
 export function ApplyModal({
@@ -68,6 +69,7 @@ export function ApplyModal({
   location = "Hà Nội",
   salary = "20 - 30 triệu VND",
   onApplySuccess,
+  hasApplied = false,
 }: ApplyModalProps) {
   const { isRecruiter } = useAuthSession();
   const [resumeList, setResumeList] = useState<ResumeChoice[]>([]);
@@ -88,10 +90,11 @@ export function ApplyModal({
         const res = await resumeApi.list();
         if (cancelled) return;
         const mapped = (res.data ?? []).map(toChoice);
-        setResumeList(mapped);
-        const defaultCv = mapped.find((item) => item.isDefault) || mapped[0];
+        const unique = Array.from(new Map(mapped.map((item) => [item.id, item])).values());
+        setResumeList(unique);
+        const defaultCv = unique.find((item) => item.isDefault) || unique[0];
         setSelectedResumeId(defaultCv?.id ?? "");
-        if (mapped.length === 0) {
+        if (unique.length === 0) {
           setError("Bạn chưa có CV. Hãy tải lên CV trước khi ứng tuyển.");
         }
       } catch {
@@ -142,9 +145,9 @@ export function ApplyModal({
     setError(null);
 
     try {
-      await applicationsApi.apply(jobId, { resumeId: selectedResumeId });
+      const response = await applicationsApi.apply(jobId, { resumeId: selectedResumeId });
       setIsSuccess(true);
-      onApplySuccess?.();
+      onApplySuccess?.(response.data?.id);
     } catch (err: unknown) {
       setError(
         err instanceof Error
@@ -227,10 +230,10 @@ export function ApplyModal({
               </div>
             </div>
 
-            {error ? (
+            {error || hasApplied ? (
               <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-                <span>{error}</span>
+                <span>{error ?? "Bạn đã ứng tuyển công việc này rồi."}</span>
               </div>
             ) : null}
 
@@ -320,8 +323,8 @@ export function ApplyModal({
             <div className="flex items-start gap-2.5 rounded-2xl bg-blue-50/80 p-3.5 text-xs text-blue-900">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <p className="leading-relaxed">
-                <span className="font-bold">Lưu ý:</span> Chọn CV phù hợp nhất với vị trí. API hiện
-                chỉ nhận <code className="text-[11px]">resumeId</code>.
+                <span className="font-bold">Lưu ý:</span> Hãy chọn CV phù hợp nhất với mô tả công
+                việc. Bạn có thể cập nhật CV trong mục Quản lý CV trước khi ứng tuyển.
               </p>
             </div>
 
@@ -337,7 +340,7 @@ export function ApplyModal({
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !selectedResumeId}
+                disabled={loading || !selectedResumeId || hasApplied}
                 className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2 text-xs font-semibold text-white shadow-xs hover:bg-primary-hover sm:text-sm"
               >
                 {loading ? (

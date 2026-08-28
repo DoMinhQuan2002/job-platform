@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, ChevronRight, Home, Loader2 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import type { JobDetail, RelatedJob } from "../types";
@@ -62,6 +62,7 @@ function toJobDetail(jobId: string, raw: unknown): JobDetail {
 
 export function JobApplyPage() {
   const params = useParams();
+  const router = useRouter();
   const jobId = String(params?.id ?? "");
 
   const [job, setJob] = useState<JobDetail | null>(null);
@@ -70,6 +71,16 @@ export function JobApplyPage() {
   const [error, setError] = useState<string | null>(null);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const { isCandidate, isRecruiter } = useAuthSession();
+
+  const handleOpenApplyModal = () => {
+    if (isRecruiter) return;
+    if (!isCandidate) {
+      router.push(`${ROUTES.auth.login}?redirect=${encodeURIComponent(`/jobs/${jobId}`)}`);
+      return;
+    }
+    if (job?.hasApplied) return;
+    setIsApplyModalOpen(true);
+  };
 
   useEffect(() => {
     if (!jobId) {
@@ -100,6 +111,36 @@ export function JobApplyPage() {
       cancelled = true;
     };
   }, [jobId]);
+
+  useEffect(() => {
+    if (!isCandidate || !job) return;
+
+    let cancelled = false;
+    const checkExistingApplication = async () => {
+      try {
+        const res = await applicationsApi.list();
+        if (cancelled) return;
+        const existing = res.data.find((app) => app.jobId === job.id);
+        if (!existing) return;
+        setJob((prev) =>
+          prev
+            ? {
+                ...prev,
+                hasApplied: true,
+                applicationId: existing.id,
+              }
+            : prev,
+        );
+      } catch {
+        // Bỏ qua — nút ứng tuyển vẫn hoạt động, BE sẽ chặn nếu đã nộp
+      }
+    };
+
+    void checkExistingApplication();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCandidate, job]);
 
   useEffect(() => {
     const companyId = job?.company.id;
@@ -182,12 +223,7 @@ export function JobApplyPage() {
           <>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               <div className="space-y-6 lg:col-span-8">
-                <JobHeaderCard
-                  job={job}
-                  onOpenApplyModal={() => {
-                    if (!isRecruiter) setIsApplyModalOpen(true);
-                  }}
-                />
+                <JobHeaderCard job={job} onOpenApplyModal={handleOpenApplyModal} />
                 <JobContentSections job={job} />
               </div>
               <div className="lg:col-span-4">
@@ -203,7 +239,7 @@ export function JobApplyPage() {
               <JobNewsletter />
             </div>
 
-            {!isRecruiter ? (
+            {isCandidate ? (
               <ApplyModal
                 isOpen={isApplyModalOpen}
                 onClose={() => setIsApplyModalOpen(false)}
@@ -213,8 +249,17 @@ export function JobApplyPage() {
                 companyLogoUrl={job.company.logoUrl}
                 location={job.location}
                 salary={job.salary}
-                onApplySuccess={() => {
-                  setJob((prev) => (prev ? { ...prev, hasApplied: true } : prev));
+                hasApplied={job.hasApplied}
+                onApplySuccess={(applicationId) => {
+                  setJob((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          hasApplied: true,
+                          applicationId: applicationId ?? prev.applicationId,
+                        }
+                      : prev,
+                  );
                 }}
               />
             ) : null}

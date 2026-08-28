@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Bookmark,
   Share2,
@@ -15,9 +16,11 @@ import {
   Send,
   Loader2,
   Check,
+  CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ROUTES } from "@/constants/routes";
 import { useAuthSession } from "@/lib/use-auth-session";
 import type { JobDetail } from "../types";
 import { applicationsApi } from "../api";
@@ -244,7 +247,46 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
       </div>
 
       <div className="mt-5 space-y-1.5 border-t border-slate-100 pt-4">
-        {canApply ? (
+        {canApply && job.hasApplied ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled
+              className="border-emerald-200 bg-emerald-50 text-emerald-700"
+            >
+              <CheckCircle2 className="size-3.5" />
+              Đã ứng tuyển
+            </Button>
+            {job.applicationId ? (
+              <Link
+                href={`${ROUTES.applications.root}/${job.applicationId}`}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "border-primary text-primary hover:bg-primary/10",
+                )}
+              >
+                Xem đơn ứng tuyển
+              </Link>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleToggleSave}
+              disabled={saving}
+              className={cn(isSaved && "border-primary bg-primary/5 text-primary")}
+            >
+              {saving ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Bookmark className={cn("size-3", isSaved && "fill-primary")} />
+              )}
+              {isSaved ? "Đã lưu tin" : "Lưu tin"}
+            </Button>
+          </div>
+        ) : canApply ? (
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
