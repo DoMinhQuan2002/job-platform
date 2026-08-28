@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import { useAuthSession } from "@/lib/use-auth-session";
 import { resumeApi } from "@/modules/resume/api";
 import type { Resume } from "@/modules/resume/types";
