@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bookmark, ChevronDown, LogOut, Menu, Search, User, X } from "lucide-react";
+import { Bell, Bookmark, Building2, ChevronDown, LogOut, Menu, Search, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import {
@@ -112,6 +112,9 @@ export function Header() {
       : session?.role === "RECRUITER"
         ? ROUTES.recruiter.root
         : null;
+  const profileLabel = session?.role === "RECRUITER"
+    ? "Trang nhà tuyển dụng"
+    : "Hồ sơ cá nhân";
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -190,13 +193,15 @@ export function Header() {
                   <Search className="absolute right-3 top-2 size-4 text-slate-600" />
                 </label>
               )}
-              <Link
-                href={ROUTES.applications.savedJobs}
-                className="rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
-                aria-label="Việc làm đã lưu"
-              >
-                <Bookmark className="size-[18px]" />
-              </Link>
+              {session.role === "CANDIDATE" && (
+                <Link
+                  href={ROUTES.applications.savedJobs}
+                  className="rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
+                  aria-label="Việc làm đã lưu"
+                >
+                  <Bookmark className="size-[18px]" />
+                </Link>
+              )}
               <button
                 className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
                 aria-label="Thông báo"
@@ -233,17 +238,21 @@ export function Header() {
                     role="menu"
                     className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
                   >
-                    {profileHref ? (
+                    {profileHref && (
                       <Link
                         href={profileHref}
                         role="menuitem"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                       >
-                        <User className="size-4" />
-                        Hồ sơ cá nhân
+                        {session.role === "RECRUITER" ? (
+                          <Building2 className="size-4" />
+                        ) : (
+                          <User className="size-4" />
+                        )}
+                        {profileLabel}
                       </Link>
-                    ) : null}
+                    )}
                     <button
                       type="button"
                       role="menuitem"
@@ -304,18 +313,18 @@ export function Header() {
               </div>
             ) : (
               <div className="mt-3 border-t border-slate-100 pt-3">
-                {session.role === "CANDIDATE" || session.role === "RECRUITER" ? (
+                {profileHref ? (
                   <Link
-                    href={
-                      session.role === "CANDIDATE"
-                        ? ROUTES.candidate.profile
-                        : ROUTES.recruiter.root
-                    }
+                    href={profileHref}
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    <User className="size-4" />
-                    Hồ sơ cá nhân
+                    {session.role === "RECRUITER" ? (
+                      <Building2 className="size-4" />
+                    ) : (
+                      <User className="size-4" />
+                    )}
+                    {profileLabel}
                   </Link>
                 ) : (
                   <span className="block rounded-md px-3 py-2 text-sm font-medium">

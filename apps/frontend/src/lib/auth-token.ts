@@ -3,6 +3,8 @@ const USER_COOKIE = "jp_user";
 const AUTH_PERSISTENCE_COOKIE = "jp_remember_auth";
 const REMEMBER_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
+export type AuthRole = "CANDIDATE" | "RECRUITER" | "ADMIN";
+
 export type StoredUser = {
   id?: number;
   email: string;
@@ -48,6 +50,25 @@ const deleteCookie = (name: string) => {
 
 export const getAccessToken = (): string | null => {
   return getCookie(ACCESS_TOKEN_COOKIE);
+};
+
+export const getAccessTokenRole = (): AuthRole | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  try {
+    const encoded = token.split(".")[1];
+    if (!encoded) return null;
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as { role?: string; exp?: number };
+    if (payload.exp && payload.exp * 1000 <= Date.now()) return null;
+    return payload.role === "CANDIDATE" || payload.role === "RECRUITER" || payload.role === "ADMIN"
+      ? payload.role
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 const getAuthCookieMaxAge = () =>

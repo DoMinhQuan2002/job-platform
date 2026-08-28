@@ -34,6 +34,7 @@ export type Job = {
   jobType: string;
   jobMode: string;
   createdAt: string;
+  isSaved: boolean;
   company: { id: string; name: string; logo: string | null };
   category: { id: string; name: string };
   jobSkills: Array<{ id: string; skill: { id: string; name: string } }>;

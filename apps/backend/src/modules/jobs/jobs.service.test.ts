@@ -61,6 +61,7 @@ describe("Jobs Module - Public Query", () => {
       expect(qbMock.andWhere).toHaveBeenCalledWith("job.deadline >= CURRENT_DATE");
       expect(qbMock.andWhere).toHaveBeenCalledWith("job.companyId = :companyId", { companyId: "5" });
       expect(result.items).toHaveLength(1);
+      expect(result.items[0].isSaved).toBe(false);
       expect(result.pagination).toEqual({
         page: 1,
         size: 20,
@@ -113,6 +114,25 @@ describe("Jobs Module - Public Query", () => {
       expect(res.status).toBe(200);
       expect(jobService.getJobs).toHaveBeenCalledWith(
         expect.objectContaining({ companyId: "5", size: 10 })
+      );
+    });
+
+    it("should pass candidate user id so jobs include saved state", async () => {
+      const mockResult = {
+        items: [{ id: "101", isSaved: true }],
+        pagination: { page: 1, size: 20, total: 1, totalPages: 1 },
+      };
+      vi.spyOn(jobService, "getJobs").mockResolvedValue(mockResult as any);
+
+      const res = await request(testApp)
+        .get("/api/v1/jobs")
+        .set("Authorization", `Bearer ${candidateToken()}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data[0].isSaved).toBe(true);
+      expect(jobService.getJobs).toHaveBeenCalledWith(
+        {},
+        "10",
       );
     });
 

@@ -4,15 +4,16 @@ import Link from "next/link";
 import {
   Bookmark,
   BriefcaseBusiness,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
   RotateCcw,
   WalletCards,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { Pagination } from "@/components/ui/pagination";
 import type { Job, JobSort } from "@/modules/jobs/types";
+import { CompanyLogo } from "@/modules/companies/components/company-detail-ui";
+import type { AuthRole } from "@/lib/auth-token";
 
 type Props = {
   jobs: Job[];
@@ -22,14 +23,18 @@ type Props = {
   sort: JobSort;
   loading: boolean;
   error: string | null;
+  handleSaveJob: (jobId: string) => void;
+  savingJobIds: ReadonlySet<string>;
   onSort: (sort: JobSort) => void;
   onPage: (page: number) => void;
   onRetry: () => void;
   onClear: () => void;
+  viewerRole: AuthRole | null;
 };
 
 export function JobsResults(props: Props) {
   const { jobs, total, page, totalPages, sort, loading, error } = props;
+
   return (
     <section className="min-w-0 flex-1">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -73,18 +78,34 @@ export function JobsResults(props: Props) {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard
+              key={job.id}
+              job={job}
+              handleSaveJob={props.handleSaveJob}
+              saving={props.savingJobIds.has(job.id)}
+              isRecruiter={props.viewerRole === "RECRUITER"}
+            />
           ))}
         </div>
       )}
       {!loading && !error && totalPages > 1 && (
-        <Pagination page={page} total={totalPages} onPage={props.onPage} />
+        <Pagination page={page} totalPages={totalPages} onPageChange={props.onPage} />
       )}
     </section>
   );
 }
 
-function JobCard({ job }: { job: Job }) {
+function JobCard({
+  job,
+  handleSaveJob,
+  saving,
+  isRecruiter,
+}: {
+  job: Job;
+  handleSaveJob: (jobId: string) => void;
+  saving: boolean;
+  isRecruiter: boolean;
+}) {
   const skills =
     job.jobSkills
       ?.slice(0, 4)
@@ -93,9 +114,7 @@ function JobCard({ job }: { job: Job }) {
   return (
     <article className="rounded-lg border border-border bg-white p-4 transition hover:border-primary/50 hover:shadow-md sm:p-5">
       <div className="flex gap-3 sm:gap-4">
-        <div className="grid size-12 shrink-0 place-items-center rounded border border-border bg-slate-50 text-xs font-bold text-primary sm:size-16">
-          {initials(job.company?.name)}
-        </div>
+        <CompanyLogo company={job.company} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -107,9 +126,19 @@ function JobCard({ job }: { job: Job }) {
               </h3>
               <p className="mt-1 text-xs text-muted">{job.company?.name}</p>
             </div>
-            <Button variant="ghost" size="icon-sm" aria-label="Lưu việc làm">
-              <Bookmark />
-            </Button>
+            {!isRecruiter && (
+              <Button
+                className="group hover:bg-primary/10!"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={job.isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
+                title={job.isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
+                disabled={saving}
+                onClick={() => handleSaveJob(job.id)}
+              >
+                <Bookmark className={`size-4 transition-colors group-hover:fill-amber-400 group-hover:text-amber-400 ${job.isSaved ? "fill-amber-400 text-amber-400" : ""}`} />
+              </Button>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-muted sm:text-xs">
             <span className="flex items-center gap-1">
@@ -147,10 +176,11 @@ function JobCard({ job }: { job: Job }) {
                 className={buttonVariants({
                   variant: "outline",
                   size: "sm",
-                  className: "border-primary  text-primary! hover:bg-primary/10!",
+                  className:
+                    "border-primary  text-primary! hover:bg-primary/10!",
                 })}
               >
-                Ứng tuyển ngay
+                {isRecruiter ? "Xem chi tiết" : "Ứng tuyển ngay"}
               </Link>
             </div>
           </div>
@@ -202,60 +232,6 @@ function StatePanel({
     </div>
   );
 }
-function Pagination({
-  page,
-  total,
-  onPage,
-}: {
-  page: number;
-  total: number;
-  onPage: (page: number) => void;
-}) {
-  return (
-    <nav
-      className="mt-7 flex flex-wrap justify-center gap-1"
-      aria-label="Phân trang"
-    >
-      <Button
-        variant="outline"
-        size="icon-sm"
-        disabled={page <= 1}
-        onClick={() => onPage(page - 1)}
-        aria-label="Trang trước"
-      >
-        <ChevronLeft />
-      </Button>
-      {pageNumbers(page, total).map((item, index) =>
-        item === "…" ? (
-          <span
-            key={`ellipsis-${index}`}
-            className="grid size-7 place-items-center text-xs text-muted"
-          >
-            …
-          </span>
-        ) : (
-          <Button
-            key={item}
-            variant={item === page ? "default" : "outline"}
-            size="icon-sm"
-            onClick={() => onPage(item)}
-          >
-            {item}
-          </Button>
-        ),
-      )}
-      <Button
-        variant="outline"
-        size="icon-sm"
-        disabled={page >= total}
-        onClick={() => onPage(page + 1)}
-        aria-label="Trang sau"
-      >
-        <ChevronRight />
-      </Button>
-    </nav>
-  );
-}
 function initials(name = "JP") {
   return name
     .split(/\s+/)
@@ -279,18 +255,4 @@ function postedDate(value: string) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(value));
-}
-function pageNumbers(page: number, total: number): Array<number | "…"> {
-  if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
-  const values: Array<number | "…"> = [1];
-  if (page > 3) values.push("…");
-  for (
-    let value = Math.max(2, page - 1);
-    value <= Math.min(total - 1, page + 1);
-    value++
-  )
-    values.push(value);
-  if (page < total - 2) values.push("…");
-  values.push(total);
-  return values;
 }
