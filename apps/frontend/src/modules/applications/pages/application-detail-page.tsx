@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
 import { ROUTES } from "@/constants/routes";
 import { applicationsApi } from "../api";
-import { CandidateNavSidebar } from "../components/candidate-nav-sidebar";
+import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
 import { ApplicationDetailTimeline } from "../components/application-detail-timeline";
 import { ApplicationDetailSidebar } from "../components/application-detail-sidebar";
 import { WithdrawModal } from "../components/withdraw-modal";
@@ -141,14 +141,10 @@ export function ApplicationDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] py-6 sm:py-8">
-      <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-3">
-            <CandidateNavSidebar />
-          </div>
-
-          <div className="space-y-6 lg:col-span-6">
+    <>
+      <CandidateWorkspaceLayout contentClassName="space-y-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+          <div className="space-y-5 xl:col-span-8">
             <Link
               href={ROUTES.applications.root}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
@@ -260,7 +256,7 @@ export function ApplicationDetailPage() {
             )}
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="xl:col-span-4">
             {application ? (
               <ApplicationDetailSidebar
                 application={application}
@@ -272,7 +268,7 @@ export function ApplicationDetailPage() {
             ) : null}
           </div>
         </div>
-      </div>
+      </CandidateWorkspaceLayout>
 
       {application ? (
         <WithdrawModal
@@ -283,6 +279,6 @@ export function ApplicationDetailPage() {
           onWithdrawSuccess={handleWithdrawSuccess}
         />
       ) : null}
-    </div>
+    </>
   );
 }

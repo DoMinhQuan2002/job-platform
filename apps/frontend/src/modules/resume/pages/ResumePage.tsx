@@ -3,17 +3,13 @@
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { ConnectedCandidateSidebar } from "@/modules/candidate/components/connected-candidate-sidebar";
+import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
 import { ResumeManager } from "../components/ResumeManager";
 import { CandidateSkillsSection } from "../components/CandidateSkillsSection";
 
 export function ResumePage() {
   return (
-    <main className="min-h-screen bg-[#f8fafc]">
-      <div className="mx-auto flex w-full container flex-col gap-5 px-4 py-6 sm:px-6 lg:flex-row lg:py-[30px] 2xl:px-0">
-        <ConnectedCandidateSidebar />
-
-        <div className="min-w-0 flex-1 space-y-8">
+    <CandidateWorkspaceLayout contentClassName="space-y-8">
           <div>
             <nav className="mb-2 flex items-center gap-1.5 text-[13px] text-muted">
               <Link
@@ -38,8 +34,6 @@ export function ResumePage() {
             </div>
             <CandidateSkillsSection />
           </div>
-        </div>
-      </div>
-    </main>
+    </CandidateWorkspaceLayout>
   );
 }
