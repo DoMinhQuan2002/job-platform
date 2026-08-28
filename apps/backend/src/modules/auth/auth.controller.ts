@@ -17,7 +17,11 @@ import type {
 } from "./auth.validation";
 
 /** Tra ve access token trong body, refresh token chi di qua httpOnly cookie. */
-const respondWithLogin = (res: Response, message: string, result: LoginResult) => {
+const respondWithLogin = (
+  res: Response,
+  message: string,
+  result: LoginResult,
+) => {
   setRefreshTokenCookie(res, result.refreshToken);
 
   sendSuccess(res, 200, message, {
@@ -39,12 +43,21 @@ export const authController = {
   },
 
   verifyRegisterCode: async (req: Request, res: Response) => {
-    const data = await authService.verifyRegisterCode(req.body as VerifyCodeInput);
-    sendSuccess(res, 200, "Xác thực thành công, tài khoản đã được kích hoạt", data);
+    const data = await authService.verifyRegisterCode(
+      req.body as VerifyCodeInput,
+    );
+    sendSuccess(
+      res,
+      200,
+      "Xác thực thành công, tài khoản đã được kích hoạt",
+      data,
+    );
   },
 
   resendRegisterCode: async (req: Request, res: Response) => {
-    const data = await authService.resendRegisterCode(req.body as EmailOnlyInput);
+    const data = await authService.resendRegisterCode(
+      req.body as EmailOnlyInput,
+    );
     sendSuccess(res, 200, "Đã gửi lại mã xác thực", data);
   },
 
@@ -55,7 +68,11 @@ export const authController = {
 
   logout: async (req: Request, res: Response) => {
     if (!req.user) {
-      throw new AppError(401, "UNAUTHORIZED", "Access token không hợp lệ hoặc đã hết hạn");
+      throw new AppError(
+        401,
+        "UNAUTHORIZED",
+        "Phiên đăng nhập của ban đã hết hạn hoặc không hợp lệ",
+      );
     }
 
     await authService.logout(req.user.id, readRefreshTokenCookie(req));
@@ -78,7 +95,9 @@ export const authController = {
   },
 
   verifyForgotPasswordCode: async (req: Request, res: Response) => {
-    const data = await authService.verifyForgotPasswordCode(req.body as VerifyCodeInput);
+    const data = await authService.verifyForgotPasswordCode(
+      req.body as VerifyCodeInput,
+    );
     sendSuccess(res, 200, "Xác thực thành công", data);
   },
 
@@ -94,7 +113,9 @@ export const authController = {
   },
 
   loginWithGoogle: async (req: Request, res: Response) => {
-    const result = await authService.loginWithGoogle(req.body as GoogleLoginInput);
+    const result = await authService.loginWithGoogle(
+      req.body as GoogleLoginInput,
+    );
     respondWithLogin(res, "Đăng nhập thành công", result);
   },
 
