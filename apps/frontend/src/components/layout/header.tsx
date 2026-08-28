@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bookmark, ChevronDown, LogOut, Menu, Search, X } from "lucide-react";
+import { Bell, Bookmark, ChevronDown, LogOut, Menu, Search, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import {
@@ -105,6 +105,13 @@ export function Header() {
       router.replace(ROUTES.auth.login);
     }
   };
+
+  const profileHref =
+    session?.role === "CANDIDATE"
+      ? ROUTES.candidate.profile
+      : session?.role === "RECRUITER"
+        ? ROUTES.recruiter.root
+        : null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -224,14 +231,28 @@ export function Header() {
                 {accountMenuOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
+                    className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
                   >
+                    {profileHref ? (
+                      <Link
+                        href={profileHref}
+                        role="menuitem"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <User className="size-4" />
+                        Hồ sơ cá nhân
+                      </Link>
+                    ) : null}
                     <button
                       type="button"
                       role="menuitem"
                       onClick={handleLogout}
                       disabled={isLoggingOut}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60",
+                        profileHref && "mt-1 border-t border-slate-100 pt-2.5",
+                      )}
                     >
                       <LogOut className="size-4" />
                       {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
@@ -283,17 +304,24 @@ export function Header() {
               </div>
             ) : (
               <div className="mt-3 border-t border-slate-100 pt-3">
-                <Link
-                  href={
-                    session.role === "CANDIDATE"
-                      ? ROUTES.candidate.profile
-                      : ROUTES.recruiter.root
-                  }
-                  onClick={() => setMenuOpen(false)}
-                  className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-slate-50"
-                >
-                  {session.fullName}
-                </Link>
+                {session.role === "CANDIDATE" || session.role === "RECRUITER" ? (
+                  <Link
+                    href={
+                      session.role === "CANDIDATE"
+                        ? ROUTES.candidate.profile
+                        : ROUTES.recruiter.root
+                    }
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <User className="size-4" />
+                    Hồ sơ cá nhân
+                  </Link>
+                ) : (
+                  <span className="block rounded-md px-3 py-2 text-sm font-medium">
+                    {session.fullName}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}

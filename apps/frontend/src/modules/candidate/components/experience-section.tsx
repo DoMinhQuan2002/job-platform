@@ -57,7 +57,7 @@ export function ExperienceSection({
               className="gap-1 text-primary hover:bg-primary/5 hover:text-primary"
               onClick={openCreate}
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-4" />
               Thêm kinh nghiệm
             </Button>
           }

@@ -18,7 +18,7 @@ type UseCandidateProfileResult = {
   error: string | null;
   unauthorized: boolean;
   saving: boolean;
-  refresh: () => Promise<void>;
+  refresh: (options?: { silent?: boolean }) => Promise<void>;
   updateProfile: (input: UpdateCandidateProfileInput) => Promise<void>;
   createEducation: (input: EducationFormInput) => Promise<void>;
   updateEducation: (id: string, input: Partial<EducationFormInput>) => Promise<void>;

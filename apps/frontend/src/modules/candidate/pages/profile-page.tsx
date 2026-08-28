@@ -73,12 +73,12 @@ export function CandidateProfilePage() {
 
       <div className="min-w-0 flex-1 space-y-5">
         <header className="space-y-2">
-          <nav className="flex items-center gap-2 text-[13px] text-muted">
+          <nav className="flex items-center gap-1.5 text-[13px] text-muted">
             <Link href={ROUTES.home} className="hover:text-primary">
               Trang chủ
             </Link>
             <ChevronRight className="size-3" />
-            <span>Hồ sơ của tôi</span>
+            <span className="font-semibold text-foreground">Hồ sơ của tôi</span>
           </nav>
           <h1 className="text-2xl font-bold text-foreground">Hồ sơ nghề nghiệp</h1>
           <p className="max-w-xl text-[15px] text-muted">
@@ -104,11 +104,7 @@ export function CandidateProfilePage() {
           onDelete={deleteWorkExperience}
         />
 
-        <SkillsOverview
-          skills={profile.skills}
-          languages={profile.languages}
-          certificates={profile.certificates}
-        />
+        <SkillsOverview />
       </div>
     </main>
   );
