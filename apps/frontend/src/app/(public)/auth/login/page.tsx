@@ -56,6 +56,10 @@ export default function LoginPage() {
 
   const [googleScriptReady, setGoogleScriptReady] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  // state quản lí email chưa xác thực
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<LoginFormValues>({
       resolver: zodResolver(loginSchema),
@@ -94,6 +98,26 @@ export default function LoginPage() {
       setIsGoogleSubmitting(false);
     }
   }, [router]);
+
+
+  // Hàm xử lí xác thực
+
+  const handleVerifyRedirect = async () => {
+    if (!unverifiedEmail) return;
+    try {
+      // Gửi lại mã OTP để người dùng có mã mới trong hộp thư
+      const res = await authApi.resendRegisterCode({ email: unverifiedEmail });
+      const query = new URLSearchParams({
+        email: unverifiedEmail,
+        expiresIn: String(res.data.otpExpiresIn),
+      });
+      router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
+    } catch {
+      // Nếu resend bị cooldown hoặc lỗi, vẫn chuyển sang trang OTP với query email
+      router.push(`${ROUTES.auth.verifyOtp}?email=${encodeURIComponent(unverifiedEmail)}`);
+    }
+  }
+
 
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -236,3 +260,32 @@ function GoogleLogo() {
     </svg>
   );
 }
+
+{/* Dialog lỗi đăng nhập thông thường */ }
+<AppAlertDialog
+  open={Boolean(submitError)}
+  onOpenChange={(open) => { if (!open) setSubmitError(""); }}
+  tone="error"
+  title="Đăng nhập thất bại"
+  description={submitError}
+  confirmLabel="Đóng"
+  showCancel={false}
+/>
+
+{/* Dialog yêu cầu xác thực tài khoản */ }
+<AppAlertDialog
+  open={Boolean(unverifiedEmail)}
+  onOpenChange={(open) => { if (!open) setUnverifiedEmail(null); }}
+  tone="warning"
+  title="Tài khoản chưa được xác thực"
+  description={
+    <div className="space-y-2">
+      <p>Tài khoản với email <strong>{unverifiedEmail}</strong> chưa được xác thực.</p>
+      <p>Bạn có muốn nhận mã xác thực và chuyển đến trang xác thực OTP ngay bây giờ không?</p>
+    </div>
+  }
+  confirmLabel="Xác thực"
+  cancelLabel="Hủy"
+  showCancel={true}
+  onConfirm={handleVerifyRedirect}
+/>

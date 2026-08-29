@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ROUTES } from "@/constants/routes";
+import { ApiError } from "@/lib/api-error";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -70,6 +71,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [, setUnverifiedEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -114,6 +116,11 @@ export default function RegisterPage() {
       });
       router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
     } catch (error) {
+      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED") {
+        setUnverifiedEmail(values.email.trim());
+        return;
+      }
+
       setSubmitError(
         error instanceof Error
           ? error.message
@@ -307,14 +314,6 @@ export default function RegisterPage() {
               <p className="mt-1.5 text-xs text-danger">{errors.terms.message}</p>
             ) : null}
           </div>
-
-          {submitError ? (
-            <StatusMessage tone="error">{submitError}</StatusMessage>
-          ) : null}
-          {submitSuccess ? (
-            <StatusMessage tone="success">{submitSuccess}</StatusMessage>
-          ) : null}
-
           <Button
             type="submit"
             size="lg"
@@ -450,28 +449,5 @@ function RoleOption({
       <span className="mb-1 block text-sm font-bold text-text">{title}</span>
       <span className="text-xs leading-relaxed text-muted">{description}</span>
     </label>
-  );
-}
-
-function StatusMessage({
-  tone,
-  children,
-}: {
-  tone: "error" | "success";
-  children: ReactNode;
-}) {
-  const Icon = tone === "error" ? AlertCircle : CheckCircle2;
-
-  return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
-      className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${tone === "error"
-        ? "bg-danger/10 text-danger"
-        : "bg-success/10 text-success"
-        }`}
-    >
-      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-      <span>{children}</span>
-    </div>
   );
 }
