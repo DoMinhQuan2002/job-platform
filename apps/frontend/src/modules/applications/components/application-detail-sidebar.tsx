@@ -24,7 +24,7 @@ interface ApplicationDetailSidebarProps {
   onOpenWithdraw: () => void;
   onViewCV: () => void;
   onDownloadCV: () => void;
-  cvBusy?: boolean;
+  cvBusy?: "view" | "download" | null;
 }
 
 export function ApplicationDetailSidebar({
@@ -32,7 +32,7 @@ export function ApplicationDetailSidebar({
   onOpenWithdraw,
   onViewCV,
   onDownloadCV,
-  cvBusy = false,
+  cvBusy = null,
 }: ApplicationDetailSidebarProps) {
   const { jobSummary, company } = application;
   const companyInitial = company.name.slice(0, 3).toUpperCase() || "CO";
@@ -127,22 +127,26 @@ export function ApplicationDetailSidebar({
           <Button
             type="button"
             variant="outline"
-            disabled={cvBusy || !application.resumeUrl}
+            disabled={!!cvBusy || !application.resumeUrl}
             onClick={onViewCV}
             className="w-full justify-center gap-2 rounded-xl border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
-            {cvBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4 text-slate-500" />}
+            {cvBusy === "view" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Eye className="h-4 w-4 text-slate-500" />
+            )}
             <span>Xem CV đã nộp</span>
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            disabled={cvBusy || !application.resumeUrl}
+            disabled={!!cvBusy || !application.resumeUrl}
             onClick={onDownloadCV}
             className="w-full justify-center gap-2 rounded-xl border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
-            {cvBusy ? (
+            {cvBusy === "download" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Download className="h-4 w-4 text-slate-500" />

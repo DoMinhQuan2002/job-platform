@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, AlertCircle, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-error";
+import { downloadFileFromUrl } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import { applicationsApi } from "../api";
 import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
@@ -59,12 +60,8 @@ async function openResumeSnapshot(storagePath: string, mode: "view" | "download"
   const url = res.data?.url;
   if (!url) throw new Error("Không lấy được URL CV");
   if (mode === "download") {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const downloadName = fileName.includes(".") ? fileName : `${fileName}.pdf`;
+    await downloadFileFromUrl(url, downloadName);
     return;
   }
   window.open(url, "_blank", "noopener,noreferrer");
@@ -78,7 +75,7 @@ export function ApplicationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
-  const [cvBusy, setCvBusy] = useState(false);
+  const [cvBusy, setCvBusy] = useState<"view" | "download" | null>(null);
 
   const load = useCallback(async () => {
     if (!appId) return;
@@ -116,11 +113,11 @@ export function ApplicationDetailPage() {
     setApplication((prev) =>
       prev
         ? {
-            ...prev,
-            status: "WITHDRAWN",
-            statusText: STATUS_LABEL.WITHDRAWN,
-            timeline: buildTimeline("WITHDRAWN", new Date().toISOString()),
-          }
+          ...prev,
+          status: "WITHDRAWN",
+          statusText: STATUS_LABEL.WITHDRAWN,
+          timeline: buildTimeline("WITHDRAWN", new Date().toISOString()),
+        }
         : prev,
     );
   };
@@ -131,12 +128,15 @@ export function ApplicationDetailPage() {
       return;
     }
     try {
-      setCvBusy(true);
+      setCvBusy(mode);
       await openResumeSnapshot(application.resumeUrl, mode, application.resumeName);
+      if (mode === "download") {
+        toast.success("Đang tải CV về máy...");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Không mở được CV.");
     } finally {
-      setCvBusy(false);
+      setCvBusy(null);
     }
   };
 
@@ -181,18 +181,15 @@ export function ApplicationDetailPage() {
                     Chi tiết đơn ứng tuyển
                   </h1>
                   <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-                    ID đơn:{" "}
-                    <span className="font-semibold text-slate-700">{application.code}</span> • Ứng
-                    tuyển ngày {application.appliedAt}
+                    Ứng tuyển lúc {application.appliedAt}
                   </p>
                 </div>
 
                 <div
-                  className={`flex items-center gap-2.5 rounded-2xl border p-4 text-xs font-bold sm:text-sm ${
-                    application.status === "WITHDRAWN" || application.status === "REJECTED"
-                      ? "border-rose-100 bg-rose-50 text-rose-800"
-                      : "border-emerald-100 bg-emerald-50 text-emerald-800"
-                  }`}
+                  className={`flex items-center gap-2.5 rounded-2xl border p-4 text-xs font-bold sm:text-sm ${application.status === "WITHDRAWN" || application.status === "REJECTED"
+                    ? "border-rose-100 bg-rose-50 text-rose-800"
+                    : "border-emerald-100 bg-emerald-50 text-emerald-800"
+                    }`}
                 >
                   Trạng thái hiện tại: {application.statusText}
                 </div>
@@ -237,11 +234,15 @@ export function ApplicationDetailPage() {
                       {application.resumeUrl ? (
                         <button
                           type="button"
-                          disabled={cvBusy}
+                          disabled={!!cvBusy}
                           onClick={() => void handleResumeAction("view")}
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline disabled:opacity-50"
                         >
-                          <FileText className="h-4 w-4" />
+                          {cvBusy === "view" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileText className="h-4 w-4" />
+                          )}
                           {application.resumeName}
                         </button>
                       ) : (
