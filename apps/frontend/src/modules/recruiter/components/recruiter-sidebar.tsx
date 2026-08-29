@@ -10,7 +10,7 @@ import { useRecruiterCompany } from "./recruiter-company-context";
 const navigation = [
   { label: "Tổng quan", href: "/recruiter", icon: LayoutDashboard },
   { label: "Quản lý tin", href: "/recruiter/jobs", icon: BriefcaseBusiness },
-  { label: "Quản lý ứng viên", href: "/recruiter/candidates", icon: Users },
+  { label: "Quản lý ứng viên", href: ROUTES.recruiter.candidates, icon: Users },
   { label: "Quản lý công ty", href: "/recruiter/company", icon: Building2 },
   { label: "Thông báo", href: "/recruiter/notifications", icon: Bell, badge: 5 },
   { label: "Tài khoản", href: ROUTES.recruiter.account, icon: Settings },
