@@ -1,0 +1,78 @@
+import type { ReactNode } from "react";
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+const featureSkeletons = Array.from({ length: 3 });
+
+type AuthSkeletonShellProps = {
+  children: ReactNode;
+  cardClassName?: string;
+  label: string;
+};
+
+export function AuthSkeletonShell({
+  children,
+  cardClassName,
+  label,
+}: AuthSkeletonShellProps) {
+  return (
+    <div
+      className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12"
+      aria-busy="true"
+      aria-label={label}
+    >
+      <section className="hidden flex-col pb-8 pt-8 lg:flex" aria-hidden="true">
+        <Skeleton className="mb-6 h-7 w-52 rounded-full" />
+        <div className="mb-5 space-y-3">
+          <Skeleton className="h-10 w-full max-w-md" />
+          <Skeleton className="h-10 w-11/12 max-w-md" />
+          <Skeleton className="h-10 w-3/5 max-w-xs" />
+        </div>
+        <div className="mb-10 space-y-2">
+          <Skeleton className="h-4 w-full max-w-lg" />
+          <Skeleton className="h-4 w-5/6 max-w-md" />
+        </div>
+        <div className="space-y-6">
+          {featureSkeletons.map((_, index) => (
+            <div key={index} className="flex items-start gap-4">
+              <Skeleton className="size-12 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-2 pt-1">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-full max-w-sm" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        className={cn(
+          "w-full max-w-lg justify-self-end rounded-2xl border border-border/70 bg-white p-6 shadow-sm md:p-10",
+          cardClassName,
+        )}
+        aria-hidden="true"
+      >
+        {children}
+      </section>
+    </div>
+  );
+}
+
+export function AuthSkeletonHeading({ descriptionWidth = "w-72" }) {
+  return (
+    <div className="mb-8 flex flex-col items-center gap-3">
+      <Skeleton className="h-8 w-52" />
+      <Skeleton className={cn("h-4 max-w-full", descriptionWidth)} />
+    </div>
+  );
+}
+
+export function AuthSkeletonField({ labelWidth = "w-24" }) {
+  return (
+    <div className="space-y-2">
+      <Skeleton className={cn("h-4", labelWidth)} />
+      <Skeleton className="h-11 w-full rounded-lg" />
+    </div>
+  );
+}
