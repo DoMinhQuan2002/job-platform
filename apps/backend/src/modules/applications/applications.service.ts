@@ -6,6 +6,9 @@ import { ResumeEntity } from "../../database/entities/resume.entity";
 import { Job } from "../../database/entities/job.entity";
 import { Company } from "../../database/entities/company.entity";
 import { UserEntity } from "../../database/entities/user.entity";
+import { EducationEntity } from "../../database/entities/education.entity";
+import { WorkExperienceEntity } from "../../database/entities/work-experience.entity";
+import { CandidateSkillEntity } from "../../database/entities/candidate-skill.entity";
 import { ApplicationStatus } from "../../common/constants";
 import { JOB_STATUS } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
@@ -16,6 +19,75 @@ import {
   ApplyJobDto,
   UpdateApplicationStatusDto,
 } from "./applications.types";
+
+export type ApplicationListItemDto = {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  resumeId: string | null;
+  resumeSnapshotUrl: string | null;
+  status: ApplicationStatus;
+  appliedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  candidate?: {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+    avatar: string | null;
+    experienceCount: number;
+  };
+  job?: {
+    id: string;
+    title: string;
+  };
+  resume?: {
+    id: string;
+    fileName: string;
+  } | null;
+};
+
+export type ApplicationDetailDto = ApplicationListItemDto & {
+  candidateProfile?: {
+    id: string;
+    userId: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+    avatar: string | null;
+    dateOfBirth: string | null;
+    addressDetail: string | null;
+    bio: string | null;
+    careerObjective: string | null;
+    educations: EducationEntity[];
+    workExperiences: WorkExperienceEntity[];
+    skills: CandidateSkillEntity[];
+    languages: CandidateSkillEntity[];
+    certificates: CandidateSkillEntity[];
+    createdAt: Date;
+    updatedAt: Date;
+  };
+};
+
+type ApplicationListRaw = {
+  id: string;
+  candidateId: string;
+  jobId: string;
+  resumeId: string | null;
+  resumeSnapshotUrl: string | null;
+  status: ApplicationStatus;
+  appliedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  candidateName: string | null;
+  candidateEmail: string | null;
+  candidatePhone: string | null;
+  candidateAvatar: string | null;
+  experienceCount: string | number | null;
+  jobTitle: string | null;
+  resumeFileName: string | null;
+};
 
 export class ApplicationsService {
   private get applicationRepo() {
@@ -44,6 +116,18 @@ export class ApplicationsService {
 
   private get userRepo() {
     return AppDataSource.getRepository(UserEntity);
+  }
+
+  private get educationRepo() {
+    return AppDataSource.getRepository(EducationEntity);
+  }
+
+  private get workExperienceRepo() {
+    return AppDataSource.getRepository(WorkExperienceEntity);
+  }
+
+  private get candidateSkillRepo() {
+    return AppDataSource.getRepository(CandidateSkillEntity);
   }
 
   private async getCandidateProfileByUserId(
@@ -184,7 +268,7 @@ export class ApplicationsService {
   async listApplications(
     user: { id: string; role: "CANDIDATE" | "RECRUITER" | "ADMIN" },
     query: ApplicationQueryDto = {},
-  ): Promise<ApplicationEntity[]> {
+  ): Promise<ApplicationListItemDto[]> {
     if (
       query.status &&
       !Object.values(ApplicationStatus).includes(query.status)
@@ -205,17 +289,22 @@ export class ApplicationsService {
         return [];
       }
 
-      return this.applicationRepo.find({
-        where: {
+      const qb = this.createApplicationListQuery()
+        .where("application.candidate_id = :candidateId", {
           candidateId: candidate.id,
-          ...(query.status ? { status: query.status } : {}),
-        },
-        order: {
-          appliedAt: "DESC",
-          createdAt: "DESC",
-        },
-        ...(limit ? { take: limit, skip } : {}),
-      });
+        });
+
+      if (query.status) {
+        qb.andWhere("application.status = :status", { status: query.status });
+      }
+
+      this.applyApplicationListOrdering(qb);
+
+      if (limit) {
+        qb.limit(limit).offset(skip);
+      }
+
+      return this.getApplicationListDtos(qb);
     }
 
     if (user.role === "RECRUITER") {
@@ -224,9 +313,7 @@ export class ApplicationsService {
         return [];
       }
 
-      const qb = this.applicationRepo
-        .createQueryBuilder("application")
-        .innerJoin(Job, "job", "job.id = application.job_id")
+      const qb = this.createApplicationListQuery()
         .where("job.company_id = :companyId", { companyId: company.id });
 
       if (query.jobId) {
@@ -239,30 +326,39 @@ export class ApplicationsService {
         qb.andWhere("application.status = :status", { status: query.status });
       }
 
-      qb.orderBy("application.applied_at", "DESC").addOrderBy(
-        "application.created_at",
-        "DESC",
-      );
+      this.applyApplicationListOrdering(qb);
 
       if (limit) {
-        qb.take(limit).skip(skip);
+        qb.limit(limit).offset(skip);
       }
 
-      return qb.getMany();
+      return this.getApplicationListDtos(qb);
     }
 
     if (user.role === "ADMIN") {
-      return this.applicationRepo.find({
-        where: {
-          ...(query.jobId ? { jobId: String(query.jobId) } : {}),
-          ...(query.status ? { status: query.status } : {}),
-        },
-        order: {
-          appliedAt: "DESC",
-          createdAt: "DESC",
-        },
-        ...(limit ? { take: limit, skip } : {}),
-      });
+      const qb = this.createApplicationListQuery();
+
+      if (query.jobId) {
+        qb.where("application.job_id = :jobId", {
+          jobId: String(query.jobId),
+        });
+      }
+
+      if (query.status) {
+        if (query.jobId) {
+          qb.andWhere("application.status = :status", { status: query.status });
+        } else {
+          qb.where("application.status = :status", { status: query.status });
+        }
+      }
+
+      this.applyApplicationListOrdering(qb);
+
+      if (limit) {
+        qb.limit(limit).offset(skip);
+      }
+
+      return this.getApplicationListDtos(qb);
     }
 
     return [];
@@ -272,7 +368,7 @@ export class ApplicationsService {
   async getApplicationById(
     user: { id: string; role: "CANDIDATE" | "RECRUITER" | "ADMIN" },
     id: string,
-  ): Promise<ApplicationEntity> {
+  ): Promise<ApplicationDetailDto> {
     const application = await this.applicationRepo.findOne({
       where: { id },
     });
@@ -318,7 +414,7 @@ export class ApplicationsService {
       }
     }
 
-    return application;
+    return this.getApplicationDetailDto(application);
   }
 
   /** 4. Update application status (Recruiter) */
@@ -541,6 +637,198 @@ export class ApplicationsService {
         createdAt: "DESC",
       },
     });
+  }
+
+  private createApplicationListQuery() {
+    return this.applicationRepo
+      .createQueryBuilder("application")
+      .innerJoin(Job, "job", "job.id = application.job_id")
+      .leftJoin(CandidateProfileEntity, "candidate", "candidate.id = application.candidate_id")
+      .leftJoin(UserEntity, "candidateUser", "candidateUser.id = candidate.user_id")
+      .leftJoin(ResumeEntity, "resume", "resume.id = application.resume_id")
+      .leftJoin(
+        "work_experiences",
+        "workExperience",
+        "workExperience.candidate_id = candidate.id",
+      )
+      .select("application.id", "id")
+      .addSelect("application.candidate_id", "candidateId")
+      .addSelect("application.job_id", "jobId")
+      .addSelect("application.resume_id", "resumeId")
+      .addSelect("application.resume_snapshot_url", "resumeSnapshotUrl")
+      .addSelect("application.status", "status")
+      .addSelect("application.applied_at", "appliedAt")
+      .addSelect("application.created_at", "createdAt")
+      .addSelect("application.updated_at", "updatedAt")
+      .addSelect("candidateUser.full_name", "candidateName")
+      .addSelect("candidateUser.email", "candidateEmail")
+      .addSelect("candidateUser.phone", "candidatePhone")
+      .addSelect("candidateUser.avatar", "candidateAvatar")
+      .addSelect("job.title", "jobTitle")
+      .addSelect("resume.file_name", "resumeFileName")
+      .addSelect("COUNT(workExperience.id)", "experienceCount")
+      .groupBy("application.id")
+      .addGroupBy("application.candidate_id")
+      .addGroupBy("application.job_id")
+      .addGroupBy("application.resume_id")
+      .addGroupBy("application.resume_snapshot_url")
+      .addGroupBy("application.status")
+      .addGroupBy("application.applied_at")
+      .addGroupBy("application.created_at")
+      .addGroupBy("application.updated_at")
+      .addGroupBy("candidateUser.full_name")
+      .addGroupBy("candidateUser.email")
+      .addGroupBy("candidateUser.phone")
+      .addGroupBy("candidateUser.avatar")
+      .addGroupBy("job.title")
+      .addGroupBy("resume.file_name");
+  }
+
+  private applyApplicationListOrdering(
+    qb: ReturnType<ApplicationsService["createApplicationListQuery"]>,
+  ): void {
+    qb.orderBy("application.applied_at", "DESC").addOrderBy(
+      "application.created_at",
+      "DESC",
+    );
+  }
+
+  private async getApplicationListDtos(
+    qb: ReturnType<ApplicationsService["createApplicationListQuery"]>,
+  ): Promise<ApplicationListItemDto[]> {
+    const rows = await qb.getRawMany<ApplicationListRaw>();
+
+    return rows.map((row) => ({
+      id: String(row.id),
+      candidateId: String(row.candidateId),
+      jobId: String(row.jobId),
+      resumeId: row.resumeId === null ? null : String(row.resumeId),
+      resumeSnapshotUrl: row.resumeSnapshotUrl,
+      status: row.status,
+      appliedAt: row.appliedAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      candidate: row.candidateName && row.candidateEmail
+        ? {
+            id: String(row.candidateId),
+            fullName: row.candidateName,
+            email: row.candidateEmail,
+            phone: row.candidatePhone,
+            avatar: row.candidateAvatar,
+            experienceCount: Number(row.experienceCount ?? 0),
+          }
+        : undefined,
+      job: row.jobTitle
+        ? {
+            id: String(row.jobId),
+            title: row.jobTitle,
+          }
+        : undefined,
+      resume: row.resumeId && row.resumeFileName
+        ? {
+            id: String(row.resumeId),
+            fileName: row.resumeFileName,
+          }
+        : null,
+    }));
+  }
+
+  private async getApplicationDetailDto(
+    application: ApplicationEntity,
+  ): Promise<ApplicationDetailDto> {
+    const [candidate, job, resume, educations, workExperiences, candidateSkills] =
+      await Promise.all([
+        this.candidateProfileRepo.findOne({
+          where: { id: application.candidateId },
+          relations: { user: true },
+        }),
+        this.jobRepo.findOne({ where: { id: application.jobId } }),
+        application.resumeId
+          ? this.resumeRepo.findOne({ where: { id: application.resumeId } })
+          : Promise.resolve(null),
+        this.educationRepo.find({
+          where: { candidateId: application.candidateId },
+          order: { createdAt: "DESC" },
+        }),
+        this.workExperienceRepo.find({
+          where: { candidateId: application.candidateId },
+          order: { createdAt: "DESC" },
+        }),
+        this.candidateSkillRepo.find({
+          where: { candidateId: application.candidateId },
+          relations: { skill: true },
+          order: { createdAt: "DESC" },
+        }),
+      ]);
+
+    const skills: CandidateSkillEntity[] = [];
+    const languages: CandidateSkillEntity[] = [];
+    const certificates: CandidateSkillEntity[] = [];
+
+    for (const item of candidateSkills) {
+      if (item.skill.category === "LANGUAGE") {
+        languages.push(item);
+      } else if (item.skill.category === "CERTIFICATE") {
+        certificates.push(item);
+      } else {
+        skills.push(item);
+      }
+    }
+
+    return {
+      id: application.id,
+      candidateId: application.candidateId,
+      jobId: application.jobId,
+      resumeId: application.resumeId,
+      resumeSnapshotUrl: application.resumeSnapshotUrl,
+      status: application.status,
+      appliedAt: application.appliedAt,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt,
+      candidate: candidate?.user
+        ? {
+            id: application.candidateId,
+            fullName: candidate.user.fullName,
+            email: candidate.user.email,
+            phone: candidate.user.phone,
+            avatar: candidate.user.avatar,
+            experienceCount: workExperiences.length,
+          }
+        : undefined,
+      job: job
+        ? {
+            id: job.id,
+            title: job.title,
+          }
+        : undefined,
+      resume: resume
+        ? {
+            id: resume.id,
+            fileName: resume.fileName,
+          }
+        : null,
+      candidateProfile: candidate?.user
+        ? {
+            id: candidate.id,
+            userId: candidate.userId,
+            fullName: candidate.user.fullName,
+            email: candidate.user.email,
+            phone: candidate.user.phone,
+            avatar: candidate.user.avatar,
+            dateOfBirth: candidate.user.dateOfBirth,
+            addressDetail: candidate.user.addressDetail,
+            bio: candidate.bio,
+            careerObjective: candidate.careerObjective,
+            educations,
+            workExperiences,
+            skills,
+            languages,
+            certificates,
+            createdAt: candidate.createdAt,
+            updatedAt: candidate.updatedAt,
+          }
+        : undefined,
+    };
   }
 }
 
