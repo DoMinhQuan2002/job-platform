@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Star, Download, Eye, Trash2 } from "lucide-react";
+import { FileText, Star, Download, Eye, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { downloadFileFromUrl } from "@/lib/utils";
 import { resumeApi } from "../api";
 import type { Resume } from "../types";
 
@@ -20,7 +21,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
-  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [fetchingAction, setFetchingAction] = useState<"view" | "download" | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const formatSize = (bytes: number) => {
@@ -73,7 +74,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
       return;
     }
     try {
-      setIsFetchingUrl(true);
+      setFetchingAction(action);
       const res = await resumeApi.getAccessUrl(resume.fileUrl);
       const url = res.data?.url;
       if (!url) {
@@ -81,12 +82,10 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
         return;
       }
       if (action === "download") {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = resume.fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const downloadName = resume.fileName?.includes(".")
+          ? resume.fileName
+          : `${resume.fileName || "CV"}.pdf`;
+        await downloadFileFromUrl(url, downloadName);
         toast.success("Đang tải CV về máy...");
       } else {
         window.open(url, "_blank", "noopener,noreferrer");
@@ -94,7 +93,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
     } catch {
       toast.error("Đã xảy ra lỗi khi lấy file.");
     } finally {
-      setIsFetchingUrl(false);
+      setFetchingAction(null);
     }
   };
 
@@ -142,18 +141,26 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
         {/* Action icons */}
         <button
           onClick={() => handleAction("download")}
-          disabled={isFetchingUrl}
+          disabled={!!fetchingAction}
           className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
           title="Tải về"
         >
-          <Download className="w-5 h-5" strokeWidth={1.5} />
+          {fetchingAction === "download" ? (
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          ) : (
+            <Download className="w-5 h-5" strokeWidth={1.5} />
+          )}
         </button>
         <button
           onClick={() => handleAction("view")}
-          disabled={isFetchingUrl}
+          disabled={!!fetchingAction}
           className="flex items-center gap-1.5 p-2 px-3 border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          <Eye className="w-4 h-4" />
+          {fetchingAction === "view" ? (
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
           <span className="text-sm font-medium">Xem</span>
         </button>
         <button

@@ -16,6 +16,11 @@ import { summarizeJob } from "../lib/job-summary";
 import { toRelatedJob } from "../lib/related-jobs";
 import { jobsApi } from "@/modules/jobs/api";
 import { useAuthSession } from "@/lib/use-auth-session";
+import {
+  findApplicationForJob,
+  isActiveApplicationStatus,
+  notifyApplicationsChanged,
+} from "../lib/use-applied-jobs";
 
 function toJobDetail(jobId: string, raw: unknown): JobDetail {
   const summary = summarizeJob(raw);
@@ -120,14 +125,16 @@ export function JobApplyPage() {
       try {
         const res = await applicationsApi.list();
         if (cancelled) return;
-        const existing = res.data.find((app) => app.jobId === job.id);
+        const existing = findApplicationForJob(res.data ?? [], job.id);
         if (!existing) return;
+        notifyApplicationsChanged();
         setJob((prev) =>
           prev
             ? {
                 ...prev,
-                hasApplied: true,
-                applicationId: existing.id,
+                hasApplied: isActiveApplicationStatus(existing.status),
+                applicationId: String(existing.id),
+                applicationStatus: existing.status,
               }
             : prev,
         );
@@ -140,7 +147,7 @@ export function JobApplyPage() {
     return () => {
       cancelled = true;
     };
-  }, [isCandidate, job]);
+  }, [isCandidate, job?.id]);
 
   useEffect(() => {
     const companyId = job?.company.id;
@@ -184,28 +191,28 @@ export function JobApplyPage() {
   return (
     <div className="min-h-screen bg-background py-6 sm:py-8">
       <div className="mx-auto w-full container space-y-6 px-4 sm:px-6 2xl:px-0">
-        <nav className="flex items-center gap-1.5 text-xs text-slate-500">
+        <nav className="flex items-center gap-1.5 text-[13px] text-muted">
           <Link href={ROUTES.home} className="flex items-center gap-1 transition hover:text-primary">
-            <Home className="h-3.5 w-3.5" />
+            <Home className="size-3.5" />
             <span>Trang chủ</span>
           </Link>
-          <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+          <ChevronRight className="size-3" />
           <Link href={ROUTES.jobs} className="transition hover:text-primary">
             Việc làm
           </Link>
-          <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-          <span className="line-clamp-1 font-semibold text-slate-800">
+          <ChevronRight className="size-3" />
+          <span className="line-clamp-1 font-semibold text-foreground">
             {job?.title || "Chi tiết tin"}
           </span>
         </nav>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-24 text-sm text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted">
+            <Loader2 className="size-4 animate-spin" />
             Đang tải tin tuyển dụng...
           </div>
         ) : error || !job ? (
-          <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6 text-sm text-rose-800">
+          <div className="rounded-xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-800">
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="space-y-3">
@@ -251,12 +258,14 @@ export function JobApplyPage() {
                 salary={job.salary}
                 hasApplied={job.hasApplied}
                 onApplySuccess={(applicationId) => {
+                  notifyApplicationsChanged();
                   setJob((prev) =>
                     prev
                       ? {
                           ...prev,
                           hasApplied: true,
                           applicationId: applicationId ?? prev.applicationId,
+                          applicationStatus: "APPLIED",
                         }
                       : prev,
                   );

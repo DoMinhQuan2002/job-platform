@@ -219,7 +219,7 @@ export function ApplicationsPage() {
                         {item.salary}
                       </p>
                       <p className="mt-1 text-[11px] text-slate-400">
-                        Nộp ngày {formatDateTime(item.appliedAt)}
+                        Nộp lúc {formatDateTime(item.appliedAt)}
                       </p>
                     </div>
                   </div>

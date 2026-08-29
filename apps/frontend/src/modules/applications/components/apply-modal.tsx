@@ -19,6 +19,7 @@ import { useAuthSession } from "@/lib/use-auth-session";
 import { resumeApi } from "@/modules/resume/api";
 import type { Resume } from "@/modules/resume/types";
 import { applicationsApi } from "../api";
+import { notifyApplicationsChanged } from "../lib/use-applied-jobs";
 import { Button } from "@/components/ui/button";
 
 type ResumeChoice = {
@@ -147,6 +148,7 @@ export function ApplyModal({
     try {
       const response = await applicationsApi.apply(jobId, { resumeId: selectedResumeId });
       setIsSuccess(true);
+      notifyApplicationsChanged();
       onApplySuccess?.(response.data?.id);
     } catch (err: unknown) {
       setError(

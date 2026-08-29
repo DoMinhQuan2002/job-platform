@@ -101,6 +101,7 @@ export type JobDetail = {
   isSaved?: boolean;
   hasApplied?: boolean;
   applicationId?: string;
+  applicationStatus?: ApplicationStatus;
 };
 
 export type ApplicationTimelineStep = {
