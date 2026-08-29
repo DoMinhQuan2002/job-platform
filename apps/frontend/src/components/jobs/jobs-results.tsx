@@ -49,7 +49,7 @@ export function JobsResults(props: Props) {
           <strong>{total.toLocaleString("vi-VN")}</strong> việc làm phù hợp
         </h2>
         <label className="flex items-center gap-2 text-xs text-muted">
-          Sắp xếp:
+          <span className="whitespace-nowrap">Sắp xếp:</span> 
           <Select
             value={sort}
             onChange={(event) => props.onSort(event.target.value as JobSort)}

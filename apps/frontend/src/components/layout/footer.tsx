@@ -192,7 +192,7 @@ export function Footer() {
           </nav>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <ShieldCheck className="size-5" />
-            <span className="mr-2 max-w-12 leading-4 text-">
+            <span className="mr-2  leading-4 ">
               Bảo mật thông tin
             </span>
           </div>

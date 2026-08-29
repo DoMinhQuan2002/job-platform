@@ -72,22 +72,36 @@ export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 border-t border-border p-3">
+        <nav className="flex-1 border-t border-border py-2">
           {navigation.map((item) => {
             const active = item.href === "/recruiter" ? pathname === item.href : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
-              <Link key={item.href} href={item.href} onClick={onClose} className={cn("flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-background hover:text-text", active && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary")}>
-                <Icon className="size-[18px]" />
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={cn(
+                  "flex items-center gap-3 border-l-4 px-5 py-3 text-sm font-medium transition-colors hover:bg-background",
+                  active
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-transparent text-muted hover:text-text",
+                )}
+              >
+                <Icon className="size-[18px] shrink-0" />
                 <span className="flex-1">{item.label}</span>
-                {item.badge && <span className="rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-white">{item.badge}</span>}
+                {item.badge && (
+                  <span className="rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-white">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
 
           {/* Mobile: điều hướng sang các trang công khai. */}
-          <div className="mt-3 border-t border-border pt-3 lg:hidden">
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted">
+          <div className="mt-2 border-t border-border pt-2 lg:hidden">
+            <p className="mb-1 px-5 text-[10px] font-semibold uppercase tracking-wider text-muted">
               Điều hướng chung
             </p>
             {mobilePublicNavigation.map((item) => {
@@ -103,12 +117,13 @@ export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-background hover:text-text",
-                    active &&
-                      "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary",
+                    "flex items-center gap-3 border-l-4 px-5 py-3 text-sm font-medium transition-colors hover:bg-background",
+                    active
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-transparent text-muted hover:text-text",
                   )}
                 >
-                  <Icon className="size-[18px]" />
+                  <Icon className="size-[18px] shrink-0" />
                   <span>{item.label}</span>
                 </Link>
               );
