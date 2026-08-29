@@ -54,7 +54,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const [googleScriptReady, setGoogleScriptReady] = useState(false);
+  const [googleScriptReady, setGoogleScriptReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.google?.accounts?.id)
+  );
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<LoginFormValues>({
@@ -123,7 +125,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <Script src="https://accounts.google.com/gsi/client?hl=vi" strategy="afterInteractive" onLoad={() => setGoogleScriptReady(true)} />
+      <Script src="https://accounts.google.com/gsi/client?hl=vi" strategy="afterInteractive" onReady={() => setGoogleScriptReady(true)} />
 
       <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
         <section className="hidden flex-col pb-8 pt-8 lg:flex" aria-labelledby="login-introduction">
