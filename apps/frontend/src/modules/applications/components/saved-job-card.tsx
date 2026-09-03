@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { SavedJob } from "../types";
 import { Button } from "@/components/ui/button";
+import { CompanyLogo } from "./company-logo";
 
 interface SavedJobCardProps {
   job: SavedJob;
@@ -41,19 +42,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
         {/* Left: Logo & Job Details */}
         <div className="flex items-start gap-4">
           {/* Logo */}
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xs">
-            {job.companyLogoUrl ? (
-              <img
-                src={job.companyLogoUrl}
-                alt={job.companyName}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-xl bg-blue-50 font-bold text-primary text-xs">
-                {job.companyName.slice(0, 3).toUpperCase()}
-              </div>
-            )}
-          </div>
+          <CompanyLogo name={job.companyName} src={job.companyLogoUrl} />
 
           {/* Job details */}
           <div className="space-y-1.5">

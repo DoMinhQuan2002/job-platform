@@ -25,6 +25,7 @@ import { useAuthSession } from "@/lib/use-auth-session";
 import type { JobDetail } from "../types";
 import { applicationsApi } from "../api";
 import { CompanyVerifiedBadge } from "./company-verified-badge";
+import { CompanyLogo } from "./company-logo";
 
 function IconTooltip({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -81,19 +82,12 @@ export function JobHeaderCard({ job, onOpenApplyModal }: JobHeaderCardProps) {
     <div className="rounded-xl border border-border/30 bg-white p-5 shadow-[0_4px_7.5px_rgba(0,0,0,0.04)] sm:p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 p-2 sm:h-16 sm:w-16">
-            {job.company.logoUrl ? (
-              <img
-                src={job.company.logoUrl}
-                alt={job.company.name}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-lg bg-primary/10 text-base font-bold text-primary">
-                {job.company.name.slice(0, 3).toUpperCase()}
-              </div>
-            )}
-          </div>
+          <CompanyLogo
+            name={job.company.name}
+            src={job.company.logoUrl}
+            className="size-14 sm:size-16 rounded-xl border border-slate-100 bg-white p-2"
+            fallbackClassName="bg-primary/10 text-primary text-base font-bold"
+          />
 
           <div>
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">{job.title}</h1>
