@@ -365,7 +365,7 @@ export const jobService = {
       .leftJoinAndSelect("job.category", "category")
       .leftJoinAndSelect("job.jobSkills", "jobSkill")
       .leftJoinAndSelect("jobSkill.skill", "skill")
-      .where("job.status = :status", { status: JOB_STATUS.APPROVED })
+      .where("job.status = :status", { status: JOB_STATUS.OPEN })
       .andWhere("job.deadline >= CURRENT_DATE");
 
     if (query.keyword?.trim()) {
