@@ -262,7 +262,7 @@ export default function CompanyDetailPage() {
 
     return (
         <main className="min-h-screen bg-slate-50">
-            <div className="container mx-auto w-full px-5 pb-8 md:px-0">
+            <div className="container mx-auto w-full px-5 pb-8 sm:px-6 lg:px-8">
                 <nav className="flex h-10 items-center gap-1.5 text-xs text-slate-500">
                     <Link href={ROUTES.home} className="flex items-center gap-1 transition hover:text-primary">
                         <Home className="h-3.5 w-3.5" />
