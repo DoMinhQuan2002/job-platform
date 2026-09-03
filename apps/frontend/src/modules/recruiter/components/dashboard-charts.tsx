@@ -42,29 +42,32 @@ function getLabels(points: CandidateTrendData["points"]): string[] {
   return [0, 1, 2, 3, 4].map((i) => points[Math.round(i * step)]!.label);
 }
 
+type AsyncState<T> = { loading: boolean; error: string | null; data: T | null };
+
 export function CandidateTrendChart() {
-  const [data, setData] = useState<CandidateTrendData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<AsyncState<CandidateTrendData>>({
+    loading: true,
+    error: null,
+    data: null,
+  });
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     let ignore = false;
-    setLoading(true);
-    setError(null);
 
     recruiterStatisticsApi
       .getCandidateTrend({ days: 30, groupBy: "day" }, controller.signal)
       .then((res) => {
-        if (!ignore) setData(res.data);
+        if (!ignore) setState({ loading: false, error: null, data: res.data });
       })
       .catch((err: unknown) => {
         if (!ignore)
-          setError(err instanceof Error ? err.message : "Không thể tải biểu đồ.");
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
+          setState({
+            loading: false,
+            error: err instanceof Error ? err.message : "Không thể tải biểu đồ.",
+            data: null,
+          });
       });
 
     return () => {
@@ -72,6 +75,8 @@ export function CandidateTrendChart() {
       controller.abort();
     };
   }, [reloadKey]);
+
+  const { loading, error, data } = state;
 
   return (
     <section className="rounded-lg border border-border bg-surface p-5 shadow-sm lg:col-span-2">
@@ -238,28 +243,29 @@ function buildConicGradient(byStatus: ApplicationsByStatusData["byStatus"], tota
 }
 
 export function CandidateStatusChart() {
-  const [data, setData] = useState<ApplicationsByStatusData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<AsyncState<ApplicationsByStatusData>>({
+    loading: true,
+    error: null,
+    data: null,
+  });
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     let ignore = false;
-    setLoading(true);
-    setError(null);
 
     recruiterStatisticsApi
       .getApplicationsByStatus(undefined, controller.signal)
       .then((res) => {
-        if (!ignore) setData(res.data);
+        if (!ignore) setState({ loading: false, error: null, data: res.data });
       })
       .catch((err: unknown) => {
         if (!ignore)
-          setError(err instanceof Error ? err.message : "Không thể tải biểu đồ.");
-      })
-      .finally(() => {
-        if (!ignore) setLoading(false);
+          setState({
+            loading: false,
+            error: err instanceof Error ? err.message : "Không thể tải biểu đồ.",
+            data: null,
+          });
       });
 
     return () => {
@@ -267,6 +273,8 @@ export function CandidateStatusChart() {
       controller.abort();
     };
   }, [reloadKey]);
+
+  const { loading, error, data } = state;
 
   return (
     <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">

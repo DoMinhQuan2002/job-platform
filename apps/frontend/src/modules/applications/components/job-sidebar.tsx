@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { ROUTES } from "@/constants/routes";
 import type { CompanyDetail, RelatedJob } from "../types";
 import { CompanyVerifiedBadge } from "./company-verified-badge";
+import { CompanyLogo } from "./company-logo";
 import {
   copyJobLink,
   shareJobNative,
@@ -79,15 +80,12 @@ export function JobSidebar({ company, relatedJobs, jobTitle }: JobSidebarProps) 
         <h3 className="text-base font-semibold text-foreground">Về công ty</h3>
 
         <div className="mt-4 flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 p-1">
-            {company.logoUrl ? (
-              <img src={company.logoUrl} alt={company.name} className="h-full w-full object-contain" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
-                {company.name.slice(0, 3).toUpperCase()}
-              </div>
-            )}
-          </div>
+          <CompanyLogo
+            name={company.name}
+            src={company.logoUrl}
+            className="size-11 rounded-lg bg-slate-50 p-1"
+            fallbackClassName="bg-primary/10 text-primary text-xs font-bold"
+          />
           <div>
             <h4 className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
               {company.name}
@@ -183,15 +181,12 @@ export function JobSidebar({ company, relatedJobs, jobTitle }: JobSidebarProps) 
                 href={`/jobs/${job.id}`}
                 className="group flex items-start gap-3 rounded-lg p-3 transition hover:bg-slate-50"
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-50 p-1">
-                  {job.logoUrl ? (
-                    <img src={job.logoUrl} alt={job.companyName} className="h-full w-full object-contain" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-sm bg-muted text-xs font-semibold text-muted-foreground">
-                      {job.companyName.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
+                <CompanyLogo
+                  name={job.companyName}
+                  src={job.logoUrl}
+                  className="size-9 rounded-md bg-slate-50 p-1"
+                  fallbackClassName="bg-muted text-muted-foreground text-[11px] font-semibold"
+                />
                 <div className="min-w-0 flex-1">
                   <h4 className="line-clamp-1 text-sm font-medium text-foreground transition group-hover:text-primary">
                     {job.title}
