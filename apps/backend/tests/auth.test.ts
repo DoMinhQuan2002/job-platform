@@ -107,23 +107,6 @@ describe("POST /api/v1/login", () => {
     expect(cookie).toContain("SameSite=Strict");
     expect(cookie).toContain("Path=/api/v1");
   });
-
-  it("giữ nguyên mã lỗi trong errors[] khi email chưa xác thực", async () => {
-    mocked.login.mockRejectedValue(
-      new AppError(403, "EMAIL_NOT_VERIFIED", "Email chưa được xác thực"),
-    );
-
-    const res = await request(app)
-      .post("/api/v1/login")
-      .send({ email: "a@example.com", password: "Abcd1234" });
-
-    expect(res.status).toBe(403);
-    expect(res.body).toEqual({
-      success: false,
-      message: "Email chưa được xác thực",
-      errors: [{ code: "EMAIL_NOT_VERIFIED" }],
-    });
-  });
 });
 
 describe("POST /api/v1/logout", () => {

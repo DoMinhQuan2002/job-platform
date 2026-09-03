@@ -120,10 +120,6 @@ const issueLogin = async (user: UserEntity): Promise<LoginResult> => {
 };
 
 const assertLoginable = (user: UserEntity) => {
-  if (user.emailVerifiedAt === null) {
-    throw new AppError(403, "EMAIL_NOT_VERIFIED", "Email chưa được xác thực");
-  }
-
   if (user.status === UserStatus.BANNED) {
     throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
   }
@@ -293,7 +289,7 @@ export const authService = {
 
     const user = session.user;
 
-    if (user.deletedAt || user.status === UserStatus.BANNED || !user.emailVerifiedAt) {
+    if (user.deletedAt || user.status === UserStatus.BANNED) {
       await sessionRepo().update({ id: session.id }, { isRevoked: true });
       throw invalidToken;
     }
