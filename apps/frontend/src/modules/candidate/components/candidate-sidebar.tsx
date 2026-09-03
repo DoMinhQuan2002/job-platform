@@ -40,14 +40,14 @@ function isNavActive(pathname: string, href: string, label: string): boolean {
   if (href === ROUTES.candidate.profile) {
     return label === "Tổng quan hồ sơ" && pathname.startsWith(ROUTES.candidate.profile);
   }
-  if (href === ROUTES.applications.root) {
-    return (
-      pathname === ROUTES.applications.root ||
-      /^\/candidate\/applications\/[^/]+$/.test(pathname)
-    );
-  }
   if (href === ROUTES.applications.savedJobs) {
     return pathname.startsWith(ROUTES.applications.savedJobs);
+  }
+  if (href === ROUTES.applications.root) {
+    return (
+      pathname.startsWith(ROUTES.applications.root) &&
+      !pathname.startsWith(ROUTES.applications.savedJobs)
+    );
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
