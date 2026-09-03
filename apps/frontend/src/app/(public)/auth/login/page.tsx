@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ROUTES } from "@/constants/routes";
+import { ApiError } from "@/lib/api-error";
 import { authApi, type AuthUser } from "@/services/auth.service";
 import { loginSchema, type LoginFormValues } from "./login.schema";
 
@@ -41,7 +42,7 @@ const features = [
   { icon: BellRing, title: "Theo dõi dễ dàng", description: "Quản lý đơn ứng tuyển và nhận thông báo nhanh chóng" },
 ] as const;
 
-const inputClassName =
+export const inputClassName =
   "h-12 w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-3 text-sm text-text outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 aria-invalid:border-danger aria-invalid:ring-danger/15";
 
 const destinationFor = (user: AuthUser) =>
@@ -77,6 +78,11 @@ export default function LoginPage() {
       );
       router.replace(destinationFor(response.data.user));
     } catch (error) {
+      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED") {
+        setUnverifiedEmail(values.email.trim());
+        return;
+      }
+
       setSubmitError(error instanceof Error ? error.message : "Không thể đăng nhập lúc này. Vui lòng thử lại.");
     }
   });
@@ -118,7 +124,7 @@ export default function LoginPage() {
       // Nếu resend bị cooldown hoặc lỗi, vẫn chuyển sang trang OTP với query email
       router.push(`${ROUTES.auth.verifyOtp}?email=${encodeURIComponent(unverifiedEmail)}`);
     }
-  }
+  };
 
 
   useEffect(() => {
@@ -236,12 +242,29 @@ export default function LoginPage() {
         confirmLabel="Đóng"
         showCancel={false}
       />
+
+      <AppAlertDialog
+        open={Boolean(unverifiedEmail)}
+        onOpenChange={(open) => { if (!open) setUnverifiedEmail(null); }}
+        tone="warning"
+        title="Tài khoản chưa được xác thực"
+        description={
+          <div className="space-y-2">
+            <p>Tài khoản với email <strong>{unverifiedEmail}</strong> chưa được xác thực.</p>
+            <p>Bạn có muốn nhận mã xác thực và chuyển đến trang xác thực OTP ngay bây giờ không?</p>
+          </div>
+        }
+        confirmLabel="Xác thực"
+        cancelLabel="Hủy"
+        showCancel={true}
+        onConfirm={handleVerifyRedirect}
+      />
     </>
   );
 }
 
 type FieldProps = { label: string; htmlFor: string; error?: string; children: ReactNode };
-function Field({ label, htmlFor, error, children }: FieldProps) {
+export function Field({ label, htmlFor, error, children }: FieldProps) {
   return (
     <div>
       <label htmlFor={htmlFor} className="mb-2 block text-sm font-semibold text-text">{label}</label>
@@ -262,32 +285,3 @@ function GoogleLogo() {
     </svg>
   );
 }
-
-{/* Dialog lỗi đăng nhập thông thường */ }
-<AppAlertDialog
-  open={Boolean(submitError)}
-  onOpenChange={(open) => { if (!open) setSubmitError(""); }}
-  tone="error"
-  title="Đăng nhập thất bại"
-  description={submitError}
-  confirmLabel="Đóng"
-  showCancel={false}
-/>
-
-{/* Dialog yêu cầu xác thực tài khoản */ }
-<AppAlertDialog
-  open={Boolean(unverifiedEmail)}
-  onOpenChange={(open) => { if (!open) setUnverifiedEmail(null); }}
-  tone="warning"
-  title="Tài khoản chưa được xác thực"
-  description={
-    <div className="space-y-2">
-      <p>Tài khoản với email <strong>{unverifiedEmail}</strong> chưa được xác thực.</p>
-      <p>Bạn có muốn nhận mã xác thực và chuyển đến trang xác thực OTP ngay bây giờ không?</p>
-    </div>
-  }
-  confirmLabel="Xác thực"
-  cancelLabel="Hủy"
-  showCancel={true}
-  onConfirm={handleVerifyRedirect}
-/>

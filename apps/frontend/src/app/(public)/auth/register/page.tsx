@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertCircle,
   BadgeCheck,
   BellRing,
   BriefcaseBusiness,
   Building2,
-  CheckCircle2,
   Eye,
   EyeOff,
   LoaderCircle,
@@ -17,6 +15,8 @@ import {
   Mail,
   UserRound,
 } from "lucide-react";
+import { Field } from "../login/page";
+import { inputClassName } from "../login/page";
 import {
   useForm,
   useWatch,
@@ -51,9 +51,6 @@ const features = [
     description: "Nhận gợi ý việc làm phù hợp với bạn",
   },
 ] as const;
-
-const inputClassName =
-  "h-11 w-full rounded-lg border border-border bg-white pl-10 pr-3 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 aria-invalid:border-danger aria-invalid:ring-danger/15";
 
 function getPasswordStrength(password: string) {
   if (!password) return 0;
@@ -350,27 +347,6 @@ export default function RegisterPage() {
         confirmLabel="Đóng"
         showCancel={false}
       />
-    </div>
-  );
-}
-
-
-// trường nhập
-type FieldProps = {
-  label: string;
-  htmlFor: string;
-  error?: string;
-  children: ReactNode;
-};
-
-function Field({ label, htmlFor, error, children }: FieldProps) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-text">
-        {label}
-      </label>
-      <div className="relative">{children}</div>
-      {error ? <p className="mt-1.5 text-xs text-danger">{error}</p> : null}
     </div>
   );
 }
