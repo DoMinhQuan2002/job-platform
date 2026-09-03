@@ -12,6 +12,7 @@ export const ROUTES = {
   candidate: {
     root: "/candidate",
     profile: "/candidate/profile",
+    account: "/candidate/account",
   },
   resume: {
     root: "/candidate/resume",

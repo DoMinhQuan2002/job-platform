@@ -14,7 +14,6 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ROUTES } from "@/constants/routes";
-import { ApiError } from "@/lib/api-error";
 import { authApi, type AuthUser } from "@/services/auth.service";
 import { loginSchema, type LoginFormValues } from "./login.schema";
 
@@ -60,9 +59,6 @@ export default function LoginPage() {
   );
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
-  // state quản lí email chưa xác thực
-  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
-
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<LoginFormValues>({
       resolver: zodResolver(loginSchema),
@@ -78,11 +74,6 @@ export default function LoginPage() {
       );
       router.replace(destinationFor(response.data.user));
     } catch (error) {
-      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED") {
-        setUnverifiedEmail(values.email.trim());
-        return;
-      }
-
       setSubmitError(error instanceof Error ? error.message : "Không thể đăng nhập lúc này. Vui lòng thử lại.");
     }
   });
@@ -106,27 +97,6 @@ export default function LoginPage() {
       setIsGoogleSubmitting(false);
     }
   }, [router]);
-
-
-  // Hàm xử lí xác thực
-
-  const handleVerifyRedirect = async () => {
-    if (!unverifiedEmail) return;
-    try {
-      // Gửi lại mã OTP để người dùng có mã mới trong hộp thư
-      const res = await authApi.resendRegisterCode({ email: unverifiedEmail });
-      const query = new URLSearchParams({
-        email: unverifiedEmail,
-        expiresIn: String(res.data.otpExpiresIn),
-      });
-      router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
-    } catch {
-      // Nếu resend bị cooldown hoặc lỗi, vẫn chuyển sang trang OTP với query email
-      router.push(`${ROUTES.auth.verifyOtp}?email=${encodeURIComponent(unverifiedEmail)}`);
-    }
-  };
-
-
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const googleIdentity = window.google?.accounts.id;
@@ -241,23 +211,6 @@ export default function LoginPage() {
         description={submitError}
         confirmLabel="Đóng"
         showCancel={false}
-      />
-
-      <AppAlertDialog
-        open={Boolean(unverifiedEmail)}
-        onOpenChange={(open) => { if (!open) setUnverifiedEmail(null); }}
-        tone="warning"
-        title="Tài khoản chưa được xác thực"
-        description={
-          <div className="space-y-2">
-            <p>Tài khoản với email <strong>{unverifiedEmail}</strong> chưa được xác thực.</p>
-            <p>Bạn có muốn nhận mã xác thực và chuyển đến trang xác thực OTP ngay bây giờ không?</p>
-          </div>
-        }
-        confirmLabel="Xác thực"
-        cancelLabel="Hủy"
-        showCancel={true}
-        onConfirm={handleVerifyRedirect}
       />
     </>
   );

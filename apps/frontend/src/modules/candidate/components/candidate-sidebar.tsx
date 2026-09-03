@@ -28,12 +28,11 @@ type CandidateSidebarProps = {
 
 const navItems = [
   { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
-  { href: ROUTES.candidate.profile, label: "Thông tin tài khoản", icon: User, disabled: true },
   { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
   { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
   { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
   { href: "#", label: "Thông báo", icon: Bell, badge: 5, disabled: true },
-  { href: "#", label: "Cài đặt tài khoản", icon: Settings, disabled: true, divider: true },
+  { href: "#", label: "Cài đặt tài khoản", icon: Settings, divider: true },
 ];
 
 function isNavActive(pathname: string, href: string, label: string): boolean {

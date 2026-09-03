@@ -197,11 +197,10 @@
 |---|---|---|
 | 400 | Thiếu email / password | |
 | 401 | Sai email hoặc password, hoặc tài khoản đã bị xoá (`deleted_at`) — dùng chung 1 message | |
-| 403 | Email chưa xác thực (`email_verified_at IS NULL`) | `EMAIL_NOT_VERIFIED` |
 | 403 | Tài khoản bị khoá (`status = BANNED`) | `ACCOUNT_BANNED` |
 
 - **Validation:** email + password bắt buộc.
-- **Xử lý:** check `deleted_at IS NULL` → check `password_hash` khớp → check `email_verified_at IS NOT NULL` → check `status != BANNED`. Thành công thì: update `last_login_at`; sinh `refreshToken` random, hash rồi insert vào `sessions` (user_id, refresh_token_hash, expires_at = now()+7 ngày, is_revoked=false); set cookie như trên; JOIN `roles` để lấy `role.name` trả về.
+- **Xử lý:** check `deleted_at IS NULL` → check `password_hash` khớp → check `status != BANNED`. Email chưa xác thực vẫn được phép đăng nhập. Thành công thì: update `last_login_at`; sinh `refreshToken` random, hash rồi insert vào `sessions` (user_id, refresh_token_hash, expires_at = now()+7 ngày, is_revoked=false); set cookie như trên; JOIN `roles` để lấy `role.name` trả về.
 
 ### 2.2 Đăng xuất
 
