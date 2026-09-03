@@ -9,7 +9,6 @@ import type { JobDetail, RelatedJob } from "../types";
 import { JobHeaderCard } from "../components/job-header-card";
 import { JobContentSections } from "../components/job-content-sections";
 import { JobSidebar } from "../components/job-sidebar";
-import { JobNewsletter } from "../components/job-newsletter";
 import { ApplyModal } from "../components/apply-modal";
 import { applicationsApi } from "../api";
 import { summarizeJob } from "../lib/job-summary";
@@ -131,11 +130,11 @@ export function JobApplyPage() {
         setJob((prev) =>
           prev
             ? {
-                ...prev,
-                hasApplied: isActiveApplicationStatus(existing.status),
-                applicationId: String(existing.id),
-                applicationStatus: existing.status,
-              }
+              ...prev,
+              hasApplied: isActiveApplicationStatus(existing.status),
+              applicationId: String(existing.id),
+              applicationStatus: existing.status,
+            }
             : prev,
         );
       } catch {
@@ -242,10 +241,6 @@ export function JobApplyPage() {
               </div>
             </div>
 
-            <div className="pt-2">
-              <JobNewsletter />
-            </div>
-
             {isCandidate ? (
               <ApplyModal
                 isOpen={isApplyModalOpen}
@@ -262,11 +257,11 @@ export function JobApplyPage() {
                   setJob((prev) =>
                     prev
                       ? {
-                          ...prev,
-                          hasApplied: true,
-                          applicationId: applicationId ?? prev.applicationId,
-                          applicationStatus: "APPLIED",
-                        }
+                        ...prev,
+                        hasApplied: true,
+                        applicationId: applicationId ?? prev.applicationId,
+                        applicationStatus: "APPLIED",
+                      }
                       : prev,
                   );
                 }}
