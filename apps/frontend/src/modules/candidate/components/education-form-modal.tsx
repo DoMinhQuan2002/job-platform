@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toDateInputValue, todayDateInputValue } from "../lib/format";
 import type { Education, EducationFormInput } from "../types";
 import {
   FormFieldError,
@@ -70,8 +71,8 @@ export function EducationFormModal({
         school: editingItem.school,
         major: editingItem.major ?? "",
         degree: editingItem.degree ?? "",
-        startDate: editingItem.startDate ?? "",
-        endDate: editingItem.endDate,
+        startDate: toDateInputValue(editingItem.startDate),
+        endDate: toDateInputValue(editingItem.endDate) || null,
         isCurrent: editingItem.isCurrent,
         description: editingItem.description ?? "",
       });
@@ -81,21 +82,54 @@ export function EducationFormModal({
     setForm(emptyForm);
   }, [open, editingItem]);
 
-  const validate = (): EducationErrors => {
-    const next: EducationErrors = {};
+  const today = todayDateInputValue();
 
-    if (!form.school.trim()) next.school = "Vui lòng nhập tên trường";
-    if (!form.startDate) next.startDate = "Vui lòng chọn ngày bắt đầu";
-    if (
-      !form.isCurrent &&
-      form.endDate &&
-      form.startDate &&
-      form.endDate < form.startDate
-    ) {
+  const validateDates = (
+    startDate: string,
+    endDate: string | null | undefined,
+    isCurrent: boolean | undefined,
+  ): Pick<EducationErrors, "startDate" | "endDate"> => {
+    const next: Pick<EducationErrors, "startDate" | "endDate"> = {};
+
+    if (startDate && startDate > today) {
+      next.startDate = "Ngày bắt đầu không được ở tương lai";
+    }
+    if (!isCurrent && endDate && startDate && endDate < startDate) {
       next.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    } else if (!isCurrent && endDate && endDate > today) {
+      next.endDate = "Ngày kết thúc không được ở tương lai";
     }
 
     return next;
+  };
+
+  const validate = (): EducationErrors => {
+    const next: EducationErrors = {
+      ...validateDates(form.startDate, form.endDate, form.isCurrent),
+    };
+
+    if (!form.school.trim()) next.school = "Vui lòng nhập tên trường";
+    if (!form.startDate) next.startDate = "Vui lòng chọn ngày bắt đầu";
+
+    return next;
+  };
+
+  const handleStartDateChange = (startDate: string) => {
+    setForm({ ...form, startDate });
+    const dateErrors = validateDates(startDate, form.endDate, form.isCurrent);
+    setErrors({
+      ...errors,
+      startDate: dateErrors.startDate,
+      endDate: dateErrors.endDate,
+    });
+  };
+
+  const handleEndDateChange = (endDate: string | null) => {
+    setForm({ ...form, endDate });
+    setErrors({
+      ...errors,
+      endDate: validateDates(form.startDate, endDate, form.isCurrent).endDate,
+    });
   };
 
   const handleSubmit = async () => {
@@ -185,11 +219,14 @@ export function EducationFormModal({
             <input
               id="edu-start"
               type="date"
+              max={today}
               value={form.startDate}
               aria-invalid={Boolean(errors.startDate)}
-              onChange={(event) => {
-                setForm({ ...form, startDate: event.target.value });
-                if (errors.startDate) setErrors({ ...errors, startDate: undefined });
+              onChange={(event) => handleStartDateChange(event.target.value)}
+              onBlur={() => {
+                if (!form.startDate) {
+                  setErrors({ ...errors, startDate: "Vui lòng chọn ngày bắt đầu" });
+                }
               }}
               className={fieldClassName(formInputClassName, Boolean(errors.startDate))}
             />
@@ -201,12 +238,13 @@ export function EducationFormModal({
               id="edu-end"
               type="date"
               disabled={form.isCurrent}
+              min={form.startDate || undefined}
+              max={today}
               value={form.endDate ?? ""}
               aria-invalid={Boolean(errors.endDate)}
-              onChange={(event) => {
-                setForm({ ...form, endDate: event.target.value || null });
-                if (errors.endDate) setErrors({ ...errors, endDate: undefined });
-              }}
+              onChange={(event) =>
+                handleEndDateChange(event.target.value || null)
+              }
               className={fieldClassName(formInputClassName, Boolean(errors.endDate))}
             />
             <FormFieldError message={errors.endDate} />
@@ -217,9 +255,10 @@ export function EducationFormModal({
           <input
             type="checkbox"
             checked={form.isCurrent ?? false}
-            onChange={(event) =>
-              setForm({ ...form, isCurrent: event.target.checked, endDate: null })
-            }
+            onChange={(event) => {
+              setForm({ ...form, isCurrent: event.target.checked, endDate: null });
+              setErrors({ ...errors, endDate: undefined });
+            }}
           />
           Đang học
         </label>

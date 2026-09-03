@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import {
   Bell,
   Bookmark,
+  Camera,
   FileText,
   Headphones,
   LayoutDashboard,
+  Loader2,
   Send,
   Settings,
+  Trash2,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +28,9 @@ type CandidateSidebarProps = {
   profile: CandidateProfile | null;
   displayName?: string;
   avatarUrl?: string | null;
+  avatarUploading?: boolean;
+  onAvatarSelect?: (file: File) => void;
+  onAvatarRemove?: () => void;
 };
 
 const navItems = [
@@ -34,6 +41,8 @@ const navItems = [
   { href: "#", label: "Thông báo", icon: Bell, badge: 5, disabled: true },
   { href: ROUTES.candidate.account, label: "Cài đặt tài khoản", icon: Settings, divider: true },
 ];
+
+const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 
 function isNavActive(pathname: string, href: string, label: string): boolean {
   if (href === ROUTES.candidate.profile) {
@@ -55,23 +64,79 @@ export function CandidateSidebar({
   profile,
   displayName = "Ứng viên",
   avatarUrl,
+  avatarUploading = false,
+  onAvatarSelect,
+  onAvatarRemove,
 }: CandidateSidebarProps) {
   const pathname = usePathname();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const completion = profile ? calculateProfileCompletion(profile) : 0;
   const name = displayName?.trim() || "Ứng viên";
+  const canEditAvatar = Boolean(onAvatarSelect);
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
       <ProfileCard className="flex flex-col items-center px-6 pb-6 pt-6 text-center">
-        <div className="relative mb-4">
-          <div className="flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#f2f3fc] shadow-sm">
+        <div className="relative mb-4 size-24 shrink-0">
+          <div className="size-full overflow-hidden rounded-full bg-[#f2f3fc] ring-4 ring-white">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={name} className="size-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt={name}
+                width={96}
+                height={96}
+                decoding="async"
+                className="size-full object-cover"
+              />
             ) : (
-              <User className="size-10 text-muted-foreground" />
+              <div className="flex size-full items-center justify-center">
+                <User className="size-10 text-muted-foreground" />
+              </div>
             )}
+            {avatarUploading ? (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                <Loader2 className="size-6 animate-spin text-white" />
+              </div>
+            ) : null}
           </div>
+
+          {canEditAvatar ? (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={AVATAR_ACCEPT}
+                className="sr-only"
+                disabled={avatarUploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) onAvatarSelect?.(file);
+                }}
+              />
+              <button
+                type="button"
+                disabled={avatarUploading}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Đổi ảnh đại diện"
+                className="absolute -bottom-0.5 -right-0.5 flex size-8 items-center justify-center rounded-full border border-[#c5cbe0] bg-white text-[#0045b2] shadow-[0_1px_3px_rgba(0,69,178,0.12)] transition hover:bg-[#f5f7ff] disabled:opacity-60"
+              >
+                <Camera className="size-4" strokeWidth={1.75} absoluteStrokeWidth />
+              </button>
+              {avatarUrl && onAvatarRemove ? (
+                <button
+                  type="button"
+                  disabled={avatarUploading}
+                  onClick={onAvatarRemove}
+                  aria-label="Xóa ảnh đại diện"
+                  className="absolute -bottom-0.5 -left-0.5 flex size-8 items-center justify-center rounded-full border border-[#c5cbe0] bg-white text-muted-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
+                >
+                  <Trash2 className="size-3.5" strokeWidth={1.75} absoluteStrokeWidth />
+                </button>
+              ) : null}
+            </>
+          ) : null}
         </div>
         <h3 className="text-lg font-semibold text-foreground">{name}</h3>
         <p className="mt-1 text-xs font-semibold text-[#0045b2]">Ứng viên</p>

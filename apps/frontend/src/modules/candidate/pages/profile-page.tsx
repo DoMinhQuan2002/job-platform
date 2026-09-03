@@ -25,6 +25,7 @@ export function CandidateProfilePage() {
     createWorkExperience,
     updateWorkExperience,
     deleteWorkExperience,
+    setAccountAvatar,
   } = useCandidateProfile();
 
   if (loading) {
@@ -69,6 +70,7 @@ export function CandidateProfilePage() {
         profile,
         displayName: account?.fullName,
         avatarUrl: account?.avatar,
+        onAvatarUpdated: setAccountAvatar,
       }}
     >
         <header className="space-y-2">
