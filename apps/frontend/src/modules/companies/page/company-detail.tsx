@@ -164,6 +164,29 @@ export default function CompanyDetailPage() {
     }, [loadCompany]);
 
     useEffect(() => {
+        if (window.location.hash !== `#${COMPANY_JOBS_SECTION_ID}`) return;
+
+        const timer = window.setTimeout(() => {
+            setActiveTab("jobs");
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (activeTab !== "jobs" || window.location.hash !== `#${COMPANY_JOBS_SECTION_ID}`) return;
+
+        const timer = window.setTimeout(() => {
+            document.getElementById(COMPANY_JOBS_SECTION_ID)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+            });
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [activeTab]);
+
+    useEffect(() => {
         const timer = window.setTimeout(() => {
             void loadCompanyJobPreview();
         }, 0);
@@ -357,9 +380,9 @@ export default function CompanyDetailPage() {
                                 >
                                     Việc làm ({totalCompanyJobs})
                                 </button>
-                                <button type="button" className={tabClass("reviews")}>
+                                {/* <button type="button" className={tabClass("reviews")}>
                                     Đánh giá ({DEFAULT_REVIEW_COUNT})
-                                </button>
+                                </button> */}
                             </div>
                         </div>
 

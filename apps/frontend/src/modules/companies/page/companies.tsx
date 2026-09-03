@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { companiesApi1 } from "../api";
+import { COMPANY_JOBS_SECTION_ID } from "../components/company-detail-ui";
 import type { Company } from "../types";
 
 const PAGE_SIZE = 10;
@@ -55,6 +56,10 @@ function normalizeLogo(logo?: string | null) {
 
 function getCompanyHref(company: Company) {
   return `${ROUTES.companies}/${company.slug || company.id}`;
+}
+
+function getCompanyJobsHref(company: Company) {
+  return `${getCompanyHref(company)}#${COMPANY_JOBS_SECTION_ID}`;
 }
 
 function getVisiblePages(currentPage: number, totalPages: number) {
@@ -203,10 +208,10 @@ export default function CompaniesPage() {
                   <p className="mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">
                     {getCompanyMeta(company)}
                   </p>
-                  <div className="mt-3 flex items-center justify-center gap-1 text-xs text-slate-500">
+                  {/* <div className="mt-3 flex items-center justify-center gap-1 text-xs text-slate-500">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     <span className="font-semibold text-slate-800">{DEFAULT_RATING}</span>
-                  </div>
+                  </div> */}
                   <span className="mt-3 inline-flex items-center rounded bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-primary">
                     Nổi bật
                   </span>
@@ -289,13 +294,13 @@ export default function CompaniesPage() {
                     </p>
                   </div>
                   <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                    {/* <div className="flex items-center gap-1 text-xs text-slate-500">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       <span className="font-semibold text-slate-800">{DEFAULT_RATING}</span>
                       <span>(đang cập nhật)</span>
-                    </div>
+                    </div> */}
                     <Link
-                      href={ROUTES.jobs}
+                      href={getCompanyJobsHref(company)}
                       className="inline-flex h-9 items-center justify-center gap-1.5 rounded border border-primary px-3.5 text-xs font-semibold text-primary transition hover:bg-blue-50"
                     >
                       <Search className="h-3.5 w-3.5" />
