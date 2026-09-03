@@ -1,40 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import Script from "next/script";
 import { useRouter } from "next/navigation";
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BellRing, BriefcaseBusiness, Eye, EyeOff, LoaderCircle,
   LockKeyhole, Mail, UserRound,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ROUTES } from "@/constants/routes";
-import { ApiError } from "@/lib/api-error";
 import { authApi, type AuthUser } from "@/services/auth.service";
 import { loginSchema, type LoginFormValues } from "./login.schema";
-
-type GoogleCredentialResponse = { credential?: string };
-type GoogleIdentity = {
-  initialize: (options: {
-    client_id: string;
-    callback: (response: GoogleCredentialResponse) => void;
-  }) => void;
-  renderButton: (parent: HTMLElement, options: {
-    type: "standard"; theme: "outline"; size: "large"; text: "continue_with";
-    shape: "rectangular"; logo_alignment: "left"; locale: "vi"; width: number;
-  }) => void;
-};
-
-declare global {
-  interface Window {
-    google?: { accounts: { id: GoogleIdentity } };
-  }
-}
 
 const features = [
   { icon: BriefcaseBusiness, title: "Việc làm đa dạng, chất lượng", description: "Cập nhật mỗi ngày từ hàng ngàn doanh nghiệp" },
@@ -51,17 +32,9 @@ const destinationFor = (user: AuthUser) =>
 
 export default function LoginPage() {
   const router = useRouter();
-  const googleButtonRef = useRef<HTMLDivElement>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
-  const [googleScriptReady, setGoogleScriptReady] = useState(
-    () => typeof window !== "undefined" && Boolean(window.google?.accounts?.id)
-  );
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-
-  // state quản lí email chưa xác thực
-  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } =
     useForm<LoginFormValues>({
@@ -78,16 +51,11 @@ export default function LoginPage() {
       );
       router.replace(destinationFor(response.data.user));
     } catch (error) {
-      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED") {
-        setUnverifiedEmail(values.email.trim());
-        return;
-      }
-
       setSubmitError(error instanceof Error ? error.message : "Không thể đăng nhập lúc này. Vui lòng thử lại.");
     }
   });
 
-  const handleGoogleCredential = useCallback(async (response: GoogleCredentialResponse) => {
+  const handleGoogleCredential = useCallback(async (response: CredentialResponse) => {
     if (!response.credential) {
       setSubmitError("Google không trả về thông tin đăng nhập. Vui lòng thử lại.");
       return;
@@ -107,56 +75,10 @@ export default function LoginPage() {
     }
   }, [router]);
 
-
-  // Hàm xử lí xác thực
-
-  const handleVerifyRedirect = async () => {
-    if (!unverifiedEmail) return;
-    try {
-      // Gửi lại mã OTP để người dùng có mã mới trong hộp thư
-      const res = await authApi.resendRegisterCode({ email: unverifiedEmail });
-      const query = new URLSearchParams({
-        email: unverifiedEmail,
-        expiresIn: String(res.data.otpExpiresIn),
-      });
-      router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
-    } catch {
-      // Nếu resend bị cooldown hoặc lỗi, vẫn chuyển sang trang OTP với query email
-      router.push(`${ROUTES.auth.verifyOtp}?email=${encodeURIComponent(unverifiedEmail)}`);
-    }
-  };
-
-
-  useEffect(() => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const googleIdentity = window.google?.accounts.id;
-    const container = googleButtonRef.current;
-    if (!googleScriptReady || !clientId || !googleIdentity || !container) return;
-
-    let lastWidth = 0;
-    const render = () => {
-      const width = Math.floor(container.getBoundingClientRect().width);
-      if (width <= 0 || width === lastWidth) return;
-      lastWidth = width;
-      container.replaceChildren();
-      googleIdentity.initialize({ client_id: clientId, callback: handleGoogleCredential });
-      googleIdentity.renderButton(container, {
-        type: "standard", theme: "outline", size: "large", text: "continue_with",
-        shape: "rectangular", logo_alignment: "left", locale: "vi", width,
-      });
-    };
-    render();
-    const observer = new ResizeObserver(render);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [googleScriptReady, handleGoogleCredential]);
-
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   return (
     <>
-      <Script src="https://accounts.google.com/gsi/client?hl=vi" strategy="afterInteractive" onReady={() => setGoogleScriptReady(true)} />
-
       <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
         <section className="hidden flex-col pb-8 pt-8 lg:flex" aria-labelledby="login-introduction">
           <h1 id="login-introduction" className="mb-6 text-4xl font-bold leading-tight tracking-tight text-text xl:text-5xl">
@@ -182,6 +104,42 @@ export default function LoginPage() {
             <h1 id="login-title" className="text-3xl font-bold tracking-tight text-text">Đăng nhập</h1>
             <p className="mt-2 text-base text-muted">Chào mừng bạn quay trở lại!</p>
           </header>
+
+          <div className="min-h-10" aria-busy={isGoogleSubmitting}>
+            {isGoogleSubmitting ? (
+              <div className="flex h-10 w-full items-center justify-center rounded-sm border border-slate-300 bg-white text-sm font-medium text-text" role="status" aria-live="polite">
+                <LoaderCircle className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                Đang đăng nhập...
+              </div>
+            ) : googleClientId ? (
+              <GoogleLogin
+                onSuccess={handleGoogleCredential}
+                onError={() => {
+                  setIsGoogleSubmitting(false);
+                  setSubmitError("Không thể mở đăng nhập Google. Vui lòng thử lại.");
+                }}
+                type="standard"
+                theme="outline"
+                size="large"
+                text="continue_with"
+                shape="rectangular"
+                logo_alignment="left"
+                width="100%"
+              />
+            ) : (
+              <button
+                type="button"
+                className="flex h-10 w-full items-center justify-center rounded-sm border border-slate-300 bg-white text-sm font-medium text-text"
+                onClick={() => setSubmitError("Chưa cấu hình Google OAuth. Hãy thêm NEXT_PUBLIC_GOOGLE_CLIENT_ID vào file môi trường.")}
+              >
+                Tiếp tục với Google
+              </button>
+            )}
+          </div>
+
+          <div className="my-6 flex items-center gap-4" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" /><span className="text-sm text-muted">hoặc</span><span className="h-px flex-1 bg-border" />
+          </div>
 
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -210,23 +168,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-6 flex items-center gap-4" aria-hidden="true">
-            <span className="h-px flex-1 bg-border" /><span className="text-sm text-muted">hoặc</span><span className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="relative min-h-11 " aria-busy={isGoogleSubmitting}>
-            {googleClientId ? (
-              <div ref={googleButtonRef} />
-            ) : (
-              <button type="button" className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-text transition hover:bg-slate-50" onClick={() => setSubmitError("Chưa cấu hình Google OAuth. Hãy thêm NEXT_PUBLIC_GOOGLE_CLIENT_ID vào file môi trường.")}>
-                <GoogleLogo />Tiếp tục với Google
-              </button>
-            )}
-            {isGoogleSubmitting ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/90 text-sm font-medium text-text"><LoaderCircle className="mr-2 size-4 animate-spin" aria-hidden="true" />Đang đăng nhập...</div>
-            ) : null}
-          </div>
-
           <p className="mt-8 text-center text-sm text-muted">
             Chưa có tài khoản?{" "}<Link href={ROUTES.auth.register} className="font-medium text-primary hover:underline">Đăng ký ngay</Link>
           </p>
@@ -242,23 +183,6 @@ export default function LoginPage() {
         confirmLabel="Đóng"
         showCancel={false}
       />
-
-      <AppAlertDialog
-        open={Boolean(unverifiedEmail)}
-        onOpenChange={(open) => { if (!open) setUnverifiedEmail(null); }}
-        tone="warning"
-        title="Tài khoản chưa được xác thực"
-        description={
-          <div className="space-y-2">
-            <p>Tài khoản với email <strong>{unverifiedEmail}</strong> chưa được xác thực.</p>
-            <p>Bạn có muốn nhận mã xác thực và chuyển đến trang xác thực OTP ngay bây giờ không?</p>
-          </div>
-        }
-        confirmLabel="Xác thực"
-        cancelLabel="Hủy"
-        showCancel={true}
-        onConfirm={handleVerifyRedirect}
-      />
     </>
   );
 }
@@ -271,17 +195,5 @@ export function Field({ label, htmlFor, error, children }: FieldProps) {
       <div className="relative">{children}</div>
       {error ? <p className="mt-1.5 text-xs text-danger">{error}</p> : null}
     </div>
-  );
-}
-
-// Logo Google
-function GoogleLogo() {
-  return (
-    <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z" />
-      <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.63-2.43l-3.24-2.54c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.39 13.86A6 6 0 0 1 6.08 12c0-.65.11-1.28.31-1.86V7.52H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.48l3.35-2.62Z" />
-      <path fill="#EA4335" d="M12 6.01c1.47 0 2.79.51 3.83 1.5l2.87-2.87A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.52l3.35 2.62C7.18 7.77 9.39 6.01 12 6.01Z" />
-    </svg>
   );
 }

@@ -1,11 +1,13 @@
 import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
-import { getAccessToken } from "@/lib/auth-token";
+import { clearAccessToken, getAccessToken } from "@/lib/auth-token";
 
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000").replace(
   /\/$/,
   "",
 );
 const API_PREFIX = "/api/v1";
+
+let refreshPromise: Promise<string> | null = null;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -31,6 +33,38 @@ const resolveUrl = (path: string, absolute?: boolean) => {
   return `${API_ORIGIN}${API_PREFIX}${normalized}`;
 };
 
+/**
+ * Share one refresh request between all requests that receive 401 at the same
+ * time. The dynamic import avoids a static dependency cycle because authApi
+ * itself uses http() for the refresh endpoint.
+ */
+const refreshAccessToken = () => {
+  if (!refreshPromise) {
+    refreshPromise = import("@/services/auth.service")
+      .then(({ authApi }) => authApi.refresh())
+      .then((response) => response.data.accessToken)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+};
+
+const sendRequest = (url: string, options: HttpOptions, headers: Record<string, string>) =>
+  fetch(url, {
+    method: options.method || "GET",
+    headers,
+    credentials: "include",
+    signal: options.signal,
+    body:
+      options.body === undefined
+        ? undefined
+        : typeof FormData !== "undefined" && options.body instanceof FormData
+          ? options.body
+          : JSON.stringify(options.body),
+  });
+
 export const http = async <T>(path: string, options: HttpOptions = {}): Promise<T> => {
   try {
     const headers: Record<string, string> = { ...options.headers };
@@ -47,18 +81,22 @@ export const http = async <T>(path: string, options: HttpOptions = {}): Promise<
       }
     }
 
-    const response = await fetch(resolveUrl(path, options.absolute), {
-      method: options.method || "GET",
-      headers,
-      credentials: "include",
-      signal: options.signal,
-      body:
-        options.body === undefined
-          ? undefined
-          : isFormData
-            ? (options.body as FormData)
-            : JSON.stringify(options.body),
-    });
+    const url = resolveUrl(path, options.absolute);
+    let response = await sendRequest(url, options, headers);
+
+    if (response.status === 401 && !options.skipAuth) {
+      try {
+        const accessToken = await refreshAccessToken();
+        headers.Authorization = `Bearer ${accessToken}`;
+        response = await sendRequest(url, options, headers);
+
+        if (response.status === 401) {
+          clearAccessToken();
+        }
+      } catch {
+        clearAccessToken();
+      }
+    }
 
     if (!response.ok) {
       throw await toApiErrorFromResponse(response);

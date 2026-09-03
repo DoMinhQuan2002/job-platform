@@ -8,7 +8,7 @@ import {
   Phone,
   MapPin,
   AlertTriangle,
-  Share2,
+  Link2,
   Copy,
   Check,
   MessageCircle,
@@ -247,27 +247,27 @@ export function JobSidebar({ company, relatedJobs, jobTitle }: JobSidebarProps) 
           <button
             type="button"
             onClick={() => void handleCopyLink()}
-            className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground transition hover:bg-muted/80"
+            className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
             title="Sao chép liên kết"
             aria-label="Sao chép liên kết"
           >
-            {copied ? <Check className="size-4 text-emerald-600" /> : <Share2 className="size-4" />}
+            {copied ? <Check className="size-4 text-emerald-600" /> : <Link2 className="size-4" />}
           </button>
         </div>
 
         <div className="mt-3">
           <p className="mb-1.5 text-xs text-muted">Hoặc sao chép link</p>
-          <div className="flex items-center rounded-lg bg-muted/30 p-1.5 transition focus-within:bg-white focus-within:ring-1 focus-within:ring-primary/30">
+          <div className="flex items-center rounded-lg border border-border/40 bg-slate-50 p-1.5 transition focus-within:bg-white focus-within:ring-1 focus-within:ring-primary/30">
             <input
               type="text"
               readOnly
               value={shareUrl}
-              className="flex-1 truncate bg-transparent px-2 text-sm text-muted outline-none"
+              className="flex-1 truncate bg-transparent px-2 text-sm text-slate-600 outline-none"
             />
             <button
               type="button"
               onClick={() => void handleCopyLink()}
-              className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white text-muted-foreground shadow-sm hover:text-primary"
+              className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white text-muted shadow-xs hover:text-primary"
               aria-label="Sao chép link"
             >
               {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}

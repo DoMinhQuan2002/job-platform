@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Bookmark, Building2, ChevronDown, LogOut, Menu, Search, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { googleLogout } from "@react-oauth/google";
 import { ROUTES } from "@/constants/routes";
 import {
   getAccessToken,
@@ -98,6 +99,7 @@ export function Header() {
       // authApi always clears local credentials; continue to the login page
       // even when the server-side session has already expired.
     } finally {
+      googleLogout();
       setAccountMenuOpen(false);
       setMenuOpen(false);
       setSession(null);
