@@ -27,8 +27,7 @@ const readValidRole = (token: string): AuthRole | null => {
     if (!payload.exp || payload.exp * 1000 <= Date.now()) return null;
     if (
       payload.role !== "CANDIDATE" &&
-      payload.role !== "RECRUITER" &&
-      payload.role !== "ADMIN"
+      payload.role !== "RECRUITER"
     ) {
       return null;
     }

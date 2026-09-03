@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { googleLogout } from "@react-oauth/google";
 import { Bell, ChevronDown, LogOut, Menu, Search, UserRound } from "lucide-react";
 import { useState } from "react";
 import { ROUTES } from "@/constants/routes";
@@ -42,6 +43,7 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
     } catch {
       // Local credentials are always cleared by authApi.
     } finally {
+      googleLogout();
       router.replace(ROUTES.auth.login);
     }
   };
