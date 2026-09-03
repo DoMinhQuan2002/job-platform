@@ -18,7 +18,7 @@ const candidateLinks = [
   ["Ứng tuyển của tôi", ROUTES.applications.root],
   ["Tạo CV", ROUTES.resume.root],
   ["Hồ sơ của tôi", ROUTES.candidate.profile],
-  ["Tài khoản", ROUTES.candidate.profile],
+  ["Tài khoản", ROUTES.candidate.account],
 ];
 
 const employerLinks = [

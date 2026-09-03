@@ -53,7 +53,6 @@ export type CandidateProfile = {
   workExperiences: WorkExperience[];
   skills: CandidateSkill[];
   languages: CandidateSkill[];
-  certificates: CandidateSkill[];
   createdAt: string;
   updatedAt: string;
 };
@@ -68,6 +67,20 @@ export type AccountUser = {
   dateOfBirth: string | null;
   addressDetail: string | null;
   wardCode: string | null;
+  hasPassword?: boolean;
+};
+
+export type UpdateAccountInput = {
+  fullName?: string;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  addressDetail?: string | null;
+  wardCode?: string | null;
+};
+
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
 };
 
 export type UpdateCandidateProfileInput = {

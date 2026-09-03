@@ -32,7 +32,7 @@ const navItems = [
   { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
   { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
   { href: "#", label: "Thông báo", icon: Bell, badge: 5, disabled: true },
-  { href: "#", label: "Cài đặt tài khoản", icon: Settings, divider: true },
+  { href: ROUTES.candidate.account, label: "Cài đặt tài khoản", icon: Settings, divider: true },
 ];
 
 function isNavActive(pathname: string, href: string, label: string): boolean {
