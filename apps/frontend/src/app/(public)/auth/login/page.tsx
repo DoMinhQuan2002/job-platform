@@ -74,6 +74,7 @@ export default function LoginPage() {
       setIsGoogleSubmitting(false);
     }
   }, [router]);
+
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   return (
@@ -104,6 +105,42 @@ export default function LoginPage() {
             <p className="mt-2 text-base text-muted">Chào mừng bạn quay trở lại!</p>
           </header>
 
+          <div className="min-h-10" aria-busy={isGoogleSubmitting}>
+            {isGoogleSubmitting ? (
+              <div className="flex h-10 w-full items-center justify-center rounded-sm border border-slate-300 bg-white text-sm font-medium text-text" role="status" aria-live="polite">
+                <LoaderCircle className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                Đang đăng nhập...
+              </div>
+            ) : googleClientId ? (
+              <GoogleLogin
+                onSuccess={handleGoogleCredential}
+                onError={() => {
+                  setIsGoogleSubmitting(false);
+                  setSubmitError("Không thể mở đăng nhập Google. Vui lòng thử lại.");
+                }}
+                type="standard"
+                theme="outline"
+                size="large"
+                text="continue_with"
+                shape="rectangular"
+                logo_alignment="left"
+                width="100%"
+              />
+            ) : (
+              <button
+                type="button"
+                className="flex h-10 w-full items-center justify-center rounded-sm border border-slate-300 bg-white text-sm font-medium text-text"
+                onClick={() => setSubmitError("Chưa cấu hình Google OAuth. Hãy thêm NEXT_PUBLIC_GOOGLE_CLIENT_ID vào file môi trường.")}
+              >
+                Tiếp tục với Google
+              </button>
+            )}
+          </div>
+
+          <div className="my-6 flex items-center gap-4" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" /><span className="text-sm text-muted">hoặc</span><span className="h-px flex-1 bg-border" />
+          </div>
+
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field label="Email" htmlFor="email" error={errors.email?.message}>
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted"><Mail className="size-5" aria-hidden="true" /></span>
@@ -130,33 +167,6 @@ export default function LoginPage() {
               {isSubmitting ? <><LoaderCircle className="animate-spin" aria-hidden="true" />Đang đăng nhập...</> : "Đăng nhập"}
             </Button>
           </form>
-
-          <div className="my-6 flex items-center gap-4" aria-hidden="true">
-            <span className="h-px flex-1 bg-border" /><span className="text-sm text-muted">hoặc</span><span className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="relative min-h-11 " aria-busy={isGoogleSubmitting}>
-            {googleClientId ? (
-              <GoogleLogin
-                onSuccess={handleGoogleCredential}
-                onError={() => setSubmitError("Không thể mở đăng nhập Google. Vui lòng thử lại.")}
-                type="standard"
-                theme="outline"
-                size="large"
-                text="continue_with"
-                shape="rectangular"
-                logo_alignment="left"
-                width="100%"
-              />
-            ) : (
-              <button type="button" className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-text transition hover:bg-slate-50" onClick={() => setSubmitError("Chưa cấu hình Google OAuth. Hãy thêm NEXT_PUBLIC_GOOGLE_CLIENT_ID vào file môi trường.")}>
-                Tiếp tục với
-              </button>
-            )}
-            {isGoogleSubmitting ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/90 text-sm font-medium text-text"><LoaderCircle className="mr-2 size-4 animate-spin" aria-hidden="true" />Đang đăng nhập...</div>
-            ) : null}
-          </div>
 
           <p className="mt-8 text-center text-sm text-muted">
             Chưa có tài khoản?{" "}<Link href={ROUTES.auth.register} className="font-medium text-primary hover:underline">Đăng ký ngay</Link>
