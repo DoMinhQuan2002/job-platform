@@ -42,9 +42,8 @@ const features = [
   { icon: BellRing, title: "Theo dõi dễ dàng", description: "Quản lý đơn ứng tuyển và nhận thông báo nhanh chóng" },
 ] as const;
 
-
 export const inputClassName =
-  "h-11 w-full rounded-lg border border-border bg-white pl-10 pr-3 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 aria-invalid:border-danger aria-invalid:ring-danger/15";
+  "h-12 w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-3 text-sm text-text outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 aria-invalid:border-danger aria-invalid:ring-danger/15";
 
 const destinationFor = (user: AuthUser) =>
   user.role === "CANDIDATE" ? ROUTES.candidate.profile
