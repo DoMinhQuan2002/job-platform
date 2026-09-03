@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Banknote, MapPin, RefreshCcw, Search, SlidersHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -17,6 +16,34 @@ export function HomeHeroSearch() {
   const [search, setSearch] = useState(initialSearch);
   const [categories, setCategories] = useState<JobCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+
+    const startWithSound = () => {
+      video.muted = false;
+      video.currentTime = 0;
+      void video.play().catch(() => undefined);
+    };
+
+    const tryPlay = () => {
+      void video.play().catch(() => {
+        video.muted = true;
+        void video.play().catch(() => undefined);
+        document.addEventListener("pointerdown", startWithSound, { once: true });
+      });
+    };
+
+    if (video.readyState >= 2) tryPlay();
+    else video.addEventListener("canplay", tryPlay, { once: true });
+
+    return () => {
+      video.removeEventListener("canplay", tryPlay);
+      document.removeEventListener("pointerdown", startWithSound);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,7 +72,18 @@ export function HomeHeroSearch() {
     <section className="relative overflow-hidden bg-gradient-to-br from-[#e3f2fd] to-[#bbdefb] pb-32 pt-14 lg:pt-16">
       <div className="relative z-10 mx-auto grid w-full container items-center gap-8 px-4 sm:px-6 md:grid-cols-2">
         <div><h1 className="text-4xl font-bold leading-10 tracking-[-0.01em] text-text sm:text-5xl sm:leading-[60px]">Tìm công việc phù hợp,<br />bứt phá <span className="text-primary">sự nghiệp</span></h1><p className="mt-6 max-w-md text-[15px] leading-6 text-muted">Hàng ngàn cơ hội việc làm từ các công ty uy tín đang chờ đón bạn.</p></div>
-        <div className="relative hidden md:block"><Image className="ml-auto h-[340px] w-full max-w-lg rounded-xl object-cover object-[center_20%] shadow-sm" src="/home-hero.png" alt="Chuyên gia công nghệ tại môi trường làm việc chuyên nghiệp" width={512} height={340} priority /></div>
+        <div className="relative ml-auto hidden h-[340px] w-full max-w-lg overflow-hidden rounded-xl shadow-sm md:block">
+          <video
+            ref={heroVideoRef}
+            className="absolute inset-0 h-full w-full object-cover"
+            src="/home-hero.mp4"
+            autoPlay
+            loop
+            playsInline
+            preload="auto"
+            aria-label="Video giới thiệu Job Platform"
+          />
+        </div>
       </div>
     </section>
 
