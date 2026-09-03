@@ -12,6 +12,19 @@ export const candidateApi = {
   /** G1 account — fullName / avatar (không lẫn vào PUT /candidates/me) */
   getAccountMe: () => http<ApiSuccess<AccountUser>>("/users/me"),
 
+  /** G1 — multipart field `avatar` (JPEG/PNG/WebP, ≤5MB) */
+  uploadAvatar: (file: File) => {
+    const body = new FormData();
+    body.append("avatar", file);
+    return http<ApiSuccess<{ avatar: string }>>("/users/me/avatar", {
+      method: "POST",
+      body,
+    });
+  },
+
+  deleteAvatar: () =>
+    http<ApiSuccess<{ avatar: null }>>("/users/me/avatar", { method: "DELETE" }),
+
   getMe: () => http<ApiSuccess<CandidateProfile>>("/candidates/me"),
 
   updateMe: (body: UpdateCandidateProfileInput) =>
