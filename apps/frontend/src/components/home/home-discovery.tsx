@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Bookmark, Mail, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { companiesApi } from "@/modules/companies/api";
 import type { PublicCompany } from "@/modules/companies/types";
 import { jobsApi } from "@/modules/jobs/api";
 import type { Job, JobFilters } from "@/modules/jobs/types";
 import { ROUTES } from "@/constants/routes";
-import { getAccessTokenRole } from "@/lib/auth-token";
+import { getAccessToken, getAccessTokenRole } from "@/lib/auth-token";
 
 const latestJobFilters: JobFilters = {
   keyword: "",
@@ -45,10 +47,12 @@ function CompactCompanyLogo({ company }: { company: Job["company"] }) {
   return <span aria-hidden="true">{initials(company?.name)}</span>;
 }
 export function HomeDiscovery() {
+  const router = useRouter();
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRecruiter, setIsRecruiter] = useState(false);
+  const [savingJobIds, setSavingJobIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const syncRole = () => setIsRecruiter(getAccessTokenRole() === "RECRUITER");
@@ -78,6 +82,53 @@ export function HomeDiscovery() {
       });
     return () => controller.abort();
   }, []);
+
+  const handleSaveJob = async (jobId: string) => {
+    if (!getAccessToken()) {
+      const redirect = `${window.location.pathname}${window.location.search}`;
+      router.push(
+        `${ROUTES.auth.login}?redirect=${encodeURIComponent(redirect)}`,
+      );
+      return;
+    }
+    const job = jobs.find((item) => item.id === jobId);
+    if (!job || savingJobIds.has(jobId)) return;
+
+    const wasSaved = Boolean(job.isSaved);
+    setSavingJobIds((current) => new Set(current).add(jobId));
+    setJobs((current) =>
+      current.map((item) =>
+        item.id === jobId ? { ...item, isSaved: !wasSaved } : item,
+      ),
+    );
+
+    try {
+      if (wasSaved) {
+        await jobsApi.unsaveJob(jobId);
+      } else {
+        await jobsApi.saveJob(jobId);
+      }
+      toast.success(wasSaved ? "Đã bỏ lưu việc làm" : "Đã lưu việc làm");
+      window.dispatchEvent(new Event("jp-saved-jobs-change"));
+    } catch (reason) {
+      setJobs((current) =>
+        current.map((item) =>
+          item.id === jobId ? { ...item, isSaved: wasSaved } : item,
+        ),
+      );
+      toast.error(
+        reason instanceof Error
+          ? reason.message
+          : "Không thể cập nhật việc làm đã lưu",
+      );
+    } finally {
+      setSavingJobIds((current) => {
+        const next = new Set(current);
+        next.delete(jobId);
+        return next;
+      });
+    }
+  };
 
   return (
     <>
@@ -177,10 +228,30 @@ export function HomeDiscovery() {
                     </span>
                     {!isRecruiter && (
                       <button
-                        aria-label={`Lưu việc làm ${job.title}`}
-                        className="text-slate-500 hover:text-primary"
+                        type="button"
+                        aria-label={
+                          job.isSaved
+                            ? `Bỏ lưu việc làm ${job.title}`
+                            : `Lưu việc làm ${job.title}`
+                        }
+                        title={job.isSaved ? "Bỏ lưu việc làm" : "Lưu việc làm"}
+                        disabled={savingJobIds.has(job.id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSaveJob(job.id);
+                        }}
+                        className={`transition-colors disabled:opacity-50 ${
+                          job.isSaved
+                            ? "text-amber-400"
+                            : "text-slate-500 hover:text-primary"
+                        }`}
                       >
-                        <Bookmark className="size-5" />
+                        <Bookmark
+                          className={`size-5 transition-colors ${
+                            job.isSaved ? "fill-amber-400 text-amber-400" : ""
+                          }`}
+                        />
                       </button>
                     )}
                   </div>
