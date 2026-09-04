@@ -47,11 +47,25 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
           {/* Job details */}
           <div className="space-y-1.5">
             <div>
-              <Link href={`/jobs/${job.jobId}`}>
-                <h3 className="text-sm sm:text-base font-bold text-slate-900 hover:text-primary transition line-clamp-1">
-                  {job.title}
-                </h3>
-              </Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/jobs/${job.jobId}`}>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 hover:text-primary transition line-clamp-1">
+                    {job.title}
+                  </h3>
+                </Link>
+                {job.statusBadge ? (
+                  <span
+                    className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold border ${job.statusBadge.variant === "closed"
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : job.statusBadge.variant === "expired"
+                          ? "bg-slate-100 text-slate-600 border-slate-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}
+                  >
+                    {job.statusBadge.text}
+                  </span>
+                ) : null}
+              </div>
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
                 {job.companyName}
               </p>
@@ -102,12 +116,22 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
             </Link>
 
             {/* Ứng tuyển */}
-            <Button
-              onClick={() => onApply(job)}
-              className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-xs"
-            >
-              Ứng tuyển
-            </Button>
+            {job.isApplyDisabled ? (
+              <Button
+                disabled
+                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed border border-slate-200 shadow-none hover:bg-slate-100"
+                title={job.statusBadge?.text || "Ngừng nhận hồ sơ"}
+              >
+                {job.statusBadge?.text || "Ngừng nhận hồ sơ"}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => onApply(job)}
+                className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-xs"
+              >
+                Ứng tuyển
+              </Button>
+            )}
 
             {/* More menu */}
             <div className="relative">

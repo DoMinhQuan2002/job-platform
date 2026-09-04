@@ -82,6 +82,12 @@ export type JobSummary = {
   benefits: string[];
   tags: string[];
   isSaved: boolean;
+  rawStatus?: string;
+  statusBadge?: {
+    text: string;
+    variant: "closed" | "expired" | "hidden";
+  } | null;
+  isApplyDisabled: boolean;
 };
 
 export function summarizeJob(raw: unknown): JobSummary {
@@ -101,6 +107,35 @@ export function summarizeJob(raw: unknown): JobSummary {
     deadlineRaw != null
       ? new Date(String(deadlineRaw)).toLocaleDateString("vi-VN")
       : "—";
+
+  let isExpired = false;
+  if (deadlineRaw != null) {
+    const d = new Date(String(deadlineRaw));
+    if (!isNaN(d.getTime())) {
+      d.setHours(23, 59, 59, 999);
+      if (d.getTime() < Date.now()) {
+        isExpired = true;
+      }
+    }
+  }
+
+  const statusStr = String(job.status || "").toUpperCase();
+  let statusBadge: { text: string; variant: "closed" | "expired" | "hidden" } | null = null;
+  let isApplyDisabled = false;
+
+  if (statusStr === "CLOSED") {
+    statusBadge = { text: "Đã đóng", variant: "closed" };
+    isApplyDisabled = true;
+  } else if (statusStr === "HIDDEN") {
+    statusBadge = { text: "Ngừng nhận hồ sơ", variant: "hidden" };
+    isApplyDisabled = true;
+  } else if (isExpired) {
+    statusBadge = { text: "Hết hạn", variant: "expired" };
+    isApplyDisabled = true;
+  } else if (statusStr && statusStr !== "OPEN" && statusStr !== "APPROVED") {
+    statusBadge = { text: "Ngừng nhận hồ sơ", variant: "hidden" };
+    isApplyDisabled = true;
+  }
 
   return {
     title: String(job.title || "Tin tuyển dụng"),
@@ -134,5 +169,8 @@ export function summarizeJob(raw: unknown): JobSummary {
     benefits: splitTextBlocks(job.benefits),
     tags: skillNames,
     isSaved: job.isSaved === true,
+    rawStatus: statusStr || undefined,
+    statusBadge,
+    isApplyDisabled,
   };
 }
