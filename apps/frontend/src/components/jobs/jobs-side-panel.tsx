@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { ApiError } from "@/lib/api-error";
 import { getAccessToken } from "@/lib/auth-token";
+import { resolveStorageUrl } from "@/lib/utils";
 import { applicationsApi } from "@/modules/applications/api";
 import { summarizeJob } from "@/modules/applications/lib/job-summary";
 
@@ -143,9 +144,7 @@ export function JobsSidePanel() {
 
 function CompanyLogo({ name, src }: { name: string; src?: string }) {
   const [failed, setFailed] = useState(false);
-  const logoSrc = src && (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/"))
-    ? src
-    : undefined;
+  const logoSrc = resolveStorageUrl(src);
 
   if (logoSrc && !failed) {
     return (

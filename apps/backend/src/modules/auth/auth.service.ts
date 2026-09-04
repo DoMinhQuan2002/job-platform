@@ -1,6 +1,7 @@
 import { AppError } from "../../common/errors/app-error";
 import { sendOtpMail } from "../../common/mail/mailer";
 import { ROLES, type RoleValue } from "../../common/constants/roles";
+import { ASSET_TYPE, storageService } from "../../common/storage";
 import { ACCESS_TOKEN_TTL_SECONDS, signAccessToken } from "../../common/security/jwt";
 import { hashPassword, verifyPassword } from "../../common/security/password";
 import { generateOpaqueToken, sha256 } from "../../common/security/token";
@@ -34,6 +35,7 @@ import type {
   ResetPasswordInput,
   VerifyCodeInput,
 } from "./auth.validation";
+import { logService } from "../system-logs/log.service";
 
 const GOOGLE_PROVIDER = "google";
 
@@ -47,6 +49,7 @@ export type PublicUser = {
   email: string;
   fullName: string;
   role: string;
+  avatar: string | null;
 };
 
 export type LoginResult = {
@@ -61,6 +64,7 @@ const toPublicUser = (user: UserEntity): PublicUser => ({
   email: user.email,
   fullName: user.fullName,
   role: user.role.name,
+  avatar: storageService.resolvePublicUrl(user.avatar, ASSET_TYPE.USER_AVATAR),
 });
 
 const findUserByEmail = (email: string) =>
@@ -119,9 +123,18 @@ const issueLogin = async (user: UserEntity): Promise<LoginResult> => {
   };
 };
 
-const assertLoginable = (user: UserEntity) => {
+const bannedAccountError = async (userId: string) => {
+  const reason = await logService.findLatestUserLockReason(userId);
+  const message = reason
+    ? `Tài khoản đã bị khoá. Lý do: ${reason}`
+    : "Tài khoản đã bị khoá";
+
+  return new AppError(403, "ACCOUNT_BANNED", message, reason ? { reason } : undefined);
+};
+
+const assertLoginable = async (user: UserEntity) => {
   if (user.status === UserStatus.BANNED) {
-    throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
+    throw await bannedAccountError(user.id);
   }
 };
 
@@ -242,7 +255,7 @@ export const authService = {
       throw invalidCredentials;
     }
 
-    assertLoginable(user);
+    await assertLoginable(user);
 
     return issueLogin(user);
   },
@@ -447,9 +460,7 @@ export const authService = {
         throw new AppError(401, "INVALID_GOOGLE_TOKEN", "Tài khoản không tồn tại");
       }
 
-      if (user.status === UserStatus.BANNED) {
-        throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
-      }
+      await assertLoginable(user);
 
       return issueLogin(user);
     }
@@ -458,9 +469,7 @@ export const authService = {
     const existing = await findUserByEmail(email);
 
     if (existing && !existing.deletedAt) {
-      if (existing.status === UserStatus.BANNED) {
-        throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
-      }
+      await assertLoginable(existing);
 
       await oauthRepo().save(
         oauthRepo().create({

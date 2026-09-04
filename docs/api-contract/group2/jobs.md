@@ -124,7 +124,7 @@ Base: `/api/v1/jobs`
 
 **Behavior**
 
-- Chỉ trả job `APPROVED` và chưa hết hạn.
+- Chỉ trả job `OPEN` và chưa hết hạn.
 - Sắp xếp mặc định `created_at DESC`.
 - List không cần trả full `description`, `requirements`, `benefits`.
 
@@ -167,7 +167,7 @@ Base: `/api/v1/jobs`
 
 **Behavior**
 
-- Public chỉ xem được job `APPROVED`.
+- Public chỉ xem được job `OPEN` và chưa hết hạn.
 - Job không tồn tại hoặc không public trả `404` để tránh lộ dữ liệu.
 
 **Response 200**
@@ -186,7 +186,7 @@ Base: `/api/v1/jobs`
     "salaryMax": 20000000,
     "location": "Hà Nội",
     "jobType": "FULL_TIME",
-    "status": "APPROVED",
+    "status": "OPEN",
     "company": { "id": "3", "name": "ABC Technology" },
     "category": { "id": "2", "name": "Công nghệ thông tin" },
     "skills": [{ "id": "1", "name": "Java" }]
@@ -356,16 +356,16 @@ Quy tắc này đang được sử dụng trong contract hiện tại.
 
 API public chỉ trả job được phép hiển thị:
 
-* job đã được duyệt;
-* job đang mở;
+* job có trạng thái `OPEN`;
 * company đang hoạt động;
 * category đang hoạt động;
 * chưa hết deadline.
 
-Không trả các job như:
+Không trả các job có trạng thái:
 
 ```text
 PENDING
+APPROVED
 REJECTED
 CLOSED
 HIDDEN
@@ -387,7 +387,7 @@ nếu các trạng thái này tồn tại trong enum.
         "salaryMin": 10000000,
         "salaryMax": 20000000,
         "location": "Hanoi",
-        "status": "APPROVED",
+        "status": "OPEN",
         "category": {
           "id": "2",
           "name": "Backend Developer"
@@ -652,7 +652,8 @@ Nếu không có job → `200` với `items: []`.
 | ---------- | ------------------ | ------------------------- |
 | Đối tượng  | Public / Candidate | Recruiter                 |
 | Phạm vi    | Job công khai      | Job của company hiện tại  |
-| `APPROVED` | Có                 | Có                        |
+| `OPEN`     | Có                 | Có                        |
+| `APPROVED` | Không              | Có                        |
 | `PENDING`  | Không              | Có                        |
 | `REJECTED` | Không              | Có                        |
 | `CLOSED`   | Không              | Có                        |

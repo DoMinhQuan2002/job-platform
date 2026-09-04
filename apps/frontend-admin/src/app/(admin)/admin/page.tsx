@@ -1,54 +1,171 @@
-import { AdminPageHeader } from "@/components/layout/admin-page-header";
-import { LayoutDashboard, Users, Building2, Briefcase, TrendingUp } from "lucide-react";
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  adminStatisticsService,
+  type StatisticsOverview,
+  type TrendPoint,
+} from "@/services/admin-statistics.service";
+import {
+  adminDashboardService,
+  type RecentJob,
+  type RecentSystemLog,
+} from "@/services/admin-dashboard.service";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import {
+  type DashboardDateFilterState,
+} from "@/components/dashboard/date-range-popover";
+import { StatCards } from "@/components/dashboard/stat-cards";
+import { TrendChart } from "@/components/dashboard/trend-chart";
+import { JobStatusDonut } from "@/components/dashboard/job-status-donut";
+import { RecentJobsTable } from "@/components/dashboard/recent-jobs-table";
+import { RecentActivities } from "@/components/dashboard/recent-activities";
+
+const getInitialDateFilter = (): DashboardDateFilterState => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const todayStr = `${year}-${month}-${day}`;
+  const todayFormatted = new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(now);
+
+  return {
+    preset: "today",
+    fromDate: todayStr,
+    toDate: todayStr,
+    displayLabel: `Hôm nay: ${todayFormatted}`,
+  };
+};
 
 export default function AdminDashboardPage() {
-  const stats = [
-    { label: "Tổng người dùng", value: "2,486", icon: Users, color: "text-blue-600 bg-blue-50" },
-    { label: "Doanh nghiệp", value: "320", icon: Building2, color: "text-emerald-600 bg-emerald-50" },
-    { label: "Tin tuyển dụng", value: "1,150", icon: Briefcase, color: "text-purple-600 bg-purple-50" },
-    { label: "Ứng tuyển mới", value: "480", icon: TrendingUp, color: "text-amber-600 bg-amber-50" },
-  ];
+  const [dateFilter, setDateFilter] = useState<DashboardDateFilterState>(
+    getInitialDateFilter()
+  );
+
+  const [overview, setOverview] = useState<StatisticsOverview | undefined>(
+    undefined
+  );
+  const [trends, setTrends] = useState<TrendPoint[]>([]);
+  const [recentJobs, setRecentJobs] = useState<RecentJob[]>([]);
+  const [recentLogs, setRecentLogs] = useState<RecentSystemLog[]>([]);
+
+  const [loadingOverview, setLoadingOverview] = useState(true);
+  const [loadingTrends, setLoadingTrends] = useState(true);
+  const [loadingTables, setLoadingTables] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Tải dữ liệu tổng quan
+  const loadOverview = useCallback(async () => {
+    try {
+      setLoadingOverview(true);
+      const data = await adminStatisticsService.getOverview();
+      setOverview(data);
+    } catch (err) {
+      console.error("Lỗi khi tải dữ liệu tổng quan:", err);
+    } finally {
+      setLoadingOverview(false);
+    }
+  }, []);
+
+  // Tải dữ liệu xu hướng theo khoảng ngày được lọc
+  const loadTrends = useCallback(
+    async (filterParams: { fromDate?: string; toDate?: string; range?: string }) => {
+      try {
+        setLoadingTrends(true);
+        const data = await adminStatisticsService.getTrends(filterParams);
+        setTrends(data);
+      } catch (err) {
+        console.error("Lỗi khi tải dữ liệu xu hướng:", err);
+      } finally {
+        setLoadingTrends(false);
+      }
+    },
+    []
+  );
+
+  // Tải danh sách tin mới và hoạt động gần nhất
+  const loadRecentData = useCallback(async () => {
+    try {
+      setLoadingTables(true);
+      const [jobs, logs] = await Promise.all([
+        adminDashboardService.getRecentJobs(7),
+        adminDashboardService.getRecentLogs(5),
+      ]);
+      setRecentJobs(jobs);
+      setRecentLogs(logs);
+    } catch (err) {
+      console.error("Lỗi khi tải dữ liệu hoạt động gần đây:", err);
+    } finally {
+      setLoadingTables(false);
+    }
+  }, []);
+
+  // Khởi tạo ban đầu
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOverview();
+    loadRecentData();
+  }, [loadOverview, loadRecentData]);
+
+  // Tải trends khi dateFilter thay đổi
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTrends({
+      fromDate: dateFilter.fromDate,
+      toDate: dateFilter.toDate,
+    });
+  }, [dateFilter, loadTrends]);
+
+  // Xử lý khi người dùng áp dụng filter trên biểu đồ xu hướng
+  const handleApplyFilter = (newFilter: DashboardDateFilterState) => {
+    setDateFilter(newFilter);
+  };
+
+  // Nút làm mới dữ liệu
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      loadOverview(),
+      loadTrends({ fromDate: dateFilter.fromDate, toDate: dateFilter.toDate }),
+      loadRecentData(),
+    ]);
+    setIsRefreshing(false);
+  };
 
   return (
-    <div>
-      <AdminPageHeader
-        title="Bảng điều khiển"
-        breadcrumbs={[
-          { label: "Dashboard", href: "/admin" },
-          { label: "Tổng quan" },
-        ]}
-      />
+    <div className="space-y-6 pb-12">
+      {/* Tiêu đề trang (đã bỏ bộ lọc ngày ở đầu trang) */}
+      <DashboardHeader onRefresh={handleRefresh} isRefreshing={isRefreshing} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={idx}
-              className="flex items-center gap-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs"
-            >
-              <div className={`grid size-12 place-items-center rounded-xl ${stat.color}`}>
-                <Icon className="size-6" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold text-slate-900">{stat.value}</p>
-              </div>
-            </div>
-          );
-        })}
+      {/* 4 Thẻ thống kê chỉ số chính */}
+      <StatCards data={overview} loading={loadingOverview} />
+
+      {/* Hàng 2: Biểu đồ xu hướng (2/3) có bộ lọc khoảng ngày & Biểu đồ trạng thái Donut (1/3) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TrendChart
+            data={trends}
+            filter={dateFilter}
+            onApplyFilter={handleApplyFilter}
+            loading={loadingTrends}
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <JobStatusDonut
+            distribution={overview?.jobStatusDistribution}
+            loading={loadingOverview}
+          />
+        </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-200/80 bg-white p-8 text-center shadow-xs">
-        <div className="mx-auto grid size-14 place-items-center rounded-full bg-blue-50 text-blue-600">
-          <LayoutDashboard className="size-7" />
-        </div>
-        <h3 className="mt-4 text-base font-bold text-slate-900">
-          Hệ thống Quản trị Job Platform
-        </h3>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-          Chào mừng bạn đến với trang quản trị. Chọn một mục bên thanh menu để bắt đầu quản lý người dùng, công ty, tin tuyển dụng hoặc cấu hình hệ thống.
-        </p>
+      {/* Hàng 3: Tin tuyển dụng mới nhất (1/2) & Hoạt động hệ thống (1/2) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <RecentJobsTable jobs={recentJobs} loading={loadingTables} />
+        <RecentActivities logs={recentLogs} loading={loadingTables} />
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { jobsApi } from "@/modules/jobs/api";
 import type { Job, JobFilters } from "@/modules/jobs/types";
 import { ROUTES } from "@/constants/routes";
 import { getAccessToken, getAccessTokenRole } from "@/lib/auth-token";
+import { resolveStorageUrl } from "@/lib/utils";
 
 const latestJobFilters: JobFilters = {
   keyword: "",
@@ -27,10 +28,7 @@ const latestJobFilters: JobFilters = {
 };
 function CompactCompanyLogo({ company }: { company: Job["company"] }) {
   const [failed, setFailed] = useState(false);
-  const logo = company?.logo;
-  const logoSrc = logo && (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/"))
-    ? logo
-    : undefined;
+  const logoSrc = resolveStorageUrl(company?.logo);
 
   if (logoSrc && !failed) {
     return (
@@ -147,7 +145,7 @@ export function HomeDiscovery() {
                   key={company.id}
                   className="flex min-w-[220px] flex-1 snap-start items-center gap-4 rounded-xl border border-border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="grid size-12 shrink-0 place-items-center rounded border border-border bg-slate-50 text-xs font-bold text-primary">
+                  <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded border border-border bg-slate-50 p-1 text-xs font-bold text-primary">
                     <CompactCompanyLogo company={company} />
                   </div>
                   <span className="min-w-0">

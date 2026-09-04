@@ -1,6 +1,7 @@
 import { Not } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
 import { COMPANY_STATUS } from "../../common/constants/job";
+import { ASSET_TYPE, storageService } from "../../common/storage";
 import { AppDataSource } from "../../data-source";
 import { Company } from "../../database/entities/company.entity";
 import type { CreateCompanyDto } from "./dto/create-company.dto";
@@ -42,7 +43,7 @@ export class CompaniesService {
       id: company.id,
       name: company.name,
       slug: company.slug,
-      logo: company.logo,
+      logo: storageService.resolvePublicUrl(company.logo, ASSET_TYPE.COMPANY_LOGO),
       website: company.website,
       email: company.email,
       phone: company.phone,
@@ -78,6 +79,8 @@ export class CompaniesService {
     if (!company) {
       throw new AppError(404, "NOT_FOUND", "Nhà tuyển dụng chưa khởi tạo hồ sơ công ty");
     }
+
+    company.logo = storageService.resolvePublicUrl(company.logo, ASSET_TYPE.COMPANY_LOGO);
 
     return company;
   }
@@ -236,7 +239,7 @@ export class CompaniesService {
       id: company.id,
       name: company.name,
       slug: company.slug,
-      logo: company.logo,
+      logo: storageService.resolvePublicUrl(company.logo, ASSET_TYPE.COMPANY_LOGO),
       companySize: company.companySize,
       taxCode: company.taxCode,
       description: company.description,

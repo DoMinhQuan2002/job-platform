@@ -17,14 +17,21 @@ export type Application = {
   appliedAt: string;
   createdAt?: string;
   updatedAt?: string;
+  job?: Record<string, unknown>;
 };
 
-/** Shape từ GET /saved-jobs (BE chưa join job) */
+export type SavedJobStatusBadge = {
+  text: string;
+  variant: "closed" | "expired" | "hidden";
+};
+
+/** Shape từ GET /saved-jobs (BE đã join job) */
 export type SavedJobRecord = {
   id: string;
   candidateId: string;
   jobId: string;
   createdAt: string;
+  job?: Record<string, unknown>;
 };
 
 /** Saved job đã enrich job info cho UI */
@@ -40,6 +47,8 @@ export type SavedJob = {
   category: string;
   savedDate: string;
   createdAt: string;
+  statusBadge?: SavedJobStatusBadge | null;
+  isApplyDisabled?: boolean;
 };
 
 export type ApplyJobInput = {
@@ -51,6 +60,7 @@ export type ApplicationListItem = Application & {
   companyName: string;
   location: string;
   salary: string;
+  statusBadge?: SavedJobStatusBadge | null;
 };
 
 export type CompanyDetail = {

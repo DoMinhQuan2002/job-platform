@@ -3,6 +3,7 @@ import { AppError } from "@/common/errors/app-error";
 import { Company } from "@/database/entities/company.entity";
 import { Job } from "@/database/entities/job.entity";
 import { COMPANY_STATUS, CompanyStatusValue } from "@/common/constants/job";
+import { ASSET_TYPE, storageService } from "@/common/storage";
 import { notificationService } from "@/modules/notifications/notification.service";
 import { logService } from "@/modules/system-logs/log.service";
 import { ListQuery, StatusBody } from "./companies.validation";
@@ -69,7 +70,7 @@ const toListItem = (company: Company, totalJobs: number) => ({
   id: company.id,
   name: company.name,
   slug: company.slug,
-  logo: company.logo,
+  logo: storageService.resolvePublicUrl(company.logo, ASSET_TYPE.COMPANY_LOGO),
   email: company.email,
   phone: company.phone,
   taxCode: company.taxCode,
@@ -198,15 +199,30 @@ export const adminCompaniesService = {
         manager,
       );
 
-      await notificationService.create(
-        {
-          userId: company.userId,
-          type: isLocking ? "COMPANY_LOCKED" : "COMPANY_UNLOCKED",
-          target: { type: "COMPANY", id: company.id },
-          params: { companyName: company.name },
-        },
-        manager,
-      );
+      if (isLocking) {
+        await notificationService.create(
+          {
+            userId: company.userId,
+            type: "COMPANY_LOCKED",
+            target: { type: "COMPANY", id: company.id },
+            params: {
+              companyName: company.name,
+              reason: body.reason ?? "Không có lý do cụ thể",
+            },
+          },
+          manager,
+        );
+      } else {
+        await notificationService.create(
+          {
+            userId: company.userId,
+            type: "COMPANY_UNLOCKED",
+            target: { type: "COMPANY", id: company.id },
+            params: { companyName: company.name },
+          },
+          manager,
+        );
+      }
 
       return {
         id: company.id,

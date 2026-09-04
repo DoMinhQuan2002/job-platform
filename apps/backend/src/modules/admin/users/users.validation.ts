@@ -30,6 +30,8 @@ const listQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
   role: z.enum(ROLES, { error: "Giá trị role không hợp lệ" }).optional(),
   status: z.enum(STATUSES, { error: "Giá trị status không hợp lệ" }).optional(),
+  fromDate: z.string().trim().optional(),
+  toDate: z.string().trim().optional(),
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;

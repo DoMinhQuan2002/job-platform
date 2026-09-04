@@ -9,10 +9,15 @@ import { ROUTES } from "@/constants/routes";
 import {
   getAccessToken,
   getStoredUser,
+  setStoredUser,
   type StoredUser,
 } from "@/lib/auth-token";
-import { cn } from "@/lib/utils";
+import { cn, resolveStorageUrl } from "@/lib/utils";
 import { authApi } from "@/services/auth.service";
+import { http } from "@/services/http";
+import { notificationsApi } from "@/modules/notifications/api";
+import { NotificationDropdown } from "@/modules/notifications/components/notification-dropdown";
+import type { ApiSuccess } from "@/types/api";
 import Image from "next/image";
 
 type Session = StoredUser & { role: "CANDIDATE" | "RECRUITER" | "ADMIN" };
@@ -21,6 +26,44 @@ const navItems = [
   { href: ROUTES.jobs, label: "Việc làm" },
   { href: "/companies", label: "Công ty" },
 ];
+
+function useUnreadNotificationCount(isLoggedIn: boolean): number {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refresh = () => {
+      notificationsApi
+        .unreadCount()
+        .then((res) => {
+          if (!cancelled) setCount(res.data.unreadCount);
+        })
+        .catch(() => {
+          // Bỏ qua lỗi hiển thị badge
+        });
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("jp-notifications-change", refresh);
+    window.addEventListener("jp-auth-change", refresh);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("jp-notifications-change", refresh);
+      window.removeEventListener("jp-auth-change", refresh);
+    };
+  }, [isLoggedIn]);
+
+  return count;
+}
 
 function readSession(): Session | null {
   const token = getAccessToken();
@@ -42,6 +85,7 @@ function readSession(): Session | null {
       email: stored?.email || payload.email || "",
       fullName: stored?.fullName || payload.email?.split("@")[0] || "Tài khoản",
       role: payload.role,
+      avatar: stored?.avatar || null,
     };
   } catch {
     return null;
@@ -56,6 +100,7 @@ export function Header() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const unreadCount = useUnreadNotificationCount(Boolean(session));
 
   useEffect(() => {
     // Session data only exists in the browser; update once hydration is complete.
@@ -64,6 +109,42 @@ export function Header() {
     const syncSession = () => setSession(readSession());
     window.addEventListener("storage", syncSession);
     window.addEventListener("jp-auth-change", syncSession);
+
+    if (getAccessToken()) {
+      let active = true;
+      http<ApiSuccess<{ avatar: string | null; fullName: string }>>("/users/me")
+        .then((res) => {
+          if (!active || !res?.data) return;
+          const userMe = res.data;
+          setSession((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              fullName: userMe.fullName || prev.fullName,
+              avatar: userMe.avatar,
+            };
+          });
+          const stored = getStoredUser();
+          if (
+            stored &&
+            (stored.avatar !== userMe.avatar ||
+              (userMe.fullName && stored.fullName !== userMe.fullName))
+          ) {
+            setStoredUser({
+              ...stored,
+              fullName: userMe.fullName || stored.fullName,
+              avatar: userMe.avatar,
+            });
+          }
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+        window.removeEventListener("storage", syncSession);
+        window.removeEventListener("jp-auth-change", syncSession);
+      };
+    }
+
     return () => {
       window.removeEventListener("storage", syncSession);
       window.removeEventListener("jp-auth-change", syncSession);
@@ -117,6 +198,11 @@ export function Header() {
   const profileLabel = session?.role === "RECRUITER"
     ? "Trang nhà tuyển dụng"
     : "Hồ sơ cá nhân";
+
+  const notificationHref =
+    session?.role === "RECRUITER"
+      ? ROUTES.recruiter.notifications
+      : ROUTES.notifications.root;
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -204,15 +290,10 @@ export function Header() {
                   <Bookmark className="size-[18px]" />
                 </Link>
               )}
-              <button
-                className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
-                aria-label="Thông báo"
-              >
-                <Bell className="size-[18px]" />
-                <span className="absolute -right-0.5 -top-1 grid size-[15px] place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
-                  3
-                </span>
-              </button>
+              <NotificationDropdown
+                baseHref={notificationHref}
+                unreadCount={unreadCount}
+              />
               <div ref={accountMenuRef} className="relative ml-1">
                 <button
                   type="button"
@@ -221,9 +302,10 @@ export function Header() {
                   aria-expanded={accountMenuOpen}
                   aria-haspopup="menu"
                 >
-                  <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
-                    {session.fullName.slice(0, 2).toUpperCase()}
-                  </span>
+                  <HeaderUserAvatar
+                    avatar={session.avatar}
+                    fullName={session.fullName}
+                  />
                   <span className="max-w-28 truncate text-xs font-medium text-slate-900">
                     {session.fullName}
                   </span>
@@ -329,10 +411,29 @@ export function Header() {
                     {profileLabel}
                   </Link>
                 ) : (
-                  <span className="block rounded-md px-3 py-2 text-sm font-medium">
-                    {session.fullName}
-                  </span>
+                  <div className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium">
+                    <HeaderUserAvatar
+                      avatar={session.avatar}
+                      fullName={session.fullName}
+                    />
+                    <span>{session.fullName}</span>
+                  </div>
                 )}
+                <Link
+                  href={notificationHref}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <span className="flex items-center gap-2">
+                    <Bell className="size-4" />
+                    Thông báo
+                  </span>
+                  {unreadCount > 0 && (
+                    <span className="grid min-w-[18px] h-[18px] px-1.5 place-items-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -348,5 +449,45 @@ export function Header() {
         </div>
       )}
     </header>
+  );
+}
+
+function HeaderUserAvatar({
+  avatar,
+  fullName,
+}: {
+  avatar?: string | null;
+  fullName: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const avatarUrl = resolveStorageUrl(avatar);
+  const initials = fullName.slice(0, 2).toUpperCase() || "TK";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [avatarUrl]);
+
+  if (avatarUrl && !failed) {
+    return (
+      <span className="relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={avatarUrl}
+          alt={fullName}
+          className="size-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white"
+    >
+      {initials}
+    </span>
   );
 }

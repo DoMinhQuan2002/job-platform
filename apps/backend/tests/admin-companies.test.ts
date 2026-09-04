@@ -334,7 +334,10 @@ describe("Admin Companies Module", () => {
             userId: "50",
             type: "COMPANY_LOCKED",
             target: { type: "COMPANY", id: "5" },
-            params: { companyName: "ACME Corp" },
+            params: {
+              companyName: "ACME Corp",
+              reason: "Vi phạm điều khoản sử dụng",
+            },
           }),
           expect.anything(),
         );
