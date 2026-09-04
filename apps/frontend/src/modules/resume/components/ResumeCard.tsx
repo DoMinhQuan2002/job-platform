@@ -140,8 +140,9 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
 
         {/* Action icons */}
         <button
+          type="button"
           onClick={() => handleAction("download")}
-          disabled={!!fetchingAction}
+          disabled={fetchingAction === "download"}
           className="p-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
           title="Tải về"
         >
@@ -152,8 +153,9 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
           )}
         </button>
         <button
+          type="button"
           onClick={() => handleAction("view")}
-          disabled={!!fetchingAction}
+          disabled={fetchingAction === "view"}
           className="flex items-center gap-1.5 p-2 px-3 border border-border rounded-lg text-muted-foreground hover:text-foreground hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
           {fetchingAction === "view" ? (
@@ -164,6 +166,7 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
           <span className="text-sm font-medium">Xem</span>
         </button>
         <button
+          type="button"
           onClick={handleDelete}
           disabled={isDeleting}
           className="p-2 border border-red-200 text-destructive rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
