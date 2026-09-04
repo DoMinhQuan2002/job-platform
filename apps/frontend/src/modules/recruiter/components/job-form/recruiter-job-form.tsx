@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Bold, Eye, Italic, Link2, List, LoaderCircle, Plus, RefreshCw, Underline, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm, type UseFormRegisterReturn } from "react-hook-form";
+import { ArrowLeft, Bold, Eye, Italic, List, LoaderCircle, Plus, RefreshCw, Underline, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
   recruiterJobsApi,
@@ -27,9 +27,80 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="mt-1 text-[10px] text-danger">{message}</p> : null;
 }
 
-function TextAreaField({ label, required, placeholder, maxLength, error, registration }: { label: string; required?: boolean; placeholder: string; maxLength: number; error?: string; registration: UseFormRegisterReturn }) {
-  return <div><label className={labelClass}>{label} {required && <span className="text-danger">*</span>}</label><div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10"><div className="flex h-9 items-center gap-3 border-b border-border bg-background px-3 text-muted"><Bold className="size-3.5" /><Italic className="size-3.5" /><Underline className="size-3.5" /><List className="size-3.5" /><Link2 className="size-3.5" /></div><textarea {...registration} maxLength={maxLength} placeholder={placeholder} className="h-32 w-full resize-none bg-transparent p-3 text-xs leading-relaxed text-text outline-none placeholder:text-muted/70" /></div><FieldError message={error} /></div>;
+
+// ─── RichTextEditor ───────────────────────────────────────────────────────────
+type RichTextEditorProps = {
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  value: string;
+  onChange: (html: string) => void;
+  error?: string;
+};
+
+function RichTextEditor({ label, required, placeholder, value, onChange, error }: RichTextEditorProps) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const lastHtml = useRef(value);
+
+  // Sync initial / reset value into contentEditable (only when value changes from outside)
+  const handleInput = () => {
+    const html = editorRef.current?.innerHTML ?? "";
+    lastHtml.current = html;
+    onChange(html);
+  };
+
+  const exec = (cmd: string) => {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false);
+    handleInput();
+  };
+
+  return (
+    <div>
+      <label className={labelClass}>
+        {label} {required && <span className="text-danger">*</span>}
+      </label>
+      <div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
+        {/* Toolbar */}
+        <div className="flex h-9 items-center gap-0.5 border-b border-border bg-background px-2">
+          {([
+            { cmd: "bold",                icon: Bold,      title: "In đậm"                  },
+            { cmd: "italic",              icon: Italic,    title: "In nghiêng"               },
+            { cmd: "underline",           icon: Underline, title: "Gạch chân"                },
+            { cmd: "insertUnorderedList", icon: List,      title: "Danh sách gạch đầu dòng"  },
+          ] as const).map(({ cmd, icon: Icon, title }) => (
+            <button
+              key={cmd}
+              type="button"
+              title={title}
+              onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
+              className="grid size-7 place-items-center rounded text-muted transition hover:bg-primary/8 hover:text-primary active:scale-90"
+            >
+              <Icon className="size-3.5" />
+            </button>
+          ))}
+        </div>
+
+        {/* Editable area */}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          dangerouslySetInnerHTML={{ __html: value }}
+          data-placeholder={placeholder}
+          className={[
+            "prose prose-xs min-h-[8rem] max-w-none p-3 text-xs leading-relaxed text-text outline-none",
+            "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
+            "empty:before:pointer-events-none empty:before:text-muted/60 empty:before:content-[attr(data-placeholder)]",
+          ].join(" ")}
+        />
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
 }
+
 
 export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   const router = useRouter();
@@ -44,7 +115,7 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<JobFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, control, formState: { errors, isSubmitting } } = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: emptyJobFormValues,
   });
@@ -166,9 +237,49 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
 
           <div className="sm:col-span-2"><label className={labelClass}>Kỹ năng yêu cầu</label><div className="mb-2 flex flex-wrap gap-2">{selectedSkills.map((selected) => { const skill = skills.find((item) => item.id === selected.skillId); if (!skill) return null; return <span key={selected.skillId} className="inline-flex items-center gap-2 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-[10px] text-text">{skill.name}<label className="flex items-center gap-1 border-l border-border pl-2 text-primary"><input type="checkbox" checked={selected.isRequired} onChange={(event) => setValue("skills", selectedSkills.map((item) => item.skillId === selected.skillId ? { ...item, isRequired: event.target.checked } : item), { shouldDirty: true })} className="size-3 accent-primary" />Bắt buộc</label><button type="button" onClick={() => setValue("skills", selectedSkills.filter((item) => item.skillId !== selected.skillId), { shouldDirty: true })} className="rounded-full p-1 text-muted hover:bg-border/50"><X className="size-3" /></button></span>; })}</div><div className="relative inline-flex"><Plus className="pointer-events-none absolute left-2 top-2 size-3.5 text-primary" /><select value="" onChange={(event) => addSkill(event.target.value)} className="h-8 rounded-full border border-dashed border-primary bg-surface pl-7 pr-3 text-[10px] font-medium text-primary outline-none"><option value="">Thêm kỹ năng</option>{skills.filter((skill) => !selectedSkills.some((selected) => selected.skillId === skill.id)).map((skill) => <option key={skill.id} value={skill.id}>{skill.name}</option>)}</select></div></div>
 
-          <TextAreaField label="Mô tả công việc" required placeholder="Nhập mô tả công việc..." maxLength={5000} registration={register("description")} error={errors.description?.message} />
-          <TextAreaField label="Yêu cầu ứng viên" required placeholder="Nhập yêu cầu ứng viên..." maxLength={5000} registration={register("requirements")} error={errors.requirements?.message} />
-          <div className="sm:col-span-2"><TextAreaField label="Quyền lợi / phúc lợi" placeholder="Nhập quyền lợi / phúc lợi..." maxLength={3000} registration={register("benefits")} error={errors.benefits?.message} /></div>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <RichTextEditor
+                label="Mô tả công việc"
+                required
+                placeholder="Nhập mô tả công việc..."
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.description?.message}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="requirements"
+            render={({ field }) => (
+              <RichTextEditor
+                label="Yêu cầu ứng viên"
+                required
+                placeholder="Nhập yêu cầu ứng viên..."
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.requirements?.message}
+              />
+            )}
+          />
+          <div className="sm:col-span-2">
+            <Controller
+              control={control}
+              name="benefits"
+              render={({ field }) => (
+                <RichTextEditor
+                  label="Quyền lợi / phúc lợi"
+                  placeholder="Nhập quyền lợi / phúc lợi..."
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.benefits?.message}
+                />
+              )}
+            />
+          </div>
         </div>
 
         <JobPreviewCard values={values} companyName={company.name} categories={categories} skills={skills} />

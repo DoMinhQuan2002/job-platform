@@ -187,7 +187,7 @@ export const adminJobsService = {
   },
 
   /** DELETE /admin/jobs/{id} — xóa mềm, không giới hạn trạng thái hiện tại của tin. */
-  async remove(actingUserId: string, id: string, reason: string): Promise<void> {
+  async remove(actingUserId: string, id: string, reason?: string): Promise<void> {
     return AppDataSource.transaction(async (manager) => {
       const jobRepo = manager.getRepository(Job);
       const job = await jobRepo.findOne({ where: { id }, relations: { company: true } });
@@ -198,6 +198,8 @@ export const adminJobsService = {
       const statusBeforeDelete = job.status;
       await jobRepo.softDelete(job.id);
 
+      const deleteReason = reason || "Đã xóa bởi quản trị viên";
+
       await logService.write(
         {
           userId: actingUserId,
@@ -205,7 +207,7 @@ export const adminJobsService = {
           target: { type: "JOB", id: job.id },
           oldValue: statusBeforeDelete,
           newValue: null,
-          description: reason,
+          description: deleteReason,
         },
         manager,
       );
@@ -215,7 +217,7 @@ export const adminJobsService = {
           userId: job.company.userId,
           type: "JOB_DELETED",
           target: { type: "JOB", id: job.id },
-          params: { jobTitle: job.title, reason },
+          params: { jobTitle: job.title, reason: deleteReason },
         },
         manager,
       );
