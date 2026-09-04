@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { googleLogout } from "@react-oauth/google";
-import { Bell, ChevronDown, LogOut, Menu, Search, UserRound } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import { resolveStorageUrl } from "@/lib/utils";
@@ -130,16 +130,6 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
 
         {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
         <div className="ml-auto flex items-center gap-3">
-          {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
-          <label className="relative hidden xl:block">
-            <span className="sr-only">Tìm kiếm việc làm hoặc công ty</span>
-            <input
-              className="h-8 w-[230px] rounded-lg border border-slate-300 bg-slate-50 pl-3 pr-9 text-xs outline-none placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/10"
-              placeholder="Tìm việc làm, công ty..."
-            />
-            <Search className="absolute right-3 top-2 size-4 text-slate-600" />
-          </label>
-
           <Link
             href={ROUTES.recruiter.notifications}
             className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
