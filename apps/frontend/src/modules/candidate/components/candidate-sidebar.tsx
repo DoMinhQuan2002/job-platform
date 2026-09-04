@@ -195,7 +195,18 @@ export function CandidateSidebar({
         <p className="text-sm leading-5 text-muted">
           Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn.
         </p>
-        <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-primary text-primary hover:bg-primary/5"
+          onClick={() => {
+            const newsletter = document.getElementById("footer-newsletter");
+            newsletter?.scrollIntoView({ behavior: "smooth", block: "center" });
+            window.setTimeout(() => {
+              document.getElementById("footer-email")?.focus();
+            }, 400);
+          }}
+        >
           Liên hệ hỗ trợ
         </Button>
       </ProfileCard>
