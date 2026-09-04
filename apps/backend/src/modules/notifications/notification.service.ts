@@ -18,9 +18,9 @@ type Base<T extends NotificationType, TT extends TargetType> = {
  * đúng theo ràng buộc `chk_notifications_target` của bảng.
  */
 export type CreateNotificationInput =
-  | Base<"ACCOUNT_LOCKED", "USER">
+  | (Base<"ACCOUNT_LOCKED", "USER"> & { params: { reason: string } })
   | Base<"ACCOUNT_UNLOCKED", "USER">
-  | (Base<"COMPANY_LOCKED", "COMPANY"> & { params: { companyName: string } })
+  | (Base<"COMPANY_LOCKED", "COMPANY"> & { params: { companyName: string; reason: string } })
   | (Base<"COMPANY_UNLOCKED", "COMPANY"> & { params: { companyName: string } })
   | (Base<"COMPANY_APPROVED", "COMPANY"> & { params: { companyName: string } })
   | (Base<"COMPANY_REJECTED", "COMPANY"> & { params: { companyName: string; reason: string } })
@@ -42,14 +42,12 @@ type TemplateOf<K extends NotificationType> = (
 
 /**
  * Câu chữ do backend sinh, frontend không gửi title/content.
- * Lưu ý: thông báo khóa tài khoản và khóa công ty KHÔNG kèm lý do —
- * lý do chỉ được lưu ở `system_logs.description`.
+ * Lý do khóa tài khoản / công ty được kèm trong content khi admin nhập.
  */
 const TEMPLATES: { [K in NotificationType]: TemplateOf<K> } = {
-  ACCOUNT_LOCKED: () => ({
+  ACCOUNT_LOCKED: ({ params }) => ({
     title: "Tài khoản bị khóa",
-    content:
-      "Tài khoản của bạn đã bị quản trị viên khóa. Vui lòng liên hệ bộ phận hỗ trợ nếu cần thêm thông tin.",
+    content: `Tài khoản của bạn đã bị quản trị viên khóa. Lý do: ${params.reason}`,
   }),
   ACCOUNT_UNLOCKED: () => ({
     title: "Tài khoản được mở khóa",
@@ -57,7 +55,7 @@ const TEMPLATES: { [K in NotificationType]: TemplateOf<K> } = {
   }),
   COMPANY_LOCKED: ({ params }) => ({
     title: "Công ty bị khóa",
-    content: `Công ty "${params.companyName}" đã bị quản trị viên khóa. Các tin tuyển dụng của công ty sẽ tạm thời không hiển thị.`,
+    content: `Công ty "${params.companyName}" đã bị quản trị viên khóa. Lý do: ${params.reason}. Các tin tuyển dụng của công ty sẽ tạm thời không hiển thị.`,
   }),
   COMPANY_UNLOCKED: ({ params }) => ({
     title: "Công ty được mở khóa",

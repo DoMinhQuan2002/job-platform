@@ -34,6 +34,7 @@ import type {
   ResetPasswordInput,
   VerifyCodeInput,
 } from "./auth.validation";
+import { logService } from "../system-logs/log.service";
 
 const GOOGLE_PROVIDER = "google";
 
@@ -119,9 +120,18 @@ const issueLogin = async (user: UserEntity): Promise<LoginResult> => {
   };
 };
 
-const assertLoginable = (user: UserEntity) => {
+const bannedAccountError = async (userId: string) => {
+  const reason = await logService.findLatestUserLockReason(userId);
+  const message = reason
+    ? `Tài khoản đã bị khoá. Lý do: ${reason}`
+    : "Tài khoản đã bị khoá";
+
+  return new AppError(403, "ACCOUNT_BANNED", message, reason ? { reason } : undefined);
+};
+
+const assertLoginable = async (user: UserEntity) => {
   if (user.status === UserStatus.BANNED) {
-    throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
+    throw await bannedAccountError(user.id);
   }
 };
 
@@ -242,7 +252,7 @@ export const authService = {
       throw invalidCredentials;
     }
 
-    assertLoginable(user);
+    await assertLoginable(user);
 
     return issueLogin(user);
   },
@@ -447,9 +457,7 @@ export const authService = {
         throw new AppError(401, "INVALID_GOOGLE_TOKEN", "Tài khoản không tồn tại");
       }
 
-      if (user.status === UserStatus.BANNED) {
-        throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
-      }
+      await assertLoginable(user);
 
       return issueLogin(user);
     }
@@ -458,9 +466,7 @@ export const authService = {
     const existing = await findUserByEmail(email);
 
     if (existing && !existing.deletedAt) {
-      if (existing.status === UserStatus.BANNED) {
-        throw new AppError(403, "ACCOUNT_BANNED", "Tài khoản đã bị khoá");
-      }
+      await assertLoginable(existing);
 
       await oauthRepo().save(
         oauthRepo().create({

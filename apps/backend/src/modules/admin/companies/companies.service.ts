@@ -140,15 +140,30 @@ export const adminCompaniesService = {
         manager,
       );
 
-      await notificationService.create(
-        {
-          userId: company.userId,
-          type: isLocking ? "COMPANY_LOCKED" : "COMPANY_UNLOCKED",
-          target: { type: "COMPANY", id: company.id },
-          params: { companyName: company.name },
-        },
-        manager,
-      );
+      if (isLocking) {
+        await notificationService.create(
+          {
+            userId: company.userId,
+            type: "COMPANY_LOCKED",
+            target: { type: "COMPANY", id: company.id },
+            params: {
+              companyName: company.name,
+              reason: body.reason ?? "Không có lý do cụ thể",
+            },
+          },
+          manager,
+        );
+      } else {
+        await notificationService.create(
+          {
+            userId: company.userId,
+            type: "COMPANY_UNLOCKED",
+            target: { type: "COMPANY", id: company.id },
+            params: { companyName: company.name },
+          },
+          manager,
+        );
+      }
 
       return {
         id: company.id,
