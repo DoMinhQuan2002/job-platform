@@ -12,6 +12,7 @@ import { authApi } from "@/services/auth.service";
 import { notificationsApi } from "@/modules/notifications/api";
 import { NotificationDropdown } from "@/modules/notifications/components/notification-dropdown";
 import { useRecruiterCompany } from "./recruiter-company-context";
+import { CandidateSearchBar } from "@/components/layout/candidate-search-bar";
 
 /** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
 function useUnreadNotificationCount(): number {
@@ -131,6 +132,19 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
 
         {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
         <div className="ml-auto flex items-center gap-3">
+          {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
+          <CandidateSearchBar className="hidden xl:block" />
+
+          <button
+            type="button"
+            className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
+            aria-label="Thông báo"
+          >
+            <Bell className="size-[18px]" />
+            <span className="absolute -right-0.5 -top-1 grid size-[15px] place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
+              5
+            </span>
+          </button>
           <NotificationDropdown
             baseHref={ROUTES.recruiter.notifications}
             unreadCount={unreadCount}

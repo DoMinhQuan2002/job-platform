@@ -11,6 +11,7 @@ import { jobsApi } from "@/modules/jobs/api";
 import type { Job, JobFilters } from "@/modules/jobs/types";
 import { ROUTES } from "@/constants/routes";
 import { getAccessToken, getAccessTokenRole } from "@/lib/auth-token";
+import { JobSkillsCollapse } from "@/components/jobs/job-skills-collapse";
 import { resolveStorageUrl } from "@/lib/utils";
 
 const latestJobFilters: JobFilters = {
@@ -210,15 +211,16 @@ export function HomeDiscovery() {
                         : `${job.experience} năm`}
                     </span>
                   </div>
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {job.jobSkills?.slice(0, 3).map((item) => (
-                      <span
-                        key={item.id}
-                        className="rounded bg-slate-100 px-2 py-1 text-[10px] text-muted"
-                      >
-                        {item.skill.name}
-                      </span>
-                    ))}
+                  <div className="mb-5 min-w-0 max-w-full">
+                    <JobSkillsCollapse
+                      skills={
+                        job.jobSkills
+                          ?.map((item) => item.skill?.name)
+                          .filter(Boolean) as string[] ?? []
+                      }
+                      tagClassName="rounded bg-slate-100 px-2 py-1 text-[10px] text-muted whitespace-nowrap shrink-0"
+                      badgeClassName="rounded bg-slate-100 px-2 py-1 text-[10px] font-semibold text-muted whitespace-nowrap shrink-0 hover:bg-slate-200 cursor-default"
+                    />
                   </div>
                   <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
                     <span className="text-[10px] text-slate-500">

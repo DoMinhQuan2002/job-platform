@@ -149,6 +149,11 @@ export function AdminJobsView() {
         if (!isIgnored) {
           setData(res);
           setError(null);
+          // Update active tab count with fresh total
+          setTabCounts((prev) => ({
+            ...prev,
+            [activeTab]: res.pagination.total,
+          }));
         }
       })
       .catch((err: unknown) => {
@@ -172,17 +177,16 @@ export function AdminJobsView() {
     };
   }, [activeTab, page, limit, filterValues, reloadKey]);
 
-  // Tab counts with real data from statistics + fallback to current total
+  // Tab counts
   const counts = useMemo(() => {
-    const currentTotal = data?.pagination?.total;
     return {
-      ALL: activeTab === "ALL" && currentTotal !== undefined ? currentTotal : tabCounts.ALL,
-      PENDING: activeTab === "PENDING" && currentTotal !== undefined ? currentTotal : tabCounts.PENDING,
-      APPROVED: activeTab === "APPROVED" && currentTotal !== undefined ? currentTotal : tabCounts.APPROVED,
-      REJECTED: activeTab === "REJECTED" && currentTotal !== undefined ? currentTotal : tabCounts.REJECTED,
-      CLOSED: activeTab === "CLOSED" && currentTotal !== undefined ? currentTotal : tabCounts.CLOSED,
+      ALL: tabCounts.ALL,
+      PENDING: tabCounts.PENDING,
+      APPROVED: tabCounts.APPROVED,
+      REJECTED: tabCounts.REJECTED,
+      CLOSED: tabCounts.CLOSED,
     };
-  }, [data, activeTab, tabCounts]);
+  }, [tabCounts]);
 
   // Selection handlers
   const handleToggleSelect = (id: string) => {
@@ -205,6 +209,7 @@ export function AdminJobsView() {
   // Filter handlers
   const handleFilter = (newValues: JobFilterValues) => {
     setIsLoading(true);
+    setSelectedIds([]);
     setFilterValues(newValues);
     setPage(1);
     if (newValues.status) {
@@ -214,6 +219,7 @@ export function AdminJobsView() {
 
   const handleResetFilters = () => {
     setIsLoading(true);
+    setSelectedIds([]);
     setFilterValues({
       search: "",
       companyId: "",
@@ -228,6 +234,7 @@ export function AdminJobsView() {
 
   const handleTabChange = (tab: JobStatusTabValue) => {
     setIsLoading(true);
+    setSelectedIds([]);
     setActiveTab(tab);
     setPage(1);
     if (tab !== "ALL") {
@@ -400,7 +407,7 @@ export function AdminJobsView() {
       )}
 
       {/* Table Section */}
-      {isLoading && !data ? (
+      {isLoading ? (
         <JobTableSkeleton />
       ) : (
         <section
@@ -415,6 +422,8 @@ export function AdminJobsView() {
             onToggleSelectAll={handleToggleSelectAll}
             onViewDetail={handleOpenDetail}
             onDelete={handleOpenDelete}
+            onApprove={handleOpenApprove}
+            onReject={handleOpenReject}
           />
 
           <JobTablePagination
