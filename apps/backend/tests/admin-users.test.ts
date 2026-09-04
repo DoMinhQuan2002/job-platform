@@ -254,7 +254,7 @@ describe("Admin Users Module", () => {
         expect(res.body.errors[0].code).toBe("CONFLICT");
       });
 
-      it("locks account: updates status, writes log with reason, notifies without reason", async () => {
+      it("locks account: updates status, writes log with reason, notifies with reason", async () => {
         mockUserRepo.findOne.mockResolvedValue(buildUser({ status: UserStatus.ACTIVE }));
         mockUserRepo.save.mockImplementation(async (u: UserEntity) => u);
 
@@ -280,6 +280,7 @@ describe("Admin Users Module", () => {
             userId: "10",
             type: "ACCOUNT_LOCKED",
             target: { type: "USER", id: "10" },
+            params: { reason: "Vi phạm điều khoản sử dụng" },
           }),
           expect.anything(),
         );

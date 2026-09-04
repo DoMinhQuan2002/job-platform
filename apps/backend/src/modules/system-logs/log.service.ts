@@ -62,4 +62,22 @@ export const logService = {
 
     return repository.save(log);
   },
+
+  /**
+   * Lý do khóa tài khoản mới nhất (lưu ở `system_logs.description` khi LOCK_USER).
+   * Dùng khi login bị chặn để trả message có lý do cho client.
+   */
+  async findLatestUserLockReason(userId: string): Promise<string | null> {
+    const log = await AppDataSource.getRepository(SystemLogEntity).findOne({
+      where: {
+        action: "LOCK_USER",
+        targetType: "USER",
+        targetId: userId,
+      },
+      order: { createdAt: "DESC" },
+    });
+
+    const reason = log?.description?.trim();
+    return reason ? reason : null;
+  },
 };

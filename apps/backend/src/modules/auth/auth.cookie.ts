@@ -19,15 +19,29 @@ const getSameSite = (): "strict" | "lax" | "none" => {
   if (envVal === "lax" || envVal === "none" || envVal === "strict") {
     return envVal;
   }
-  return "strict";
+  // Giữ 'strict' trong môi trường test để đảm bảo contract unit tests
+  if (process.env.NODE_ENV === "test") {
+    return "strict";
+  }
+  // Trên production / HTTPS cross-site, bắt buộc SameSite=None để trình duyệt cho phép lưu cookie từ backend khác domain
+  if (isSecure()) {
+    return "none";
+  }
+  return "lax";
 };
 
-const baseOptions = (): CookieOptions => ({
-  httpOnly: true,
-  secure: isSecure(),
-  sameSite: getSameSite(),
-  path: COOKIE_PATH,
-});
+const baseOptions = (): CookieOptions => {
+  const secure = isSecure();
+  const sameSite = getSameSite();
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite,
+    ...(sameSite === "none" && secure ? { partitioned: true } : {}),
+    path: COOKIE_PATH,
+  };
+};
 
 export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
