@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ROUTES } from "@/constants/routes";
+import { resolveStorageUrl } from "@/lib/utils";
 import type { Job, JobSort } from "@/modules/jobs/types";
 import type { Company } from "../types";
 
@@ -48,10 +49,7 @@ export function getCompanyMark(name: string) {
 
 export function normalizeLogo(logo?: string | null) {
   if (!logo) return "";
-  if (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/")) {
-    return logo;
-  }
-  return "";
+  return resolveStorageUrl(logo) || "";
 }
 
 export function normalizeWebsite(website?: string | null) {

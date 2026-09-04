@@ -11,7 +11,7 @@ import {
   getStoredUser,
   type StoredUser,
 } from "@/lib/auth-token";
-import { cn } from "@/lib/utils";
+import { cn, resolveStorageUrl } from "@/lib/utils";
 import { authApi } from "@/services/auth.service";
 import Image from "next/image";
 
@@ -42,6 +42,7 @@ function readSession(): Session | null {
       email: stored?.email || payload.email || "",
       fullName: stored?.fullName || payload.email?.split("@")[0] || "Tài khoản",
       role: payload.role,
+      avatar: stored?.avatar || null,
     };
   } catch {
     return null;
@@ -221,9 +222,10 @@ export function Header() {
                   aria-expanded={accountMenuOpen}
                   aria-haspopup="menu"
                 >
-                  <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
-                    {session.fullName.slice(0, 2).toUpperCase()}
-                  </span>
+                  <HeaderUserAvatar
+                    avatar={session.avatar}
+                    fullName={session.fullName}
+                  />
                   <span className="max-w-28 truncate text-xs font-medium text-slate-900">
                     {session.fullName}
                   </span>
@@ -329,9 +331,13 @@ export function Header() {
                     {profileLabel}
                   </Link>
                 ) : (
-                  <span className="block rounded-md px-3 py-2 text-sm font-medium">
-                    {session.fullName}
-                  </span>
+                  <div className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium">
+                    <HeaderUserAvatar
+                      avatar={session.avatar}
+                      fullName={session.fullName}
+                    />
+                    <span>{session.fullName}</span>
+                  </div>
                 )}
                 <button
                   type="button"
@@ -348,5 +354,41 @@ export function Header() {
         </div>
       )}
     </header>
+  );
+}
+
+function HeaderUserAvatar({
+  avatar,
+  fullName,
+}: {
+  avatar?: string | null;
+  fullName: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const avatarUrl = resolveStorageUrl(avatar);
+  const initials = fullName.slice(0, 2).toUpperCase() || "TK";
+
+  if (avatarUrl && !failed) {
+    return (
+      <span className="relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={avatarUrl}
+          alt={fullName}
+          className="size-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white"
+    >
+      {initials}
+    </span>
   );
 }

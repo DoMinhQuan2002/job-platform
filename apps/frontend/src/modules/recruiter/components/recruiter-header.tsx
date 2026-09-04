@@ -5,10 +5,46 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { googleLogout } from "@react-oauth/google";
 import { Bell, ChevronDown, LogOut, Menu, Search, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ROUTES } from "@/constants/routes";
+import { resolveStorageUrl } from "@/lib/utils";
 import { authApi } from "@/services/auth.service";
+import { notificationsApi } from "@/modules/notifications/api";
 import { useRecruiterCompany } from "./recruiter-company-context";
+
+/** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
+function useUnreadNotificationCount(): number {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = () => {
+      notificationsApi
+        .unreadCount()
+        .then((res) => {
+          if (!cancelled) setCount(res.data.unreadCount);
+        })
+        .catch(() => {
+          // Bỏ qua — badge chỉ là tiện ích hiển thị
+        });
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("jp-notifications-change", refresh);
+    window.addEventListener("jp-auth-change", refresh);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("jp-notifications-change", refresh);
+      window.removeEventListener("jp-auth-change", refresh);
+    };
+  }, []);
+
+  return count;
+}
 
 type RecruiterHeaderProps = {
   menuOpen: boolean;
@@ -34,6 +70,8 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
     .map((word) => word[0])
     .join("")
     .toUpperCase() || "CT";
+
+  const unreadCount = useUnreadNotificationCount();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -102,16 +140,18 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
             <Search className="absolute right-3 top-2 size-4 text-slate-600" />
           </label>
 
-          <button
-            type="button"
+          <Link
+            href={ROUTES.recruiter.notifications}
             className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
             aria-label="Thông báo"
           >
             <Bell className="size-[18px]" />
-            <span className="absolute -right-0.5 -top-1 grid size-[15px] place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
-              5
-            </span>
-          </button>
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-1 grid min-w-[15px] h-[15px] px-1 place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
 
           {/* Mobile chỉ hiện avatar; từ sm trở lên hiện thêm tên và mũi tên. */}
           <div className="relative ml-1">
@@ -122,9 +162,11 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
               aria-expanded={accountOpen}
               aria-haspopup="menu"
             >
-              <span className="grid size-7 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white">
-                {companyInitials}
-              </span>
+              <RecruiterAvatar
+                logo={company?.logo}
+                companyName={company?.name}
+                initials={companyInitials}
+              />
               <span
                 className="hidden max-w-32 truncate text-xs font-medium text-slate-900 sm:block"
                 title={company?.name}
@@ -157,5 +199,42 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
         </div>
       </nav>
     </header>
+  );
+}
+
+function RecruiterAvatar({
+  logo,
+  companyName,
+  initials,
+}: {
+  logo?: string | null;
+  companyName?: string;
+  initials: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const logoUrl = resolveStorageUrl(logo);
+
+  if (logoUrl && !failed) {
+    return (
+      <span className="relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-full border border-slate-200 bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoUrl}
+          alt={companyName ?? "Công ty"}
+          className="size-full object-contain p-0.5"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-slate-300 to-slate-600 text-[10px] font-semibold text-white"
+    >
+      {initials}
+    </span>
   );
 }

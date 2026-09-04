@@ -8,12 +8,14 @@ import type { NotificationItem } from "../types";
 
 type NotificationListItemProps = {
   notification: NotificationItem;
+  baseHref?: string;
   onMarkRead: (id: string) => void;
   onDelete: (notification: NotificationItem) => void;
 };
 
 export function NotificationListItem({
   notification,
+  baseHref = ROUTES.notifications.root,
   onMarkRead,
   onDelete,
 }: NotificationListItemProps) {
@@ -40,7 +42,7 @@ export function NotificationListItem({
       </span>
 
       <Link
-        href={`${ROUTES.notifications.root}/${notification.id}`}
+        href={`${baseHref}/${notification.id}`}
         onClick={() => {
           if (!notification.isRead) onMarkRead(notification.id);
         }}

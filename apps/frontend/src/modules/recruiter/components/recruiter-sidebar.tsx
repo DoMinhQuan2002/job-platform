@@ -1,18 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, BriefcaseBusiness, Building2, CheckCircle2, Headphones, House, LayoutDashboard, Settings, Users, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, resolveStorageUrl } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
+import { notificationsApi } from "@/modules/notifications/api";
 import { useRecruiterCompany } from "./recruiter-company-context";
 
-const navigation = [
+/** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
+function useUnreadNotificationCount(): number {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = () => {
+      notificationsApi
+        .unreadCount()
+        .then((res) => {
+          if (!cancelled) setCount(res.data.unreadCount);
+        })
+        .catch(() => {
+          // Bỏ qua — badge chỉ là tiện ích hiển thị, không chặn sidebar.
+        });
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("jp-notifications-change", refresh);
+    window.addEventListener("jp-auth-change", refresh);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("jp-notifications-change", refresh);
+      window.removeEventListener("jp-auth-change", refresh);
+    };
+  }, []);
+
+  return count;
+}
+
+type NavigationItem = {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isNotification?: boolean;
+  badge?: number | string;
+};
+
+const baseNavigation: NavigationItem[] = [
   { label: "Tổng quan", href: "/recruiter", icon: LayoutDashboard },
   { label: "Quản lý tin", href: "/recruiter/jobs", icon: BriefcaseBusiness },
   { label: "Quản lý ứng viên", href: ROUTES.recruiter.candidates, icon: Users },
   { label: "Quản lý công ty", href: "/recruiter/company", icon: Building2 },
-  { label: "Thông báo", href: "/recruiter/notifications", icon: Bell, badge: 5 },
+  { label: "Thông báo", href: ROUTES.recruiter.notifications, icon: Bell, isNotification: true },
   { label: "Tài khoản", href: ROUTES.recruiter.account, icon: Settings },
 ];
 
@@ -30,6 +74,17 @@ type RecruiterSidebarProps = {
 export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
   const pathname = usePathname();
   const { company, loading: companyLoading } = useRecruiterCompany();
+  const unreadCount = useUnreadNotificationCount();
+
+  const navigation = baseNavigation.map((item) => {
+    if (item.isNotification) {
+      return {
+        ...item,
+        badge: unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : undefined,
+      };
+    }
+    return item;
+  });
 
   return (
     <>
@@ -56,8 +111,17 @@ export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
           <X className="size-5" />
         </button>
         <div className="p-5 text-center">
-          <div className="mx-auto mb-3 grid size-16 place-items-center rounded-full bg-primary/10 text-primary">
-            <Building2 className="size-7" />
+          <div className="mx-auto mb-3 grid size-16 place-items-center overflow-hidden rounded-full border border-slate-200 bg-primary/10 text-primary">
+            {company?.logo && resolveStorageUrl(company.logo) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={resolveStorageUrl(company.logo)}
+                alt={company?.name ?? "Logo công ty"}
+                className="size-full object-contain p-1"
+              />
+            ) : (
+              <Building2 className="size-7" />
+            )}
           </div>
           {companyLoading ? (
             <div className="mx-auto h-5 w-36 animate-pulse rounded bg-border/70" />
@@ -90,7 +154,7 @@ export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
               >
                 <Icon className="size-[18px] shrink-0" />
                 <span className="flex-1">{item.label}</span>
-                {item.badge && (
+                {item.badge !== undefined && item.badge !== null && (
                   <span className="rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-white">
                     {item.badge}
                   </span>

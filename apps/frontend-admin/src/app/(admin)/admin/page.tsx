@@ -23,7 +23,10 @@ import { RecentActivities } from "@/components/dashboard/recent-activities";
 
 const getInitialDateFilter = (): DashboardDateFilterState => {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const todayStr = `${year}-${month}-${day}`;
   const todayFormatted = new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
