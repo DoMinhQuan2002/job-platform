@@ -3,9 +3,23 @@ import { AppError } from "@/common/errors/app-error";
 import { UserEntity, UserStatus } from "@/database/entities/user.entity";
 import { notificationService } from "@/modules/notifications/notification.service";
 import { logService } from "@/modules/system-logs/log.service";
+import { getSupabaseClient, getSupabaseConfig } from "@/config/supabase";
 import { ListQuery, StatusBody } from "./users.validation";
 
 const repo = () => AppDataSource.getRepository(UserEntity);
+
+/** Chuyển đường dẫn storage (vd: avatars/xyz.jpg) thành public URL đầy đủ của Supabase. */
+const resolveAvatarUrl = (avatar?: string | null): string | null => {
+  if (!avatar) return null;
+  if (/^https?:\/\//i.test(avatar)) return avatar;
+  try {
+    const { publicBucket } = getSupabaseConfig();
+    const client = getSupabaseClient();
+    return client.storage.from(publicBucket).getPublicUrl(avatar).data.publicUrl;
+  } catch {
+    return avatar;
+  }
+};
 
 /** Shape trả về cho list — không lộ field thô như `passwordHash`, `deletedAt`. */
 const toListItem = (user: UserEntity) => ({
@@ -13,7 +27,7 @@ const toListItem = (user: UserEntity) => ({
   email: user.email,
   fullName: user.fullName,
   phone: user.phone,
-  avatar: user.avatar,
+  avatar: resolveAvatarUrl(user.avatar),
   role: { id: user.role.id, name: user.role.name },
   status: user.status,
   lastLoginAt: user.lastLoginAt,
@@ -21,14 +35,30 @@ const toListItem = (user: UserEntity) => ({
   createdAt: user.createdAt,
 });
 
+interface LocationInfo {
+  wardName?: string | null;
+  provinceName?: string | null;
+  fullAddress?: string | null;
+}
+
 /** Shape trả về cho detail — thêm vài field profile so với list item. */
-const toDetail = (user: UserEntity) => ({
-  ...toListItem(user),
-  dateOfBirth: user.dateOfBirth,
-  addressDetail: user.addressDetail,
-  wardCode: user.wardCode,
-  updatedAt: user.updatedAt,
-});
+const toDetail = (user: UserEntity, locationInfo?: LocationInfo) => {
+  const wardName = locationInfo?.wardName ?? null;
+  const provinceName = locationInfo?.provinceName ?? null;
+  const parts = [user.addressDetail, wardName, provinceName].filter(Boolean);
+  const fullAddress = locationInfo?.fullAddress ?? (parts.length > 0 ? parts.join(", ") : null);
+
+  return {
+    ...toListItem(user),
+    dateOfBirth: user.dateOfBirth,
+    addressDetail: user.addressDetail,
+    wardCode: user.wardCode,
+    wardName,
+    provinceName,
+    fullAddress,
+    updatedAt: user.updatedAt,
+  };
+};
 
 export type PaginatedUsers = {
   items: ReturnType<typeof toListItem>[];
@@ -50,6 +80,16 @@ export const adminUsersService = {
     }
     if (query.status) {
       qb.andWhere("user.status = :status", { status: query.status });
+    }
+    if (query.fromDate) {
+      qb.andWhere("user.createdAt >= :fromDate", {
+        fromDate: new Date(query.fromDate),
+      });
+    }
+    if (query.toDate) {
+      const endOfDay = new Date(query.toDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      qb.andWhere("user.createdAt <= :toDate", { toDate: endOfDay });
     }
 
     qb.orderBy("user.createdAt", "DESC");
@@ -75,7 +115,29 @@ export const adminUsersService = {
       throw new AppError(404, "NOT_FOUND", "Không tìm thấy tài khoản");
     }
 
-    return toDetail(user);
+    let locationInfo: LocationInfo | undefined;
+    if (user.wardCode) {
+      try {
+        const rows = await AppDataSource.query(
+          `SELECT w.full_name as ward_name, p.full_name as province_name
+           FROM wards w
+           LEFT JOIN provinces p ON w.province_code = p.code
+           WHERE w.code = $1
+           LIMIT 1`,
+          [user.wardCode]
+        );
+        if (Array.isArray(rows) && rows.length > 0) {
+          locationInfo = {
+            wardName: rows[0].ward_name || null,
+            provinceName: rows[0].province_name || null,
+          };
+        }
+      } catch {
+        // Non-blocking fallback if wards table is not available in mock/test
+      }
+    }
+
+    return toDetail(user, locationInfo);
   },
 
   /**
