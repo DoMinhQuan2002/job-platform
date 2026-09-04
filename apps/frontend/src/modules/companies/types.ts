@@ -29,11 +29,14 @@ export type CompaniesResponse1 = {
   meta: CompaniesMeta;
 };
 
+export type CompanySort = "newest" | "oldest";
+
 export type CompanyListQuery = {
   page?: number;
   limit?: number;
   search?: string;
   companySize?: CompanySize | "";
+  sort?: CompanySort;
 };
 
 export type CompanyProfileInput = {

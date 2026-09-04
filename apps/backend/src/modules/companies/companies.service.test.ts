@@ -993,6 +993,29 @@ describe("Companies Module", () => {
         totalPages: 0,
       });
     });
+
+    it("should sort oldest companies first when requested", async () => {
+      const qbMock: any = {
+        where: vi.fn().mockReturnThis(),
+        andWhere: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[], 0]),
+      };
+
+      vi.spyOn(AppDataSource, "getRepository").mockReturnValue({
+        createQueryBuilder: vi.fn().mockReturnValue(qbMock),
+      } as any);
+
+      await companiesService.getPublicCompanies({
+        page: 1,
+        limit: 10,
+        sort: "oldest",
+      });
+
+      expect(qbMock.orderBy).toHaveBeenCalledWith("company.createdAt", "ASC");
+    });
   });
 
   describe("CompaniesController.getPublicCompanies", () => {

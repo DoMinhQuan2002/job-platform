@@ -12,16 +12,15 @@ import {
   Loader2,
   MapPin,
   Search,
-  Star,
   Users,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { companiesApi1 } from "../api";
 import { COMPANY_JOBS_SECTION_ID } from "../components/company-detail-ui";
-import type { Company } from "../types";
+import type { Company, CompanySort } from "../types";
 
 const PAGE_SIZE = 10;
-const DEFAULT_RATING = "4.3";
+const COMPANIES_LIST_SECTION_ID = "companies-list";
 
 function getCompanyMark(name: string) {
   return name
@@ -93,19 +92,42 @@ function CompanyLogo({ company, variant = "list" }: { company: Company; variant?
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [featuredCompanies, setFeaturedCompanies] = useState<Company[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
+  const [featuredError, setFeaturedError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [sort, setSort] = useState<CompanySort>("newest");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadFeaturedCompanies = useCallback(async () => {
+    setFeaturedLoading(true);
+    setFeaturedError(null);
+    try {
+      const res = await companiesApi1.list({
+        page: 1,
+        limit: 5,
+        sort: "newest",
+      });
+      setFeaturedCompanies(res.data.items ?? []);
+    } catch (err) {
+      setFeaturedCompanies([]);
+      setFeaturedError(err instanceof Error ? err.message : "Không tải được danh sách công ty nổi bật.");
+    } finally {
+      setFeaturedLoading(false);
+    }
+  }, []);
+
+  const loadCompanies = useCallback(async () => {
+    setListLoading(true);
+    setListError(null);
     try {
       const res = await companiesApi1.list({
         page: currentPage,
         limit: PAGE_SIZE,
+        sort,
       });
       setCompanies(res.data.items ?? []);
       setTotal(res.data.meta.total ?? 0);
@@ -114,25 +136,41 @@ export default function CompaniesPage() {
       setCompanies([]);
       setTotal(0);
       setTotalPages(1);
-      setError(err instanceof Error ? err.message : "Không tải được danh sách công ty.");
+      setListError(err instanceof Error ? err.message : "Không tải được danh sách công ty.");
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, sort]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void load();
+      void loadFeaturedCompanies();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [loadFeaturedCompanies]);
 
-  const featuredCompanies = useMemo(() => companies.slice(0, 5), [companies]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadCompanies();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [loadCompanies]);
+
   const visiblePages = useMemo(
     () => getVisiblePages(currentPage, totalPages),
     [currentPage, totalPages],
   );
+  const showListInitialLoading = listLoading && companies.length === 0;
+  const showListRefreshing = listLoading && companies.length > 0;
+
+  const scrollToCompaniesList = useCallback(() => {
+    document.getElementById(COMPANIES_LIST_SECTION_ID)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
 
   const pageStart = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const pageEnd = Math.min(currentPage * PAGE_SIZE, total);
@@ -170,23 +208,24 @@ export default function CompaniesPage() {
         <section className="border-x border-b border-slate-200 bg-white p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <h2 className="text-lg font-bold text-slate-950">Công ty nổi bật</h2>
-            <Link
-              href={ROUTES.companies}
+            <button
+              type="button"
+              onClick={scrollToCompaniesList}
               className="text-sm font-semibold text-primary hover:text-primary-hover"
             >
               Xem tất cả
-            </Link>
+            </button>
           </div>
 
-          {loading ? (
+          {featuredLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" />
               Đang tải công ty...
             </div>
-          ) : error ? (
+          ) : featuredError ? (
             <div className="flex items-start gap-2 rounded border border-rose-100 bg-rose-50 p-4 text-xs text-rose-800">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>{error}</p>
+              <p>{featuredError}</p>
             </div>
           ) : featuredCompanies.length === 0 ? (
             <div className="py-10 text-center">
@@ -223,38 +262,43 @@ export default function CompaniesPage() {
           )}
         </section>
 
-        <section className="border-x border-b border-slate-200 bg-white p-5 sm:p-6">
+        <section id={COMPANIES_LIST_SECTION_ID} className="scroll-mt-20 border-x border-b border-slate-200 bg-white p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <h2 className="text-lg font-bold text-slate-950">Danh sách công ty</h2>
             <label className="flex items-center gap-2 text-xs text-slate-500">
               <span>Sắp xếp:</span>
               <span className="relative">
                 <select
-                  value="latest"
-                  onChange={() => undefined}
+                  value={sort}
+                  onChange={(event) => {
+                    setSort(event.target.value as CompanySort);
+                    setCurrentPage(1);
+                  }}
                   className="h-9 cursor-pointer appearance-none rounded border border-slate-200 bg-white px-3 pr-8 text-xs font-medium text-slate-700 outline-none focus:border-primary"
                 >
-                  <option value="latest">Mới cập nhật</option>
+                  <option value="newest">Mới cập nhật</option>
+                  <option value="oldest">Cũ nhất</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2 top-3 h-3.5 w-3.5 text-slate-400" />
               </span>
+              {showListRefreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" /> : null}
             </label>
           </div>
 
-          {loading ? (
+          {showListInitialLoading ? (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
               <Loader2 className="h-4 w-4 animate-spin" />
               Đang tải danh sách công ty...
             </div>
-          ) : error ? (
+          ) : listError ? (
             <div className="space-y-3 rounded border border-rose-100 bg-rose-50 p-5 text-sm text-rose-800">
               <div className="flex items-start gap-2">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{error}</p>
+                <p>{listError}</p>
               </div>
               <button
                 type="button"
-                onClick={() => void load()}
+                onClick={() => void loadCompanies()}
                 className="rounded border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
               >
                 Thử lại
@@ -271,7 +315,12 @@ export default function CompaniesPage() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-200 border-y border-slate-100">
+            <div
+              aria-busy={showListRefreshing}
+              className={`divide-y divide-slate-200 border-y border-slate-100 transition-opacity ${
+                showListRefreshing ? "opacity-60" : "opacity-100"
+              }`}
+            >
               {companies.map((company) => (
                 <article
                   key={company.id}
@@ -314,7 +363,7 @@ export default function CompaniesPage() {
             </div>
           )}
 
-          {total > 0 && !loading && !error ? (
+          {total > 0 && !showListInitialLoading && !listError ? (
             <div className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row">
               <span className="text-xs font-medium text-slate-500">
                 Hiển thị {pageStart} - {pageEnd} trong {total} công ty
