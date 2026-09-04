@@ -21,6 +21,9 @@ export const ROUTES = {
     root: "/candidate/applications",
     savedJobs: "/candidate/applications/saved-jobs",
   },
+  notifications: {
+    root: "/candidate/notifications",
+  },
   recruiter: {
     root: "/recruiter",
     candidates: "/recruiter/candidates",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
+import { notificationsApi } from "@/modules/notifications/api";
 import { calculateProfileCompletion } from "../lib/completion";
 import type { CandidateProfile } from "../types";
 import { ProfileCard } from "./profile-card";
@@ -33,14 +34,55 @@ type CandidateSidebarProps = {
   onAvatarRemove?: () => void;
 };
 
-const navItems = [
-  { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
-  { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
-  { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
-  { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
-  { href: "#", label: "Thông báo", icon: Bell, badge: 5, disabled: true },
-  { href: ROUTES.candidate.account, label: "Cài đặt tài khoản", icon: Settings, divider: true },
-];
+function buildNavItems(unreadCount: number) {
+  return [
+    { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
+    { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
+    { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
+    { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
+    {
+      href: ROUTES.notifications.root,
+      label: "Thông báo",
+      icon: Bell,
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+    { href: ROUTES.candidate.account, label: "Cài đặt tài khoản", icon: Settings, divider: true },
+  ];
+}
+
+/** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
+function useUnreadNotificationCount(): number {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = () => {
+      notificationsApi
+        .unreadCount()
+        .then((res) => {
+          if (!cancelled) setCount(res.data.unreadCount);
+        })
+        .catch(() => {
+          // Bỏ qua — badge chỉ là tiện ích hiển thị, không chặn sidebar.
+        });
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("jp-notifications-change", refresh);
+    window.addEventListener("jp-auth-change", refresh);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("jp-notifications-change", refresh);
+      window.removeEventListener("jp-auth-change", refresh);
+    };
+  }, []);
+
+  return count;
+}
 
 const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 
@@ -73,6 +115,8 @@ export function CandidateSidebar({
   const completion = profile ? calculateProfileCompletion(profile) : 0;
   const name = displayName?.trim() || "Ứng viên";
   const canEditAvatar = Boolean(onAvatarSelect);
+  const unreadCount = useUnreadNotificationCount();
+  const navItems = buildNavItems(unreadCount);
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
@@ -153,7 +197,7 @@ export function CandidateSidebar({
         <nav className="py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = !item.disabled && isNavActive(pathname, item.href, item.label);
+            const isActive = isNavActive(pathname, item.href, item.label);
 
             const content = (
               <span
@@ -162,7 +206,6 @@ export function CandidateSidebar({
                   isActive
                     ? "border-[#0045b2] bg-[rgba(179,197,255,0.2)] text-[#0045b2]"
                     : "border-transparent text-muted hover:bg-muted/30",
-                  item.disabled && "pointer-events-none opacity-60",
                 )}
               >
                 <span className="flex items-center gap-3">
@@ -180,7 +223,7 @@ export function CandidateSidebar({
             return (
               <div key={item.label}>
                 {item.divider ? <div className="my-1 border-t border-border/50" /> : null}
-                {item.disabled ? content : <Link href={item.href}>{content}</Link>}
+                <Link href={item.href}>{content}</Link>
               </div>
             );
           })}
