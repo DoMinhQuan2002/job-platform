@@ -9,10 +9,13 @@ import { ROUTES } from "@/constants/routes";
 import {
   getAccessToken,
   getStoredUser,
+  setStoredUser,
   type StoredUser,
 } from "@/lib/auth-token";
 import { cn, resolveStorageUrl } from "@/lib/utils";
 import { authApi } from "@/services/auth.service";
+import { http } from "@/services/http";
+import type { ApiSuccess } from "@/types/api";
 import Image from "next/image";
 
 type Session = StoredUser & { role: "CANDIDATE" | "RECRUITER" | "ADMIN" };
@@ -65,6 +68,42 @@ export function Header() {
     const syncSession = () => setSession(readSession());
     window.addEventListener("storage", syncSession);
     window.addEventListener("jp-auth-change", syncSession);
+
+    if (getAccessToken()) {
+      let active = true;
+      http<ApiSuccess<{ avatar: string | null; fullName: string }>>("/users/me")
+        .then((res) => {
+          if (!active || !res?.data) return;
+          const userMe = res.data;
+          setSession((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              fullName: userMe.fullName || prev.fullName,
+              avatar: userMe.avatar,
+            };
+          });
+          const stored = getStoredUser();
+          if (
+            stored &&
+            (stored.avatar !== userMe.avatar ||
+              (userMe.fullName && stored.fullName !== userMe.fullName))
+          ) {
+            setStoredUser({
+              ...stored,
+              fullName: userMe.fullName || stored.fullName,
+              avatar: userMe.avatar,
+            });
+          }
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+        window.removeEventListener("storage", syncSession);
+        window.removeEventListener("jp-auth-change", syncSession);
+      };
+    }
+
     return () => {
       window.removeEventListener("storage", syncSession);
       window.removeEventListener("jp-auth-change", syncSession);
@@ -367,6 +406,10 @@ function HeaderUserAvatar({
   const [failed, setFailed] = useState(false);
   const avatarUrl = resolveStorageUrl(avatar);
   const initials = fullName.slice(0, 2).toUpperCase() || "TK";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [avatarUrl]);
 
   if (avatarUrl && !failed) {
     return (
