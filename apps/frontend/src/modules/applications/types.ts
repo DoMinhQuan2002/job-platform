@@ -17,6 +17,7 @@ export type Application = {
   appliedAt: string;
   createdAt?: string;
   updatedAt?: string;
+  job?: Record<string, unknown>;
 };
 
 export type SavedJobStatusBadge = {
@@ -59,6 +60,7 @@ export type ApplicationListItem = Application & {
   companyName: string;
   location: string;
   salary: string;
+  statusBadge?: SavedJobStatusBadge | null;
 };
 
 export type CompanyDetail = {
