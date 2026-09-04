@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={`${hankenGrotesk.variable} h-full antialiased`}>
-      <body className="h-full antialiased bg-[#f8fafc] text-slate-900 font-sans">
+      <body className="h-full antialiased bg-background text-slate-900 font-sans">
         {children}
       </body>
     </html>
