@@ -12,7 +12,21 @@ export const usersService = {
     const user = await AppDataSource.getRepository(UserEntity).findOne({ where: { id: userId }, relations: { role: true } });
     if (!user) throw new AppError(404, "USER_NOT_FOUND", "Không tìm thấy tài khoản");
     const avatar = !user.avatar || /^https?:\/\//i.test(user.avatar) ? user.avatar : (await storageService.getAccessUrl(user.avatar, ASSET_TYPE.USER_AVATAR)).url;
-    return { id: user.id, roleId: user.roleId || user.role.id, role: user.role.name, email: user.email, fullName: user.fullName, phone: user.phone, avatar, dateOfBirth: user.dateOfBirth, addressDetail: user.addressDetail, wardCode: user.wardCode, lastLoginAt: user.lastLoginAt, emailVerifiedAt: user.emailVerifiedAt };
+    return {
+      id: user.id,
+      roleId: user.roleId || user.role.id,
+      role: user.role.name,
+      email: user.email,
+      fullName: user.fullName,
+      phone: user.phone,
+      avatar,
+      dateOfBirth: user.dateOfBirth,
+      addressDetail: user.addressDetail,
+      wardCode: user.wardCode,
+      lastLoginAt: user.lastLoginAt,
+      emailVerifiedAt: user.emailVerifiedAt,
+      hasPassword: Boolean(user.passwordHash),
+    };
   },
 
   async updateMyProfile(userId: string, input: UpdateMyProfileDto) {

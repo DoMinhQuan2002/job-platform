@@ -1,5 +1,6 @@
-import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
+﻿import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
 import {
+  clearAccessToken,
   getAccessToken,
   isTokenExpired,
   logoutAndRedirectToLogin,
@@ -34,10 +35,6 @@ const resolveUrl = (path: string, absolute?: boolean) => {
   return `${API_ORIGIN}${API_PREFIX}${normalized}`;
 };
 
-/**
- * Promise Mutex Queue: Đảm bảo khi nhiều request đồng thời phát hiện token hết hạn,
- * chỉ có DUY NHẤT 1 request refresh token được gửi đi.
- */
 let refreshPromise: Promise<string | null> | null = null;
 
 export const refreshAccessToken = async (): Promise<string | null> => {
@@ -80,6 +77,24 @@ export const refreshAccessToken = async (): Promise<string | null> => {
   return refreshPromise;
 };
 
+const sendRequest = (
+  url: string,
+  options: HttpOptions,
+  headers: Record<string, string>
+) =>
+  fetch(url, {
+    method: options.method || "GET",
+    headers,
+    credentials: "include",
+    signal: options.signal,
+    body:
+      options.body === undefined
+        ? undefined
+        : typeof FormData !== "undefined" && options.body instanceof FormData
+        ? options.body
+        : JSON.stringify(options.body),
+  });
+
 export const http = async <T>(
   path: string,
   options: HttpOptions = {}
@@ -93,21 +108,12 @@ export const http = async <T>(
       headers["Content-Type"] = "application/json";
     }
 
-    // 1. Kiểm tra và làm mới token trước khi gửi nếu cần
     if (!options.skipAuth) {
       let token = getAccessToken();
       const isLogoutRequest = path === "/logout" || path.endsWith("/logout");
       if (!token || isTokenExpired(token)) {
         if (!isLogoutRequest) {
           token = await refreshAccessToken();
-          if (!token) {
-            logoutAndRedirectToLogin("session_expired");
-            throw new ApiError(
-              401,
-              "Phiên đăng nhập đã hết hạn. Đang chuyển hướng...",
-              "TOKEN_EXPIRED"
-            );
-          }
         }
       }
       if (token) {
@@ -115,41 +121,30 @@ export const http = async <T>(
       }
     }
 
-    const response = await fetch(resolveUrl(path, options.absolute), {
-      method: options.method || "GET",
-      headers,
-      credentials: "include",
-      signal: options.signal,
-      body:
-        options.body === undefined
-          ? undefined
-          : isFormData
-          ? (options.body as FormData)
-          : JSON.stringify(options.body),
-    });
+    const url = resolveUrl(path, options.absolute);
+    let response = await sendRequest(url, options, headers);
 
-    // 2. Xử lý khi server phản hồi mã 401 Unauthorized
     if (response.status === 401 && !options.skipAuth && !options._isRetry) {
       const isLogoutRequest = path === "/logout" || path.endsWith("/logout");
       if (isLogoutRequest) {
+        clearAccessToken();
         return undefined as T;
       }
 
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        // Tự động retry lại request ban đầu với accessToken mới
-        return http<T>(path, {
-          ...options,
-          _isRetry: true,
-          headers: {
-            ...options.headers,
-            Authorization: `Bearer ${newToken}`,
-          },
-        });
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          headers.Authorization = `Bearer ${newToken}`;
+          response = await sendRequest(url, { ...options, _isRetry: true }, headers);
+        }
+      } catch {
+        clearAccessToken();
       }
 
-      logoutAndRedirectToLogin("session_expired");
-      throw await toApiErrorFromResponse(response);
+      if (response.status === 401) {
+        logoutAndRedirectToLogin("session_expired");
+        throw await toApiErrorFromResponse(response);
+      }
     }
 
     if (!response.ok) {

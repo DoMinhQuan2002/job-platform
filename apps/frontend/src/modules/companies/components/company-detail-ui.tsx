@@ -82,10 +82,10 @@ export function CompanyLogo({ company }: { company: Company }) {
   const logo = normalizeLogo(company.logo);
 
   return (
-    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white text-sm font-bold text-primary shadow-sm">
+    <div className="flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-white text-sm font-bold text-primary shadow-sm">
       {logo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logo} alt={company.name} className="h-full w-full object-contain" />
+        <img src={logo} alt={company.name} className="h-full w-full object-cover" />
       ) : (
         getCompanyMark(company.name)
       )}

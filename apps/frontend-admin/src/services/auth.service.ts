@@ -1,14 +1,22 @@
-import { http } from "./http";
+﻿import {
+  clearAccessToken,
+  setAuthPersistence,
+  setAccessToken,
+  setStoredUser,
+} from "@/lib/auth-token";
+import { http } from "@/services/http";
+import type { ApiSuccess } from "@/types/api";
 
-export interface CurrentUser {
-  id: string | number;
-  roleId?: string | number;
-  role?: string;
+export type AuthUser = {
+  id: number | string;
   email: string;
   fullName: string;
-  phone?: string | null;
+  role?: string;
   avatar?: string | null;
-}
+  phone?: string | null;
+};
+
+export type CurrentUser = AuthUser;
 
 export interface CurrentUserResponse {
   success: boolean;
@@ -16,48 +24,63 @@ export interface CurrentUserResponse {
   data: CurrentUser;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    accessToken: string;
-    expiresIn?: number;
-    user: CurrentUser;
-  };
-}
+export type LoginBody = {
+  email: string;
+  password: string;
+};
 
-export interface RefreshTokenResponse {
-  success: boolean;
-  message: string;
-  data: {
-    accessToken: string;
-    expiresIn: number;
-  };
-}
+export type AuthSession = {
+  accessToken: string;
+  expiresIn: number;
+  user: AuthUser;
+};
+
+export type AccessTokenData = {
+  accessToken: string;
+  expiresIn: number;
+};
+
+const saveSession = (session: AuthSession, remember = false) => {
+  setAuthPersistence(remember);
+  setAccessToken(session.accessToken);
+  setStoredUser(session.user);
+};
 
 export const authApi = {
   getMe: async () => {
     return http<CurrentUserResponse>("/users/me");
   },
 
-  login: async (input: { email: string; password: string }) => {
-    return http<LoginResponse>("/login", {
+  login: async (body: LoginBody, options?: { remember?: boolean }) => {
+    const response = await http<ApiSuccess<AuthSession>>("/login", {
       method: "POST",
-      body: input,
+      body,
       skipAuth: true,
     });
-  },
-
-  refresh: async () => {
-    return http<RefreshTokenResponse>("/refresh-token", {
-      method: "POST",
-      skipAuth: true,
-    });
+    if (response && response.data) {
+      saveSession(response.data, options?.remember);
+    }
+    return response;
   },
 
   logout: async () => {
-    return http<{ success: boolean; message: string }>("/logout", {
+    try {
+      return await http<ApiSuccess<Record<string, never>>>("/logout", {
+        method: "POST",
+      });
+    } finally {
+      clearAccessToken();
+    }
+  },
+
+  refresh: async () => {
+    const response = await http<ApiSuccess<AccessTokenData>>("/refresh-token", {
       method: "POST",
+      skipAuth: true,
     });
+    if (response && response.data) {
+      setAccessToken(response.data.accessToken);
+    }
+    return response;
   },
 };

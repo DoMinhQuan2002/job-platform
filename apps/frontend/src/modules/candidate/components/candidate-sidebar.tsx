@@ -2,19 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
+  Camera,
   FileText,
   Headphones,
   LayoutDashboard,
+  Loader2,
   Send,
   Settings,
+  Trash2,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/utils";
+import { notificationsApi } from "@/modules/notifications/api";
 import { calculateProfileCompletion } from "../lib/completion";
 import type { CandidateProfile } from "../types";
 import { ProfileCard } from "./profile-card";
@@ -24,30 +29,75 @@ type CandidateSidebarProps = {
   profile: CandidateProfile | null;
   displayName?: string;
   avatarUrl?: string | null;
+  avatarUploading?: boolean;
+  onAvatarSelect?: (file: File) => void;
+  onAvatarRemove?: () => void;
 };
 
-const navItems = [
-  { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
-  { href: ROUTES.candidate.profile, label: "Thông tin tài khoản", icon: User, disabled: true },
-  { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
-  { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
-  { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
-  { href: "#", label: "Thông báo", icon: Bell, badge: 5, disabled: true },
-  { href: "#", label: "Cài đặt tài khoản", icon: Settings, disabled: true, divider: true },
-];
+function buildNavItems(unreadCount: number) {
+  return [
+    { href: ROUTES.candidate.profile, label: "Tổng quan hồ sơ", icon: LayoutDashboard },
+    { href: ROUTES.resume.root, label: "Quản lý CV", icon: FileText },
+    { href: ROUTES.applications.root, label: "Đơn ứng tuyển", icon: Send },
+    { href: ROUTES.applications.savedJobs, label: "Việc đã lưu", icon: Bookmark },
+    {
+      href: ROUTES.notifications.root,
+      label: "Thông báo",
+      icon: Bell,
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+    { href: ROUTES.candidate.account, label: "Cài đặt tài khoản", icon: Settings, divider: true },
+  ];
+}
+
+/** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
+function useUnreadNotificationCount(): number {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = () => {
+      notificationsApi
+        .unreadCount()
+        .then((res) => {
+          if (!cancelled) setCount(res.data.unreadCount);
+        })
+        .catch(() => {
+          // Bỏ qua — badge chỉ là tiện ích hiển thị, không chặn sidebar.
+        });
+    };
+
+    refresh();
+    const interval = setInterval(refresh, 30_000);
+    window.addEventListener("jp-notifications-change", refresh);
+    window.addEventListener("jp-auth-change", refresh);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("jp-notifications-change", refresh);
+      window.removeEventListener("jp-auth-change", refresh);
+    };
+  }, []);
+
+  return count;
+}
+
+const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 
 function isNavActive(pathname: string, href: string, label: string): boolean {
   if (href === ROUTES.candidate.profile) {
     return label === "Tổng quan hồ sơ" && pathname.startsWith(ROUTES.candidate.profile);
   }
-  if (href === ROUTES.applications.root) {
-    return (
-      pathname === ROUTES.applications.root ||
-      /^\/candidate\/applications\/[^/]+$/.test(pathname)
-    );
-  }
   if (href === ROUTES.applications.savedJobs) {
     return pathname.startsWith(ROUTES.applications.savedJobs);
+  }
+  if (href === ROUTES.applications.root) {
+    return (
+      pathname.startsWith(ROUTES.applications.root) &&
+      !pathname.startsWith(ROUTES.applications.savedJobs)
+    );
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -56,23 +106,81 @@ export function CandidateSidebar({
   profile,
   displayName = "Ứng viên",
   avatarUrl,
+  avatarUploading = false,
+  onAvatarSelect,
+  onAvatarRemove,
 }: CandidateSidebarProps) {
   const pathname = usePathname();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const completion = profile ? calculateProfileCompletion(profile) : 0;
   const name = displayName?.trim() || "Ứng viên";
+  const canEditAvatar = Boolean(onAvatarSelect);
+  const unreadCount = useUnreadNotificationCount();
+  const navItems = buildNavItems(unreadCount);
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-[280px]">
       <ProfileCard className="flex flex-col items-center px-6 pb-6 pt-6 text-center">
-        <div className="relative mb-4">
-          <div className="flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#f2f3fc] shadow-sm">
+        <div className="relative mb-4 size-24 shrink-0">
+          <div className="size-full overflow-hidden rounded-full bg-[#f2f3fc] ring-4 ring-white">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={name} className="size-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt={name}
+                width={96}
+                height={96}
+                decoding="async"
+                className="size-full object-cover"
+              />
             ) : (
-              <User className="size-10 text-muted-foreground" />
+              <div className="flex size-full items-center justify-center">
+                <User className="size-10 text-muted-foreground" />
+              </div>
             )}
+            {avatarUploading ? (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                <Loader2 className="size-6 animate-spin text-white" />
+              </div>
+            ) : null}
           </div>
+
+          {canEditAvatar ? (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={AVATAR_ACCEPT}
+                className="sr-only"
+                disabled={avatarUploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) onAvatarSelect?.(file);
+                }}
+              />
+              <button
+                type="button"
+                disabled={avatarUploading}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Đổi ảnh đại diện"
+                className="absolute -bottom-0.5 -right-0.5 flex size-8 items-center justify-center rounded-full border border-[#c5cbe0] bg-white text-[#0045b2] shadow-[0_1px_3px_rgba(0,69,178,0.12)] transition hover:bg-[#f5f7ff] disabled:opacity-60"
+              >
+                <Camera className="size-4" strokeWidth={1.75} absoluteStrokeWidth />
+              </button>
+              {avatarUrl && onAvatarRemove ? (
+                <button
+                  type="button"
+                  disabled={avatarUploading}
+                  onClick={onAvatarRemove}
+                  aria-label="Xóa ảnh đại diện"
+                  className="absolute -bottom-0.5 -left-0.5 flex size-8 items-center justify-center rounded-full border border-[#c5cbe0] bg-white text-muted-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)] transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
+                >
+                  <Trash2 className="size-3.5" strokeWidth={1.75} absoluteStrokeWidth />
+                </button>
+              ) : null}
+            </>
+          ) : null}
         </div>
         <h3 className="text-lg font-semibold text-foreground">{name}</h3>
         <p className="mt-1 text-xs font-semibold text-[#0045b2]">Ứng viên</p>
@@ -89,7 +197,7 @@ export function CandidateSidebar({
         <nav className="py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = !item.disabled && isNavActive(pathname, item.href, item.label);
+            const isActive = isNavActive(pathname, item.href, item.label);
 
             const content = (
               <span
@@ -98,7 +206,6 @@ export function CandidateSidebar({
                   isActive
                     ? "border-[#0045b2] bg-[rgba(179,197,255,0.2)] text-[#0045b2]"
                     : "border-transparent text-muted hover:bg-muted/30",
-                  item.disabled && "pointer-events-none opacity-60",
                 )}
               >
                 <span className="flex items-center gap-3">
@@ -116,7 +223,7 @@ export function CandidateSidebar({
             return (
               <div key={item.label}>
                 {item.divider ? <div className="my-1 border-t border-border/50" /> : null}
-                {item.disabled ? content : <Link href={item.href}>{content}</Link>}
+                <Link href={item.href}>{content}</Link>
               </div>
             );
           })}
@@ -131,7 +238,18 @@ export function CandidateSidebar({
         <p className="text-sm leading-5 text-muted">
           Đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn.
         </p>
-        <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-primary text-primary hover:bg-primary/5"
+          onClick={() => {
+            const newsletter = document.getElementById("footer-newsletter");
+            newsletter?.scrollIntoView({ behavior: "smooth", block: "center" });
+            window.setTimeout(() => {
+              document.getElementById("footer-email")?.focus();
+            }, 400);
+          }}
+        >
           Liên hệ hỗ trợ
         </Button>
       </ProfileCard>

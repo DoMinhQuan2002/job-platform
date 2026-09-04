@@ -3,7 +3,9 @@ import type { ApiSuccess } from "@/types/api";
 import type {
   AccountUser,
   CandidateProfile,
+  ChangePasswordInput,
   Education,
+  UpdateAccountInput,
   UpdateCandidateProfileInput,
   WorkExperience,
 } from "./types";
@@ -11,6 +13,24 @@ import type {
 export const candidateApi = {
   /** G1 account — fullName / avatar (không lẫn vào PUT /candidates/me) */
   getAccountMe: () => http<ApiSuccess<AccountUser>>("/users/me"),
+
+  updateAccountMe: (body: UpdateAccountInput) =>
+    http<ApiSuccess<AccountUser>>("/users/me", { method: "PATCH", body }),
+
+  uploadAvatar: (file: File) => {
+    const body = new FormData();
+    body.append("avatar", file);
+    return http<ApiSuccess<{ avatar: string }>>("/users/me/avatar", {
+      method: "POST",
+      body,
+    });
+  },
+
+  deleteAvatar: () =>
+    http<ApiSuccess<{ avatar: null }>>("/users/me/avatar", { method: "DELETE" }),
+
+  changePassword: (body: ChangePasswordInput) =>
+    http<ApiSuccess<null>>("/users/me/password", { method: "PATCH", body }),
 
   getMe: () => http<ApiSuccess<CandidateProfile>>("/candidates/me"),
 

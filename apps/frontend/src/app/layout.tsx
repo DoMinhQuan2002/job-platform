@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { AppChrome } from "@/components/layout/app-chrome";
+import { GoogleAuthProvider } from "@/components/providers/google-auth-provider";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -26,7 +27,9 @@ export default function RootLayout({
     <html lang="vi" className={`${beVietnamPro.variable} h-full antialiased`}>
 
       <body className="min-h-full flex flex-col">
-        <AppChrome>{children}</AppChrome>
+        <GoogleAuthProvider>
+          <AppChrome>{children}</AppChrome>
+        </GoogleAuthProvider>
         <Toaster position="top-right" richColors />
       </body>
     </html>
