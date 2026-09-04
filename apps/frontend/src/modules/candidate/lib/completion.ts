@@ -8,7 +8,7 @@ export function calculateProfileCompletion(profile: CandidateProfile): number {
     profile.workExperiences.length > 0,
     profile.skills.length > 0,
     profile.languages.length > 0,
-    profile.certificates.length > 0,
+    // profile.certificates.length > 0,
   ];
 
   const filled = checks.filter(Boolean).length;

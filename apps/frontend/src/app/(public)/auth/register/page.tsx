@@ -427,3 +427,20 @@ function RoleOption({
     </label>
   );
 }
+
+export function RegisterSkeleton() {
+  return (
+    <div
+      className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12"
+      aria-busy="true"
+      aria-label="Đang tải trang đăng ký"
+    >
+      <section className="hidden min-h-[640px] flex-col pb-8 pt-8 lg:flex" aria-hidden="true">
+        <div className="skeleton h-[640px] w-full rounded-2xl" />
+      </section>
+      <section className="w-full max-w-lg justify-self-end" aria-hidden="true">
+        <div className="skeleton h-[640px] w-full rounded-2xl" />
+      </section>
+    </div>
+  );
+}
