@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin", "vietnamese"],
@@ -19,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" className={`${hankenGrotesk.variable} h-full antialiased`}>
       <body className="h-full antialiased bg-[#f8fafc] text-slate-900 font-sans">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -26,6 +26,7 @@ export const companiesApi1 = {
     if (query.limit) params.set("limit", String(query.limit));
     if (query.search?.trim()) params.set("search", query.search.trim());
     if (query.companySize) params.set("companySize", query.companySize);
+    if (query.sort) params.set("sort", query.sort);
 
     const qs = params.toString();
     return http<ApiSuccess<CompaniesResponse1>>(`/companies${qs ? `?${qs}` : ""}`, {

@@ -9,5 +9,7 @@ const statisticsRouter = Router();
 statisticsRouter.use(authenticate, requireAdmin);
 
 statisticsRouter.get("/", statisticsController.overview);
+statisticsRouter.get("/trends", statisticsController.trends);
 
 export default statisticsRouter;
+

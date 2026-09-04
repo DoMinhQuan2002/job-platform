@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Briefcase, Calendar, Plus } from "lucide-react";
+import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
+import { Button } from "@/components/ui/button";
 import { formatDateRange } from "../lib/format";
 import type { WorkExperience, WorkExperienceFormInput } from "../types";
 import { ExperienceFormModal } from "./experience-form-modal";
@@ -27,6 +28,7 @@ export function ExperienceSection({
 }: ExperienceSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WorkExperience | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WorkExperience | null>(null);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -94,11 +96,7 @@ export function ExperienceSection({
                 )}
                 <ItemActions
                   onEdit={() => openEdit(item)}
-                  onDelete={() => {
-                    if (window.confirm("Xóa kinh nghiệm này?")) {
-                      void onDelete(item.id);
-                    }
-                  }}
+                  onDelete={() => setDeleteTarget(item)}
                   deleting={saving}
                 />
               </li>
@@ -114,6 +112,30 @@ export function ExperienceSection({
         onClose={closeModal}
         onCreate={onCreate}
         onUpdate={onUpdate}
+      />
+
+      <AppAlertDialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        tone="error"
+        title="Xóa kinh nghiệm?"
+        description={
+          <>
+            Bạn sắp xóa kinh nghiệm tại{" "}
+            <span className="font-medium text-foreground">
+              {deleteTarget?.companyName ?? ""}
+            </span>
+            . Hành động này không thể hoàn tác.
+          </>
+        }
+        cancelLabel="Hủy"
+        confirmLabel="Xóa"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await onDelete(deleteTarget.id);
+        }}
       />
     </>
   );

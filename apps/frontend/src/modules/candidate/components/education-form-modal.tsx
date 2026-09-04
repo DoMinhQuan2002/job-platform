@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toDateInputValue, todayDateInputValue } from "../lib/format";
+import { validateDateRange, type DateRangeErrors } from "../lib/date-range";
+import { toDateInputValue } from "../lib/format";
 import type { Education, EducationFormInput } from "../types";
+import { DateRangeFields } from "./date-range-fields";
 import {
   FormFieldError,
   FormLabel,
@@ -38,9 +40,7 @@ const DESCRIPTION_MAX = 500;
 
 type EducationErrors = {
   school?: string;
-  startDate?: string;
-  endDate?: string;
-};
+} & DateRangeErrors;
 
 type EducationFormModalProps = {
   open: boolean;
@@ -82,54 +82,14 @@ export function EducationFormModal({
     setForm(emptyForm);
   }, [open, editingItem]);
 
-  const today = todayDateInputValue();
-
-  const validateDates = (
-    startDate: string,
-    endDate: string | null | undefined,
-    isCurrent: boolean | undefined,
-  ): Pick<EducationErrors, "startDate" | "endDate"> => {
-    const next: Pick<EducationErrors, "startDate" | "endDate"> = {};
-
-    if (startDate && startDate > today) {
-      next.startDate = "Ngày bắt đầu không được ở tương lai";
-    }
-    if (!isCurrent && endDate && startDate && endDate < startDate) {
-      next.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
-    } else if (!isCurrent && endDate && endDate > today) {
-      next.endDate = "Ngày kết thúc không được ở tương lai";
-    }
-
-    return next;
-  };
-
   const validate = (): EducationErrors => {
     const next: EducationErrors = {
-      ...validateDates(form.startDate, form.endDate, form.isCurrent),
+      ...validateDateRange(form.startDate, form.endDate, form.isCurrent, {
+        requireStart: true,
+      }),
     };
-
     if (!form.school.trim()) next.school = "Vui lòng nhập tên trường";
-    if (!form.startDate) next.startDate = "Vui lòng chọn ngày bắt đầu";
-
     return next;
-  };
-
-  const handleStartDateChange = (startDate: string) => {
-    setForm({ ...form, startDate });
-    const dateErrors = validateDates(startDate, form.endDate, form.isCurrent);
-    setErrors({
-      ...errors,
-      startDate: dateErrors.startDate,
-      endDate: dateErrors.endDate,
-    });
-  };
-
-  const handleEndDateChange = (endDate: string | null) => {
-    setForm({ ...form, endDate });
-    setErrors({
-      ...errors,
-      endDate: validateDates(form.startDate, endDate, form.isCurrent).endDate,
-    });
   };
 
   const handleSubmit = async () => {
@@ -211,57 +171,26 @@ export function EducationFormModal({
           </select>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-1">
-            <FormLabel required htmlFor="edu-start">
-              Ngày bắt đầu
-            </FormLabel>
-            <input
-              id="edu-start"
-              type="date"
-              max={today}
-              value={form.startDate}
-              aria-invalid={Boolean(errors.startDate)}
-              onChange={(event) => handleStartDateChange(event.target.value)}
-              onBlur={() => {
-                if (!form.startDate) {
-                  setErrors({ ...errors, startDate: "Vui lòng chọn ngày bắt đầu" });
-                }
-              }}
-              className={fieldClassName(formInputClassName, Boolean(errors.startDate))}
-            />
-            <FormFieldError message={errors.startDate} />
-          </div>
-          <div className="space-y-1">
-            <FormLabel htmlFor="edu-end">Ngày kết thúc</FormLabel>
-            <input
-              id="edu-end"
-              type="date"
-              disabled={form.isCurrent}
-              min={form.startDate || undefined}
-              max={today}
-              value={form.endDate ?? ""}
-              aria-invalid={Boolean(errors.endDate)}
-              onChange={(event) =>
-                handleEndDateChange(event.target.value || null)
-              }
-              className={fieldClassName(formInputClassName, Boolean(errors.endDate))}
-            />
-            <FormFieldError message={errors.endDate} />
-          </div>
-        </div>
-
-        <label className="flex items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={form.isCurrent ?? false}
-            onChange={(event) => {
-              setForm({ ...form, isCurrent: event.target.checked, endDate: null });
-              setErrors({ ...errors, endDate: undefined });
-            }}
-          />
-          Đang học
-        </label>
+        <DateRangeFields
+          idPrefix="edu"
+          startDate={form.startDate}
+          endDate={form.endDate ?? null}
+          isCurrent={form.isCurrent ?? false}
+          currentLabel="Đang học"
+          errors={{ startDate: errors.startDate, endDate: errors.endDate }}
+          onStartDateChange={(startDate) => setForm({ ...form, startDate })}
+          onEndDateChange={(endDate) => setForm({ ...form, endDate })}
+          onIsCurrentChange={(isCurrent) =>
+            setForm({ ...form, isCurrent, endDate: null })
+          }
+          onErrorsChange={(dateErrors) =>
+            setErrors({
+              ...errors,
+              startDate: dateErrors.startDate,
+              endDate: dateErrors.endDate,
+            })
+          }
+        />
 
         <div className="space-y-1">
           <FormLabel htmlFor="edu-description">Mô tả thêm</FormLabel>
