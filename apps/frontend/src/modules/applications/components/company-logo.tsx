@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, resolveStorageUrl } from "@/lib/utils";
 
 export function getCompanyInitials(name: string): string {
   if (!name) return "JP";
@@ -39,14 +39,7 @@ export function CompanyLogo({
   imageClassName = "size-full object-contain",
 }: CompanyLogoProps) {
   const [failed, setFailed] = useState(false);
-  const logoSrc =
-    src &&
-    (src.startsWith("http://") ||
-      src.startsWith("https://") ||
-      src.startsWith("/") ||
-      src.startsWith("data:image/"))
-      ? src
-      : undefined;
+  const logoSrc = resolveStorageUrl(src);
 
   return (
     <div

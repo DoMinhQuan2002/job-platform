@@ -11,6 +11,7 @@ import { jobsApi } from "@/modules/jobs/api";
 import type { Job, JobFilters } from "@/modules/jobs/types";
 import { ROUTES } from "@/constants/routes";
 import { getAccessToken, getAccessTokenRole } from "@/lib/auth-token";
+import { resolveStorageUrl } from "@/lib/utils";
 
 const latestJobFilters: JobFilters = {
   keyword: "",
@@ -27,10 +28,7 @@ const latestJobFilters: JobFilters = {
 };
 function CompactCompanyLogo({ company }: { company: Job["company"] }) {
   const [failed, setFailed] = useState(false);
-  const logo = company?.logo;
-  const logoSrc = logo && (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/"))
-    ? logo
-    : undefined;
+  const logoSrc = resolveStorageUrl(company?.logo);
 
   if (logoSrc && !failed) {
     return (

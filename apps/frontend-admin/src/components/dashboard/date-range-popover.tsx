@@ -75,6 +75,13 @@ export function DateRangePopover({
     tempFromDate && tempToDate && tempFromDate > tempToDate
   );
 
+const toLocalDateString = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
   const handleQuickPreset = (preset: "today" | "7days" | "30days", days: number) => {
     setSelectedPreset(preset);
     const end = new Date();
@@ -82,21 +89,20 @@ export function DateRangePopover({
     if (days > 0) {
       start.setDate(end.getDate() - days);
     }
-    setTempFromDate(start.toISOString().split("T")[0]);
-    setTempToDate(end.toISOString().split("T")[0]);
+    setTempFromDate(toLocalDateString(start));
+    setTempToDate(toLocalDateString(end));
   };
 
   const handleThisMonthPreset = () => {
     setSelectedPreset("thisMonth");
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    setTempFromDate(firstDay.toISOString().split("T")[0]);
-    setTempToDate(now.toISOString().split("T")[0]);
+    setTempFromDate(toLocalDateString(firstDay));
+    setTempToDate(toLocalDateString(now));
   };
 
   const handleClearDates = () => {
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
+    const todayStr = toLocalDateString(new Date());
     setTempFromDate(todayStr);
     setTempToDate(todayStr);
     setSelectedPreset("today");

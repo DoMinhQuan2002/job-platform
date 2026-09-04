@@ -179,10 +179,12 @@ export const statisticsService = {
     const { range, fromDate, toDate } = query;
 
     if (fromDate && toDate) {
-      const isSameDay = fromDate === toDate;
+      const fDate = fromDate.slice(0, 10);
+      const tDate = toDate.slice(0, 10);
+      const isSameDay = fDate === tDate;
 
       if (isSameDay) {
-        // Cùng 1 ngày (ví dụ Hôm nay), hiển thị theo các mốc giờ trong ngày
+        // Cùng 1 ngày (Hôm nay): 12 mốc 2 giờ (00:00 -> 22:00) theo múi giờ Việt Nam (UTC+7)
         const rows = await AppDataSource.query<
           Array<{
             date: string;
@@ -192,39 +194,45 @@ export const statisticsService = {
           }>
         >(
           `
-          WITH hours AS (
+          WITH slots AS (
             SELECT generate_series(
-              date_trunc('day', $1::timestamptz),
-              date_trunc('day', $1::timestamptz) + interval '22 hours',
+              ($1 || ' 00:00:00+07')::timestamptz,
+              ($1 || ' 00:00:00+07')::timestamptz + interval '22 hours',
               interval '2 hours'
-            ) AS hour
+            ) AS slot_start
           ),
           job_counts AS (
-            SELECT date_trunc('hour', created_at) AS hour, COUNT(*) AS count
-            FROM jobs
-            WHERE created_at >= date_trunc('day', $1::timestamptz)
-              AND created_at < date_trunc('day', $1::timestamptz) + interval '1 day'
-              AND deleted_at IS NULL
-            GROUP BY 1
+            SELECT 
+              s.slot_start,
+              COUNT(j.id) AS count
+            FROM slots s
+            LEFT JOIN jobs j 
+              ON j.created_at >= s.slot_start 
+             AND j.created_at < s.slot_start + interval '2 hours'
+             AND j.deleted_at IS NULL
+            GROUP BY s.slot_start
           ),
           app_counts AS (
-            SELECT date_trunc('hour', created_at) AS hour, COUNT(*) AS count
-            FROM applications
-            WHERE created_at >= date_trunc('day', $1::timestamptz)
-              AND created_at < date_trunc('day', $1::timestamptz) + interval '1 day'
-            GROUP BY 1
+            SELECT 
+              s.slot_start,
+              COUNT(a.id) AS count
+            FROM slots s
+            LEFT JOIN applications a 
+              ON a.created_at >= s.slot_start 
+             AND a.created_at < s.slot_start + interval '2 hours'
+            GROUP BY s.slot_start
           )
           SELECT
-            to_char(h.hour, 'YYYY-MM-DD HH24:MI') AS date,
-            to_char(h.hour, 'HH24:MI') AS "formattedDate",
+            to_char(s.slot_start AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') AS date,
+            to_char(s.slot_start AT TIME ZONE 'Asia/Ho_Chi_Minh', 'HH24:MI') AS "formattedDate",
             COALESCE(j.count, 0)::int AS jobs,
             COALESCE(a.count, 0)::int AS applications
-          FROM hours h
-          LEFT JOIN job_counts j ON j.hour = h.hour
-          LEFT JOIN app_counts a ON a.hour = h.hour
-          ORDER BY h.hour ASC;
+          FROM slots s
+          LEFT JOIN job_counts j ON j.slot_start = s.slot_start
+          LEFT JOIN app_counts a ON a.slot_start = s.slot_start
+          ORDER BY s.slot_start ASC;
           `,
-          [fromDate],
+          [fDate],
         );
 
         return rows.map((r) => ({
@@ -235,7 +243,7 @@ export const statisticsService = {
         }));
       }
 
-      // Khoảng ngày từ fromDate đến toDate
+      // Khoảng ngày từ fromDate đến toDate theo múi giờ Việt Nam
       const rows = await AppDataSource.query<
         Array<{
           date: string;
@@ -247,37 +255,43 @@ export const statisticsService = {
         `
         WITH dates AS (
           SELECT generate_series(
-            date_trunc('day', $1::timestamptz),
-            date_trunc('day', $2::timestamptz),
+            ($1 || ' 00:00:00+07')::timestamptz,
+            ($2 || ' 00:00:00+07')::timestamptz,
             interval '1 day'
-          )::date AS day
+          ) AS day_start
         ),
         job_counts AS (
-          SELECT date_trunc('day', created_at)::date AS day, COUNT(*) AS count
-          FROM jobs
-          WHERE created_at >= date_trunc('day', $1::timestamptz)
-            AND created_at <= date_trunc('day', $2::timestamptz) + interval '1 day' - interval '1 millisecond'
-            AND deleted_at IS NULL
-          GROUP BY 1
+          SELECT 
+            d.day_start,
+            COUNT(j.id) AS count
+          FROM dates d
+          LEFT JOIN jobs j 
+            ON j.created_at >= d.day_start 
+           AND j.created_at < d.day_start + interval '1 day'
+           AND j.deleted_at IS NULL
+          GROUP BY d.day_start
         ),
         app_counts AS (
-          SELECT date_trunc('day', created_at)::date AS day, COUNT(*) AS count
-          FROM applications
-          WHERE created_at >= date_trunc('day', $1::timestamptz)
-            AND created_at <= date_trunc('day', $2::timestamptz) + interval '1 day' - interval '1 millisecond'
-          GROUP BY 1
+          SELECT 
+            d.day_start,
+            COUNT(a.id) AS count
+          FROM dates d
+          LEFT JOIN applications a 
+            ON a.created_at >= d.day_start 
+           AND a.created_at < d.day_start + interval '1 day'
+          GROUP BY d.day_start
         )
         SELECT
-          to_char(d.day, 'YYYY-MM-DD') AS date,
-          to_char(d.day, 'DD/MM') AS "formattedDate",
+          to_char(d.day_start AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') AS date,
+          to_char(d.day_start AT TIME ZONE 'Asia/Ho_Chi_Minh', 'DD/MM') AS "formattedDate",
           COALESCE(j.count, 0)::int AS jobs,
           COALESCE(a.count, 0)::int AS applications
         FROM dates d
-        LEFT JOIN job_counts j ON j.day = d.day
-        LEFT JOIN app_counts a ON a.day = d.day
-        ORDER BY d.day ASC;
+        LEFT JOIN job_counts j ON j.day_start = d.day_start
+        LEFT JOIN app_counts a ON a.day_start = d.day_start
+        ORDER BY d.day_start ASC;
         `,
-        [fromDate, toDate],
+        [fDate, tDate],
       );
 
       return rows.map((r) => ({
@@ -306,22 +320,22 @@ export const statisticsService = {
       `
       WITH dates AS (
         SELECT generate_series(
-          date_trunc('day', CURRENT_TIMESTAMP - ($1::int - 1) * interval '1 day'),
-          date_trunc('day', CURRENT_TIMESTAMP),
+          date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Ho_Chi_Minh') - ($1::int - 1) * interval '1 day',
+          date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Ho_Chi_Minh'),
           interval '1 day'
         )::date AS day
       ),
       job_counts AS (
-        SELECT date_trunc('day', created_at)::date AS day, COUNT(*) AS count
+        SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS day, COUNT(*) AS count
         FROM jobs
-        WHERE created_at >= date_trunc('day', CURRENT_TIMESTAMP - ($1::int - 1) * interval '1 day')
+        WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - ($1::int - 1)
           AND deleted_at IS NULL
         GROUP BY 1
       ),
       app_counts AS (
-        SELECT date_trunc('day', created_at)::date AS day, COUNT(*) AS count
+        SELECT (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date AS day, COUNT(*) AS count
         FROM applications
-        WHERE created_at >= date_trunc('day', CURRENT_TIMESTAMP - ($1::int - 1) * interval '1 day')
+        WHERE (created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - ($1::int - 1)
         GROUP BY 1
       )
       SELECT

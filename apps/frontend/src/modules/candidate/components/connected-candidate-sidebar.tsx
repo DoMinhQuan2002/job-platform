@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { candidateApi } from "../api";
+import { getStoredUser, setStoredUser } from "@/lib/auth-token";
 import { useCandidateSidebarData } from "../hooks/use-candidate-sidebar-data";
 import type { CandidateProfile } from "../types";
 import { CandidateSidebar } from "./candidate-sidebar";
@@ -57,6 +58,13 @@ export function ConnectedCandidateSidebar({
   const applyAvatar = (url: string | null) => {
     setLocalAvatar(url);
     onAvatarUpdated?.(url);
+    const stored = getStoredUser();
+    if (stored) {
+      setStoredUser({
+        ...stored,
+        avatar: url,
+      });
+    }
   };
 
   const handleAvatarSelect = async (file: File) => {

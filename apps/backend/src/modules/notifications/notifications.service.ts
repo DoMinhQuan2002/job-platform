@@ -1,6 +1,7 @@
 import { Between, In, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import { AppDataSource } from "@/data-source";
 import { AppError } from "@/common/errors/app-error";
+import { ASSET_TYPE, storageService } from "@/common/storage";
 import { ApplicationEntity } from "@/database/entities/application.entity";
 import { NotificationEntity } from "@/database/entities/notification.entity";
 import { ListQuery } from "./notifications.validation";
@@ -55,7 +56,11 @@ const loadJobInfo = async (notification: NotificationEntity): Promise<Notificati
     salaryMin: job.salaryMin,
     salaryMax: job.salaryMax,
     isNegotiable: job.isNegotiable,
-    company: { id: job.company.id, name: job.company.name, logo: job.company.logo },
+    company: {
+      id: job.company.id,
+      name: job.company.name,
+      logo: storageService.resolvePublicUrl(job.company.logo, ASSET_TYPE.COMPANY_LOGO),
+    },
     applicationId: application.id,
     applicationStatus: application.status,
   };

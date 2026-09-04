@@ -10,6 +10,7 @@ export type StoredUser = {
   email: string;
   fullName: string;
   role?: string;
+  avatar?: string | null;
 };
 
 const notifyAuthChange = () => {

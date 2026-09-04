@@ -14,6 +14,7 @@ export type AuthUser = {
   email: string;
   fullName: string;
   role: string;
+  avatar?: string | null;
 };
 
 export type RegisterBody = {

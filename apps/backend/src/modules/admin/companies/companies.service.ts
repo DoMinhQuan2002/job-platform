@@ -3,6 +3,7 @@ import { AppError } from "@/common/errors/app-error";
 import { Company } from "@/database/entities/company.entity";
 import { Job } from "@/database/entities/job.entity";
 import { COMPANY_STATUS, CompanyStatusValue } from "@/common/constants/job";
+import { ASSET_TYPE, storageService } from "@/common/storage";
 import { notificationService } from "@/modules/notifications/notification.service";
 import { logService } from "@/modules/system-logs/log.service";
 import { ListQuery, StatusBody } from "./companies.validation";
@@ -30,7 +31,7 @@ const toListItem = (company: Company, totalJobs: number) => ({
   id: company.id,
   name: company.name,
   slug: company.slug,
-  logo: company.logo,
+  logo: storageService.resolvePublicUrl(company.logo, ASSET_TYPE.COMPANY_LOGO),
   email: company.email,
   phone: company.phone,
   taxCode: company.taxCode,

@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { AppError } from "../errors/app-error";
 import { getSupabaseClient, getSupabaseConfig } from "../../config/supabase";
 import {
+  ASSET_TYPE,
   DEFAULT_SIGNED_URL_EXPIRES_IN,
   extensionFor,
   getAssetSpec,
@@ -125,6 +126,20 @@ export const storageService = {
     }
 
     return { url: signedUrl, expiresIn, isPublic: false };
+  },
+
+  resolvePublicUrl(storagePath?: string | null, assetType: AssetType | string = ASSET_TYPE.COMPANY_LOGO): string | null {
+    if (!storagePath) return null;
+    if (/^https?:\/\//i.test(storagePath) || storagePath.startsWith("data:image/")) {
+      return storagePath;
+    }
+    try {
+      const spec = getAssetSpec(assetType);
+      const bucket = bucketFor(spec);
+      return getSupabaseClient().storage.from(bucket).getPublicUrl(storagePath).data.publicUrl;
+    } catch {
+      return storagePath;
+    }
   },
 
   async remove(storagePath: string, assetType: AssetType | string) {

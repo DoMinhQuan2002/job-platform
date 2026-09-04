@@ -1,6 +1,7 @@
 import { AppError } from "../../common/errors/app-error";
 import { sendOtpMail } from "../../common/mail/mailer";
 import { ROLES, type RoleValue } from "../../common/constants/roles";
+import { ASSET_TYPE, storageService } from "../../common/storage";
 import { ACCESS_TOKEN_TTL_SECONDS, signAccessToken } from "../../common/security/jwt";
 import { hashPassword, verifyPassword } from "../../common/security/password";
 import { generateOpaqueToken, sha256 } from "../../common/security/token";
@@ -48,6 +49,7 @@ export type PublicUser = {
   email: string;
   fullName: string;
   role: string;
+  avatar: string | null;
 };
 
 export type LoginResult = {
@@ -62,6 +64,7 @@ const toPublicUser = (user: UserEntity): PublicUser => ({
   email: user.email,
   fullName: user.fullName,
   role: user.role.name,
+  avatar: storageService.resolvePublicUrl(user.avatar, ASSET_TYPE.USER_AVATAR),
 });
 
 const findUserByEmail = (email: string) =>
