@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
     try {
       setLoadingTables(true);
       const [jobs, logs] = await Promise.all([
-        adminDashboardService.getRecentJobs(5),
+        adminDashboardService.getRecentJobs(7),
         adminDashboardService.getRecentLogs(5),
       ]);
       setRecentJobs(jobs);

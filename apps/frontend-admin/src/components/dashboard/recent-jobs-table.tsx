@@ -16,32 +16,32 @@ export function RecentJobsTable({ jobs, loading }: RecentJobsTableProps) {
       case "OPEN":
       case "APPROVED":
         return (
-          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-2xs font-medium text-emerald-700">
+          <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 whitespace-nowrap">
             Đang tuyển
           </span>
         );
       case "PENDING":
         return (
-          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-2xs font-medium text-amber-700">
+          <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 whitespace-nowrap">
             Chờ duyệt
           </span>
         );
       case "CLOSED":
       case "HIDDEN":
         return (
-          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-2xs font-medium text-slate-600">
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 whitespace-nowrap">
             Đã đóng
           </span>
         );
       case "REJECTED":
         return (
-          <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-2xs font-medium text-rose-700">
+          <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700 whitespace-nowrap">
             Bị từ chối
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-2xs font-medium text-slate-600">
+          <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 whitespace-nowrap">
             {status}
           </span>
         );
@@ -70,37 +70,41 @@ export function RecentJobsTable({ jobs, loading }: RecentJobsTableProps) {
           </h3>
           <Link
             href="/admin/jobs"
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline shrink-0"
           >
             Xem tất cả
           </Link>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="mt-4 overflow-hidden">
+          <table className="w-full table-fixed text-left text-xs">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400">
-                <th className="pb-3 font-medium">Tiêu đề</th>
-                <th className="pb-3 font-medium">Công ty</th>
-                <th className="pb-3 text-center font-medium">Trạng thái</th>
-                <th className="pb-3 text-right font-medium">Ngày đăng</th>
+                <th className="pb-3 pr-2 font-medium">Tiêu đề</th>
+                <th className="w-3/12 pb-3 px-2 font-medium">Công ty</th>
+                <th className="w-[100px] pb-3 px-2 text-center font-medium whitespace-nowrap">
+                  Trạng thái
+                </th>
+                <th className="w-[90px] pb-3 pl-2 text-right font-medium whitespace-nowrap">
+                  Ngày đăng
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                [1, 2, 3, 4, 5].map((i) => (
+                [1, 2, 3, 4, 5, 6, 7].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="py-3.5">
-                      <div className="h-3.5 w-36 rounded bg-slate-100" />
+                    <td className="py-3.5 pr-2">
+                      <div className="h-3.5 w-3/4 rounded bg-slate-100" />
                     </td>
-                    <td className="py-3.5">
-                      <div className="h-3.5 w-28 rounded bg-slate-100" />
+                    <td className="py-3.5 px-2">
+                      <div className="h-3.5 w-4/5 rounded bg-slate-100" />
                     </td>
-                    <td className="py-3.5 text-center">
-                      <div className="mx-auto h-5 w-16 rounded bg-slate-100" />
+                    <td className="py-3.5 px-2 text-center">
+                      <div className="mx-auto h-5 w-16 rounded-md bg-slate-100" />
                     </td>
-                    <td className="py-3.5 text-right">
-                      <div className="ml-auto h-3.5 w-20 rounded bg-slate-100" />
+                    <td className="py-3.5 pl-2 text-right">
+                      <div className="ml-auto h-3.5 w-16 rounded bg-slate-100" />
                     </td>
                   </tr>
                 ))
@@ -119,21 +123,27 @@ export function RecentJobsTable({ jobs, loading }: RecentJobsTableProps) {
                     key={job.id}
                     className="group transition-colors hover:bg-slate-50/60"
                   >
-                    <td className="py-3 font-medium text-slate-900">
+                    <td className="py-3 pr-2 font-medium text-slate-900">
                       <Link
                         href={`/admin/jobs/${job.id}`}
-                        className="hover:text-blue-600 hover:underline"
+                        className="block truncate hover:text-blue-600 hover:underline"
+                        title={job.title}
                       >
                         {job.title}
                       </Link>
                     </td>
-                    <td className="py-3 text-slate-500">
-                      {job.company?.name || "—"}
+                    <td className="py-3 px-2 text-slate-500">
+                      <span
+                        className="block truncate"
+                        title={job.company?.name || "—"}
+                      >
+                        {job.company?.name || "—"}
+                      </span>
                     </td>
-                    <td className="py-3 text-center">
+                    <td className="py-3 px-2 text-center whitespace-nowrap">
                       {getStatusBadge(job.status)}
                     </td>
-                    <td className="py-3 text-right text-slate-400">
+                    <td className="py-3 pl-2 text-right text-slate-400 whitespace-nowrap">
                       {formatDate(job.createdAt)}
                     </td>
                   </tr>
