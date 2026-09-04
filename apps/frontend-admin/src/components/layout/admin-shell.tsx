@@ -84,7 +84,6 @@ export function AdminShell({ children }: AdminShellProps) {
 
   const handleConfirmLogout = async () => {
     setIsLoggingOut(true);
-    setLogoutModalOpen(false);
     try {
       await logout();
     } catch {
@@ -93,13 +92,13 @@ export function AdminShell({ children }: AdminShellProps) {
     router.replace(ADMIN_ROUTES.login);
   };
 
-  // 1. Màn hình Chờ khi F5 hoặc lần đầu vào trang, hoặc khi đang xử lý đăng xuất
-  if (isLoading || isLoggingOut) {
+  // 1. Màn hình Chờ khi F5 hoặc lần đầu vào trang
+  if (isLoading) {
     return <AdminLayoutSkeleton />;
   }
 
-  // 2. Chưa xác thực hoặc không có quyền Admin
-  if (!isAuthenticated || currentUser?.role !== "ADMIN") {
+  // 2. Chưa xác thực hoặc không có quyền Admin (ngoại trừ khi đang trong luồng đăng xuất)
+  if ((!isAuthenticated || currentUser?.role !== "ADMIN") && !isLoggingOut) {
     return null;
   }
 

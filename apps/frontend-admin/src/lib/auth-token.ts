@@ -51,14 +51,14 @@ const setCookie = (name: string, value: string, maxAgeSeconds?: number) => {
 
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   const maxAge = maxAgeSeconds ? `; Max-Age=${maxAgeSeconds}` : "";
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${maxAge}${secure}`;
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Path=/; SameSite=Lax${maxAge}${secure}`;
 };
 
 const deleteCookie = (name: string) => {
   if (typeof document === "undefined") return;
 
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${encodeURIComponent(name)}=; Path=/; Max-Age=0; SameSite=Strict${secure}`;
+  document.cookie = `${encodeURIComponent(name)}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
   document.cookie = `${encodeURIComponent(name)}=; Path=/; Max-Age=0`;
 };
 

@@ -1,4 +1,4 @@
-﻿import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
+import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
 import {
   clearAccessToken,
   getAccessToken,
@@ -110,11 +110,8 @@ export const http = async <T>(
 
     if (!options.skipAuth) {
       let token = getAccessToken();
-      const isLogoutRequest = path === "/logout" || path.endsWith("/logout");
       if (!token || isTokenExpired(token)) {
-        if (!isLogoutRequest) {
-          token = await refreshAccessToken();
-        }
+        token = await refreshAccessToken();
       }
       if (token) {
         headers.Authorization = `Bearer ${token}`;

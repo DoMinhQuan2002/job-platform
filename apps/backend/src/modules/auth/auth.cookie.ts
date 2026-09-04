@@ -14,10 +14,18 @@ const isSecure = () =>
     ? process.env.COOKIE_SECURE === "true"
     : process.env.NODE_ENV === "production";
 
+const getSameSite = (): "strict" | "lax" | "none" => {
+  const envVal = (process.env.COOKIE_SAME_SITE || "").toLowerCase();
+  if (envVal === "lax" || envVal === "none" || envVal === "strict") {
+    return envVal;
+  }
+  return "strict";
+};
+
 const baseOptions = (): CookieOptions => ({
   httpOnly: true,
   secure: isSecure(),
-  sameSite: "strict",
+  sameSite: getSameSite(),
   path: COOKIE_PATH,
 });
 

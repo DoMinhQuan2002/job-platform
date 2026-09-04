@@ -12,6 +12,7 @@ const extractToken = (req: Request): string | undefined => {
   }
 
   const cookieToken =
+    req.cookies?.jp_admin_access_token ||
     req.cookies?.jp_access_token ||
     req.cookies?.accessToken ||
     req.cookies?.access_token ||

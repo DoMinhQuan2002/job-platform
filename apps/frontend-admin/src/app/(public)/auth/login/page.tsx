@@ -1,25 +1,25 @@
-﻿"use client";
+"use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BellRing,
   BriefcaseBusiness,
   Eye,
   EyeOff,
+  Info,
   LoaderCircle,
   LockKeyhole,
   Mail,
   UserRound,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, Suspense, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { ADMIN_ROUTES } from "@/constants/routes";
-import { authApi } from "@/services/auth.service";
-import { clearAccessToken } from "@/lib/auth-token";
+import { useAuth } from "@/contexts/auth-context";
 import { loginSchema, type LoginFormValues } from "./login.schema";
 
 const features = [
@@ -43,10 +43,28 @@ const features = [
 const inputClassName =
   "h-12 w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-3 text-sm text-text outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 aria-invalid:border-danger aria-invalid:ring-danger/15";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
+  const { login, isAuthenticated, isLoading } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  const reasonMessage =
+    reason === "session_expired"
+      ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+      : reason === "unauthorized"
+      ? "Bạn cần đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục."
+      : "";
+
+  // Nếu đã đăng nhập thành công là ADMIN, tự động chuyển hướng vào Dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace(ADMIN_ROUTES.dashboard);
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const {
     register,
@@ -60,18 +78,14 @@ export default function LoginPage() {
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError("");
     try {
-      const response = await authApi.login(
+      const res = await login(
         { email: values.email.trim(), password: values.password },
         { remember: values.rememberMe },
       );
 
-      const user = response.data.user;
-
-      // Chỉ cho phép tài khoản có vai trò ADMIN truy cập
-      if (user.role !== "ADMIN") {
-        clearAccessToken();
+      if (!res.success) {
         setSubmitError(
-          "Tài khoản của bạn không có quyền truy cập vào cổng Quản trị viên (Admin). Vui lòng đăng nhập bằng tài khoản Quản trị.",
+          res.message || "Không thể đăng nhập lúc này. Vui lòng thử lại.",
         );
         return;
       }
@@ -102,7 +116,7 @@ export default function LoginPage() {
             bứt phá <span className="text-primary">sự nghiệp</span>
           </h1>
           <p className="mb-10 max-w-md leading-relaxed text-muted">
-            Hàng ngàn việc làm từ các công ty uy tín đang chờ ứng viên như bạn.
+            Hệ thống Quản trị Việc làm & Tuyển dụng Job Platform.
           </p>
           <ul className="space-y-7">
             {features.map(({ icon: Icon, title, description }) => (
@@ -131,9 +145,16 @@ export default function LoginPage() {
               Đăng nhập
             </h1>
             <p className="mt-2 text-base text-muted">
-              Giao diện đăng nhập trang admin
+              Giao diện đăng nhập trang Quản trị viên
             </p>
           </header>
+
+          {reasonMessage && !submitError && (
+            <div className="mb-5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800">
+              <Info className="size-4 shrink-0 text-amber-600" />
+              <span>{reasonMessage}</span>
+            </div>
+          )}
 
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -196,14 +217,14 @@ export default function LoginPage() {
             <Button
               type="submit"
               size="lg"
-              className="h-12 w-full rounded-xl bg-primary text-base font-semibold text-white shadow-none hover:bg-primary-hover cursor-pointer"
+              className="w-full text-base font-semibold cursor-pointer"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <>
-                  <LoaderCircle className="animate-spin" aria-hidden="true" />
+                <span className="inline-flex items-center gap-2">
+                  <LoaderCircle className="size-4 animate-spin" />
                   Đang đăng nhập...
-                </>
+                </span>
               ) : (
                 "Đăng nhập"
               )}
@@ -217,13 +238,22 @@ export default function LoginPage() {
         onOpenChange={(open) => {
           if (!open) setSubmitError("");
         }}
-        tone="error"
-        title="Đăng nhập thất bại"
+        title="Đăng nhập không thành công"
         description={submitError}
-        confirmLabel="Đóng"
+        tone="error"
+        confirmLabel="Đã hiểu"
         showCancel={false}
+        onConfirm={() => setSubmitError("")}
       />
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
 
@@ -233,17 +263,15 @@ type FieldProps = {
   error?: string;
   children: ReactNode;
 };
+
 function Field({ label, htmlFor, error, children }: FieldProps) {
   return (
     <div>
-      <label
-        htmlFor={htmlFor}
-        className="mb-2 block text-sm font-semibold text-text"
-      >
+      <label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-text">
         {label}
       </label>
       <div className="relative">{children}</div>
-      {error ? <p className="mt-1.5 text-xs text-danger">{error}</p> : null}
+      {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
     </div>
   );
 }

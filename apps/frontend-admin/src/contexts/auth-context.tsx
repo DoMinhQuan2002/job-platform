@@ -13,9 +13,14 @@ import {
   CurrentUser,
 } from "@/services/auth.service";
 import {
+  StoredUser,
   clearAccessToken,
   decodeJwtPayload,
+  getAccessToken,
+  getStoredUser,
+  isTokenExpired,
   setAccessToken,
+  setStoredUser,
 } from "@/lib/auth-token";
 import { refreshAccessToken } from "@/services/http";
 
@@ -23,7 +28,10 @@ interface AuthContextType {
   currentUser: CurrentUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (input: { email: string; password: string }) => Promise<{
+  login: (
+    input: { email: string; password: string },
+    options?: { remember?: boolean }
+  ) => Promise<{
     success: boolean;
     message?: string;
   }>;
@@ -33,15 +41,53 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const toAuthUser = (user: StoredUser, fallbackId: string | number = ""): CurrentUser => ({
+  id: user.id ?? fallbackId,
+  email: user.email,
+  fullName: user.fullName,
+  role: user.role,
+  avatar: user.avatar,
+});
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Đồng bộ user từ Access Token / Cookie hiện có nếu còn hạn
+  const syncFromToken = useCallback((): boolean => {
+    const token = getAccessToken();
+    if (!token || isTokenExpired(token)) {
+      return false;
+    }
+
+    const payload = decodeJwtPayload(token);
+    if (payload?.role !== "ADMIN") {
+      clearAccessToken();
+      setCurrentUser(null);
+      return false;
+    }
+
+    const storedUser = getStoredUser();
+    if (storedUser && storedUser.role === "ADMIN") {
+      setCurrentUser(toAuthUser(storedUser, payload.sub || ""));
+    } else if (payload.sub && payload.email) {
+      setCurrentUser({
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        fullName: payload.email.split("@")[0],
+      });
+    }
+
+    return true;
+  }, []);
 
   // Hàm thủ công làm mới phiên làm việc
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
       const newToken = await refreshAccessToken();
       if (!newToken) {
+        clearAccessToken();
         setCurrentUser(null);
         return false;
       }
@@ -53,8 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // Thiết lập thông tin người dùng ngay lập tức từ payload JWT
-      if (payload?.sub && payload.email) {
+      const storedUser = getStoredUser();
+      if (storedUser && storedUser.role === "ADMIN") {
+        setCurrentUser(toAuthUser(storedUser, payload.sub || ""));
+      } else if (payload.sub && payload.email) {
         setCurrentUser({
           id: payload.sub,
           email: payload.email,
@@ -63,17 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      // Tải bổ sung hồ sơ đầy đủ (họ tên đầy đủ, avatar) ngầm không làm chậm giao diện
+      // Tải hồ sơ đầy đủ ngầm
       authApi
         .getMe()
         .then((userRes) => {
           if (userRes?.success && userRes.data) {
             setCurrentUser(userRes.data);
+            setStoredUser(userRes.data);
           }
         })
-        .catch(() => {
-          // Bỏ qua nếu lỗi, giữ nguyên dữ liệu JWT
-        });
+        .catch(() => {});
 
       return true;
     } catch {
@@ -83,10 +130,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Khôi phục phiên làm việc khi vào trang hoặc F5 tải lại
+  // Khôi phục phiên làm việc khi vào trang hoặc F5
   useEffect(() => {
     let isMounted = true;
 
+    // 1. Kiểm tra nếu đã có token hợp lệ sẵn trong Cookie -> render ngay
+    const isValid = syncFromToken();
+    if (isValid) {
+      setIsLoading(false);
+      // Nạp thông tin mới nhất từ API chạy nền
+      authApi
+        .getMe()
+        .then((userRes) => {
+          if (isMounted && userRes?.success && userRes.data) {
+            setCurrentUser(userRes.data);
+            setStoredUser(userRes.data);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
+    // 2. Nếu chưa có hoặc token đã hết hạn -> gọi refresh qua HttpOnly cookie
     refreshAccessToken()
       .then((newToken) => {
         if (!isMounted) return;
@@ -104,8 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Set thông tin người dùng lập tức để render dashboard trong vài mili-giây
-        if (payload?.sub && payload.email) {
+        const storedUser = getStoredUser();
+        if (storedUser && storedUser.role === "ADMIN") {
+          setCurrentUser(toAuthUser(storedUser, payload.sub || ""));
+        } else if (payload?.sub && payload.email) {
           setCurrentUser({
             id: payload.sub,
             email: payload.email,
@@ -115,17 +182,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setIsLoading(false);
 
-        // Nạp chi tiết profile và avatar từ API chạy nền không gây block màn hình
         authApi
           .getMe()
           .then((userRes) => {
             if (isMounted && userRes?.success && userRes.data) {
               setCurrentUser(userRes.data);
+              setStoredUser(userRes.data);
             }
           })
-          .catch(() => {
-            // Không block trang nếu getMe chậm
-          });
+          .catch(() => {});
       })
       .catch(() => {
         if (isMounted) {
@@ -137,10 +202,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [syncFromToken]);
 
-  const login = async (input: { email: string; password: string }) => {
-    const res = await authApi.login(input);
+  // Lắng nghe sự kiện thay đổi trạng thái xác thực trên toàn hệ thống
+  useEffect(() => {
+    const handleAuthChange = () => {
+      syncFromToken();
+    };
+
+    window.addEventListener("jp-admin-auth-change", handleAuthChange);
+    return () => {
+      window.removeEventListener("jp-admin-auth-change", handleAuthChange);
+    };
+  }, [syncFromToken]);
+
+  const login = async (
+    input: { email: string; password: string },
+    options?: { remember?: boolean }
+  ) => {
+    const res = await authApi.login(input, options);
     if (res?.success && res.data) {
       const { accessToken, user } = res.data;
       if (user.role !== "ADMIN") {
@@ -152,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setAccessToken(accessToken);
+      setStoredUser(user);
       setCurrentUser(user);
       return { success: true };
     }
