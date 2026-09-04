@@ -15,7 +15,7 @@ export class CompaniesService {
    */
   async getPublicCompanies(query: QueryCompaniesDto) {
     const companyRepo = AppDataSource.getRepository(Company);
-    const { page = 1, limit = 10, search, companySize } = query;
+    const { page = 1, limit = 10, search, companySize, sort = "newest" } = query;
 
     const qb = companyRepo
       .createQueryBuilder("company")
@@ -32,7 +32,7 @@ export class CompaniesService {
       qb.andWhere("company.companySize = :companySize", { companySize });
     }
 
-    qb.orderBy("company.createdAt", "DESC")
+    qb.orderBy("company.createdAt", sort === "oldest" ? "ASC" : "DESC")
       .skip((page - 1) * limit)
       .take(limit);
 

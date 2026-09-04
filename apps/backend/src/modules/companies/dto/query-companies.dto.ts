@@ -14,6 +14,9 @@ export const queryCompaniesSchema = z.object({
     .max(100, "limit tối đa là 100")
     .default(10),
   search: z.string().trim().optional(),
+  sort: z.enum(["newest", "oldest"], {
+    error: "Sắp xếp công ty không hợp lệ (chọn: 'newest', 'oldest')",
+  }).default("newest"),
   companySize: z
     .enum(
       [
