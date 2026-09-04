@@ -144,12 +144,12 @@ export default function LoginPage() {
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field label="Email" htmlFor="email" error={errors.email?.message}>
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted"><Mail className="size-5" aria-hidden="true" /></span>
-              <input id="email" type="email" autoComplete="email" placeholder="Nhập địa chỉ email" aria-invalid={Boolean(errors.email)} className={inputClassName} {...register("email")} />
+              <input maxLength={254} id="email" type="email" autoComplete="email" placeholder="Nhập địa chỉ email" aria-invalid={Boolean(errors.email)} className={inputClassName} {...register("email")} />
             </Field>
 
             <Field label="Mật khẩu" htmlFor="password" error={errors.password?.message}>
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted"><LockKeyhole className="size-5" aria-hidden="true" /></span>
-              <input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Nhập mật khẩu" aria-invalid={Boolean(errors.password)} className={`${inputClassName} pr-10`} {...register("password")} />
+              <input maxLength={64} id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Nhập mật khẩu" aria-invalid={Boolean(errors.password)} className={`${inputClassName} pr-10`} {...register("password")} />
               <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute inset-y-0 right-0 flex items-center px-3 text-muted transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>
                 {showPassword ? <EyeOff className="size-5" aria-hidden="true" /> : <Eye className="size-5" aria-hidden="true" />}
               </button>
