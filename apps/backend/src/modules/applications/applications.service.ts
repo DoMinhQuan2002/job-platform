@@ -537,6 +537,7 @@ export class ApplicationsService {
       where: {
         candidateId: candidate.id,
       },
+      relations: ["job", "job.company", "job.category", "job.jobSkills", "job.jobSkills.skill"],
       order: {
         createdAt: "DESC",
       },
