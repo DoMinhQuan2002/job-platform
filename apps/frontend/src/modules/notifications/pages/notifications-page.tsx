@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
+import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api-error";
 import { ROUTES } from "@/constants/routes";
 import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
@@ -118,14 +119,17 @@ export function NotificationsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadTabCounts();
   }, [loadTabCounts]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [activeTab, readFilter, timeFilter]);
 
@@ -212,28 +216,30 @@ export function NotificationsPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <select
+          <Select
             value={readFilter}
             onChange={(e) => setReadFilter(e.target.value as ReadFilter)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-primary focus:outline-none"
+            className="w-auto min-w-32 text-xs font-semibold"
+            aria-label="Lọc theo trạng thái đọc"
           >
             {READ_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>
                 {f.label}
               </option>
             ))}
-          </select>
-          <select
+          </Select>
+          <Select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-primary focus:outline-none"
+            className="w-auto min-w-40 text-xs font-semibold"
+            aria-label="Lọc theo thời gian"
           >
             {TIME_FILTERS.map((f) => (
               <option key={f.value} value={f.value}>
                 {f.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {loading ? (
