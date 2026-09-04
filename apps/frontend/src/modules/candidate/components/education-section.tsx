@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Calendar, GraduationCap, Plus } from "lucide-react";
+import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
+import { Button } from "@/components/ui/button";
 import { formatDateRange } from "../lib/format";
 import type { Education, EducationFormInput } from "../types";
 import { EducationFormModal } from "./education-form-modal";
@@ -27,6 +28,7 @@ export function EducationSection({
 }: EducationSectionProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Education | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Education | null>(null);
 
   const openCreate = () => {
     setEditingItem(null);
@@ -92,11 +94,7 @@ export function EducationSection({
                 </div>
                 <ItemActions
                   onEdit={() => openEdit(item)}
-                  onDelete={() => {
-                    if (window.confirm("Xóa mục học vấn này?")) {
-                      void onDelete(item.id);
-                    }
-                  }}
+                  onDelete={() => setDeleteTarget(item)}
                   deleting={saving}
                 />
               </li>
@@ -112,6 +110,30 @@ export function EducationSection({
         onClose={closeModal}
         onCreate={onCreate}
         onUpdate={onUpdate}
+      />
+
+      <AppAlertDialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        tone="error"
+        title="Xóa học vấn?"
+        description={
+          <>
+            Bạn sắp xóa học vấn tại{" "}
+            <span className="font-medium text-foreground">
+              {deleteTarget?.school ?? ""}
+            </span>
+            . Hành động này không thể hoàn tác.
+          </>
+        }
+        cancelLabel="Hủy"
+        confirmLabel="Xóa"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await onDelete(deleteTarget.id);
+        }}
       />
     </>
   );
