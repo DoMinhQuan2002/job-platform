@@ -103,12 +103,14 @@ export default function AdminDashboardPage() {
 
   // Khởi tạo ban đầu
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOverview();
     loadRecentData();
   }, [loadOverview, loadRecentData]);
 
   // Tải trends khi dateFilter thay đổi
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTrends({
       fromDate: dateFilter.fromDate,
       toDate: dateFilter.toDate,

@@ -1,4 +1,4 @@
-﻿const ACCESS_TOKEN_COOKIE = "jp_admin_access_token";
+const ACCESS_TOKEN_COOKIE = "jp_admin_access_token";
 const USER_COOKIE = "jp_admin_user";
 const AUTH_PERSISTENCE_COOKIE = "jp_admin_remember_auth";
 const REMEMBER_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -16,7 +16,7 @@ const CANDIDATE_COOKIE_NAMES = [
 export type AuthRole = "ADMIN";
 
 export type StoredUser = {
-  id?: number;
+  id?: number | string;
   email: string;
   fullName: string;
   role?: string;

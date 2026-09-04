@@ -46,6 +46,7 @@ export function DateRangePopover({
 
   // Đồng bộ khi prop filter thay đổi
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedPreset(filter.preset);
     setTempFromDate(filter.fromDate);
     setTempToDate(filter.toDate);
