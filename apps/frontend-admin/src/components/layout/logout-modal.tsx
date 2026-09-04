@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { LogOut, X } from "lucide-react";
+import { Loader2, LogOut, X } from "lucide-react";
 
 interface LogoutModalProps {
   isOpen: boolean;
@@ -20,12 +20,12 @@ export function LogoutModal({
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !isLoading) onClose();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isLoading]);
 
   if (!isOpen) return null;
 
@@ -34,7 +34,7 @@ export function LogoutModal({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
+        onClick={isLoading ? undefined : onClose}
         aria-hidden="true"
       />
 
@@ -47,8 +47,9 @@ export function LogoutModal({
       >
         <button
           type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          onClick={isLoading ? undefined : onClose}
+          disabled={isLoading}
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
           aria-label="Đóng"
         >
           <X className="size-5" />
@@ -78,7 +79,7 @@ export function LogoutModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 transition-colors disabled:opacity-50"
+            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Hủy bỏ
           </button>
@@ -86,9 +87,16 @@ export function LogoutModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer min-w-[120px]"
           >
-            {isLoading ? "Đang đăng xuất..." : "Đăng xuất"}
+            {isLoading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Đang đăng xuất...</span>
+              </>
+            ) : (
+              <span>Đăng xuất</span>
+            )}
           </button>
         </div>
       </div>

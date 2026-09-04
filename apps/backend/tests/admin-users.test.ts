@@ -172,17 +172,23 @@ describe("Admin Users Module", () => {
         expect(res.body.errors[0].code).toBe("NOT_FOUND");
       });
 
-      it("returns user detail with extra profile fields", async () => {
+      it("returns user detail with extra profile fields and resolved address", async () => {
         mockUserRepo.findOne.mockResolvedValue(
-          buildUser({ addressDetail: "123 Main St", wardCode: "W001" }),
+          buildUser({ addressDetail: "123 Main St", wardCode: "00004" }),
         );
+        vi.spyOn(AppDataSource, "query").mockResolvedValueOnce([
+          { ward_name: "Phường Ba Đình", province_name: "Thành phố Hà Nội" },
+        ]);
 
         const res = await request(testApp).get("/api/v1/admin/users/10");
 
         expect(res.status).toBe(200);
         expect(res.body.data.id).toBe("10");
         expect(res.body.data.addressDetail).toBe("123 Main St");
-        expect(res.body.data.wardCode).toBe("W001");
+        expect(res.body.data.wardCode).toBe("00004");
+        expect(res.body.data.wardName).toBe("Phường Ba Đình");
+        expect(res.body.data.provinceName).toBe("Thành phố Hà Nội");
+        expect(res.body.data.fullAddress).toBe("123 Main St, Phường Ba Đình, Thành phố Hà Nội");
       });
     });
 
