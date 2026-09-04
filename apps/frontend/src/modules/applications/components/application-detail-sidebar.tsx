@@ -127,7 +127,7 @@ export function ApplicationDetailSidebar({
           <Button
             type="button"
             variant="outline"
-            disabled={!!cvBusy || !application.resumeUrl}
+            disabled={cvBusy === "view" || !application.resumeUrl}
             onClick={onViewCV}
             className="w-full justify-center gap-2 rounded-xl border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
@@ -142,7 +142,7 @@ export function ApplicationDetailSidebar({
           <Button
             type="button"
             variant="outline"
-            disabled={!!cvBusy || !application.resumeUrl}
+            disabled={cvBusy === "download" || !application.resumeUrl}
             onClick={onDownloadCV}
             className="w-full justify-center gap-2 rounded-xl border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
