@@ -7,6 +7,8 @@ const NOTIFICATION_TYPES = [
   "ACCOUNT_UNLOCKED",
   "COMPANY_LOCKED",
   "COMPANY_UNLOCKED",
+  "COMPANY_APPROVED",
+  "COMPANY_REJECTED",
   "JOB_APPROVED",
   "JOB_REJECTED",
   "JOB_DELETED",
@@ -40,7 +42,22 @@ const listQuerySchema = z.object({
     .enum(["true", "false"], { error: "isRead phải là true hoặc false" })
     .transform((v) => v === "true")
     .optional(),
-  type: z.enum(NOTIFICATION_TYPES, { error: "Giá trị type không hợp lệ" }).optional(),
+  // Chấp nhận 1 giá trị, nhiều giá trị lặp key (?type=A&type=B) hoặc phân tách bằng dấu phẩy (?type=A,B)
+  // để FE tự gộp nhóm tab (VD "Ứng tuyển" = nhiều type) mà không cần BE định nghĩa nhóm cứng.
+  type: z.preprocess(
+    (val) => {
+      if (val === undefined) return undefined;
+      if (Array.isArray(val)) return val;
+      if (typeof val === "string") return val.split(",");
+      return val;
+    },
+    z.array(z.enum(NOTIFICATION_TYPES, { error: "Giá trị type không hợp lệ" })).min(1),
+  ).optional(),
+  from: z.coerce.date({ error: "from phải là ngày hợp lệ (ISO 8601)" }).optional(),
+  to: z.coerce.date({ error: "to phải là ngày hợp lệ (ISO 8601)" }).optional(),
+}).refine((data) => !data.from || !data.to || data.from <= data.to, {
+  error: "from phải trước hoặc bằng to",
+  path: ["from"],
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
