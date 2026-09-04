@@ -33,7 +33,6 @@ function useUnreadNotificationCount(isLoggedIn: boolean): number {
 
   useEffect(() => {
     if (!isLoggedIn) {
-      setCount(0);
       return;
     }
 
@@ -63,7 +62,7 @@ function useUnreadNotificationCount(isLoggedIn: boolean): number {
     };
   }, [isLoggedIn]);
 
-  return count;
+  return isLoggedIn ? count : 0;
 }
 
 function readSession(): Session | null {
@@ -452,15 +451,11 @@ function HeaderUserAvatar({
   avatar?: string | null;
   fullName: string;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const avatarUrl = resolveStorageUrl(avatar);
   const initials = fullName.slice(0, 2).toUpperCase() || "TK";
 
-  useEffect(() => {
-    setFailed(false);
-  }, [avatarUrl]);
-
-  if (avatarUrl && !failed) {
+  if (avatarUrl && failedUrl !== avatarUrl) {
     return (
       <span className="relative grid size-7 shrink-0 place-items-center overflow-hidden rounded-full border border-slate-200 bg-slate-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -469,7 +464,7 @@ function HeaderUserAvatar({
           alt={fullName}
           className="size-full object-cover"
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrl(avatarUrl)}
         />
       </span>
     );
