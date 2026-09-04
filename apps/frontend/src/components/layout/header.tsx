@@ -19,6 +19,7 @@ import { notificationsApi } from "@/modules/notifications/api";
 import { NotificationDropdown } from "@/modules/notifications/components/notification-dropdown";
 import type { ApiSuccess } from "@/types/api";
 import Image from "next/image";
+import { CandidateSearchBar } from "@/components/layout/candidate-search-bar";
 
 type Session = StoredUser & { role: "CANDIDATE" | "RECRUITER" | "ADMIN" };
 const navItems = [
@@ -254,6 +255,7 @@ export function Header() {
         <div className="ml-auto hidden items-center gap-3 md:flex">
           {!session ? (
             <>
+              <CandidateSearchBar className="hidden xl:block" />
               <Link
                 href={ROUTES.auth.login}
                 className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
@@ -270,16 +272,7 @@ export function Header() {
           ) : (
             <>
               {session.role === "CANDIDATE" && (
-                <label className="relative hidden xl:block">
-                  <span className="sr-only">
-                    Tìm kiếm việc làm hoặc công ty
-                  </span>
-                  <input
-                    className="h-8 w-[230px] rounded-lg border border-slate-300 bg-slate-50 pl-3 pr-9 text-xs outline-none placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/10"
-                    placeholder="Tìm việc làm, công ty..."
-                  />
-                  <Search className="absolute right-3 top-2 size-4 text-slate-600" />
-                </label>
+                <CandidateSearchBar className="hidden xl:block" />
               )}
               {session.role === "CANDIDATE" && (
                 <Link

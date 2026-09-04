@@ -20,6 +20,7 @@ import {
   useAppliedJobsMap,
 } from "@/modules/applications/lib/use-applied-jobs";
 import type { Job, JobSort } from "@/modules/jobs/types";
+import { JobSkillsCollapse } from "./job-skills-collapse";
 
 type Props = {
   jobs: Job[];
@@ -118,9 +119,8 @@ function JobCard({
 }) {
   const skills =
     job.jobSkills
-      ?.slice(0, 4)
-      .map((item) => item.skill?.name)
-      .filter(Boolean) ?? [];
+      ?.map((item) => item.skill?.name)
+      .filter(Boolean) as string[] ?? [];
 
   return (
     <article className="rounded-lg border border-border bg-white p-4 transition hover:border-primary/50 hover:shadow-md sm:p-5">
@@ -167,19 +167,12 @@ function JobCard({
               {salary(job)}
             </strong>
           </div>
-          <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-md bg-slate-100 px-2 py-1 text-[9px] text-muted"
-                >
-                  {skill}
-                </span>
-              ))}
+          <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <JobSkillsCollapse skills={skills} />
             </div>
-            <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <span className="text-[9px] text-muted">
+            <div className="flex items-center justify-between gap-3 shrink-0 sm:justify-end">
+              <span className="text-[9px] text-muted whitespace-nowrap">
                 Đăng ngày {postedDate(job.createdAt)}
               </span>
               {isRecruiter ? (
