@@ -124,7 +124,6 @@ export function AdminJobsView() {
   useEffect(() => {
     let isIgnored = false;
     const controller = new AbortController();
-    setIsLoading(true);
 
     // Determine query status: activeTab overrides or filterValues
     const queryStatus =
@@ -389,7 +388,10 @@ export function AdminJobsView() {
           </div>
           <button
             type="button"
-            onClick={() => setReloadKey((k) => k + 1)}
+            onClick={() => {
+              setIsLoading(true);
+              setReloadKey((k) => k + 1);
+            }}
             className="font-semibold underline hover:text-rose-950 flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Thử lại
@@ -421,9 +423,11 @@ export function AdminJobsView() {
             total={pagination.total}
             totalPages={pagination.totalPages}
             onPageChange={(newPage) => {
+              setIsLoading(true);
               setPage(newPage);
             }}
             onLimitChange={(newLimit) => {
+              setIsLoading(true);
               setLimit(newLimit);
               setPage(1);
             }}

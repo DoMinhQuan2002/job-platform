@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, X, AlertTriangle, Loader2 } from "lucide-react";
+import { Check, X, Trash2, Loader2 } from "lucide-react";
 import type { AdminJobListItem } from "@/services/admin-jobs.service";
 
 /* ─── Shared Job Info Box ─────────────────────────────────────── */
@@ -137,25 +137,24 @@ export function RejectModal({
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Reset reason when modal opens with new job
-  useEffect(() => {
-    if (isOpen) {
-      setReason("");
-      setError(null);
-    }
-  }, [isOpen, job?.id]);
+  const handleClose = () => {
+    if (isLoading) return;
+    setReason("");
+    setError(null);
+    onClose();
+  };
 
   // Close on ESC
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isLoading) {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
+  }, [isOpen, isLoading]);
 
   if (!isOpen || !job) return null;
 
@@ -176,7 +175,7 @@ export function RejectModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative z-10 w-full max-w-[650px] bg-white rounded-2xl shadow-2xl p-6 sm:p-7 border border-gray-100"
@@ -186,7 +185,7 @@ export function RejectModal({
         <button
           aria-label="Đóng"
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           disabled={isLoading}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 cursor-pointer"
         >
@@ -240,7 +239,7 @@ export function RejectModal({
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isLoading}
                 className="px-5 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none transition-all shadow-xs disabled:opacity-50 cursor-pointer"
               >
