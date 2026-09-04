@@ -19,6 +19,7 @@ import recruiterStatisticsRouter from "../modules/recruiter-statistics/recruiter
 import systemLogsRouter from "../modules/system-logs/system-logs.route";
 import usersRouter from "../modules/users/users.route";
 import workExperiencesRouter from "../modules/work-experiences/work-experiences.route";
+import locationsRouter from "../modules/locations/locations.route";
 
 const apiRouter = Router();
 
@@ -45,5 +46,6 @@ apiRouter.use("/admin/system-logs", systemLogsRouter);
 apiRouter.use("/admin/statistics", statisticsRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/notifications", notificationsRouter);
+apiRouter.use("/locations", locationsRouter);
 
 export default apiRouter;

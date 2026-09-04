@@ -29,6 +29,7 @@ type UseCandidateProfileResult = {
     input: Partial<WorkExperienceFormInput>,
   ) => Promise<void>;
   deleteWorkExperience: (id: string) => Promise<void>;
+  setAccountAvatar: (avatar: string | null) => void;
 };
 
 export function useCandidateProfile(): UseCandidateProfileResult {
@@ -131,5 +132,8 @@ export function useCandidateProfile(): UseCandidateProfileResult {
       runMutation(async () => {
         await candidateApi.deleteWorkExperience(id);
       }),
+    setAccountAvatar: (avatar) => {
+      setAccount((current) => (current ? { ...current, avatar } : current));
+    },
   };
 }

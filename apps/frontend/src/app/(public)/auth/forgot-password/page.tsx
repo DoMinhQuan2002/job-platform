@@ -250,3 +250,17 @@ function PasswordField({ id, label, placeholder, shown, onToggle, error, hint, r
 function InfoBox({ title, children }: { title: string; children: ReactNode }) { return <div className="mt-8 flex items-start gap-3 rounded-lg border border-primary/15 bg-primary/5 p-4 text-sm"><Info className="mt-0.5 size-5 shrink-0 text-primary" /><div><p className="font-semibold text-primary">{title}</p><p className="mt-1 text-muted">{children}</p></div></div>; }
 function StatusArea({ error, success }: { error: string; success: string }) { return <>{error ? <StatusMessage tone="error">{error}</StatusMessage> : success ? <StatusMessage tone="success">{success}</StatusMessage> : null}</>; }
 function StatusMessage({ tone, children }: { tone: "error" | "success"; children: ReactNode }) { const Icon = tone === "error" ? AlertCircle : CheckCircle2; return <div role={tone === "error" ? "alert" : "status"} className={`mt-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${tone === "error" ? "bg-danger/10 text-danger" : "bg-success/10 text-success"}`}><Icon className="mt-0.5 size-4 shrink-0" /><span>{children}</span></div>; }
+
+export function ForgotPasswordSkeleton() {
+  return (
+    <div
+      className="flex min-h-[calc(100vh-220px)] items-center justify-center px-4 py-8 md:px-8"
+      aria-busy="true"
+      aria-label="Đang tải trang quên mật khẩu"
+    >
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl">
+        <div className="skeleton h-[560px] w-full rounded-2xl" />
+      </div>
+    </div>
+  );
+}

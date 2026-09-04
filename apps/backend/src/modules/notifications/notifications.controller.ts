@@ -20,6 +20,14 @@ export const notificationsController = {
     res.status(200).json({ success: true, message: "Thành công", data: result });
   },
 
+  detail: async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const id = validateIdParam(req.params);
+    const notification = await notificationsService.getDetail(userId, id);
+
+    res.status(200).json({ success: true, message: "Thành công", data: notification });
+  },
+
   unreadCount: async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const unreadCount = await notificationsService.unreadCount(userId);

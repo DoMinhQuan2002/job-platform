@@ -1,3 +1,18 @@
+/** Giá trị `YYYY-MM-DD` cho `<input type="date">` theo ngày local hôm nay. */
+export function todayDateInputValue(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Chuẩn hóa ISO/`YYYY-MM-DD` về `YYYY-MM-DD` cho date input. */
+export function toDateInputValue(date: string | null | undefined): string {
+  if (!date) return "";
+  return date.slice(0, 10);
+}
+
 export function formatMonthYear(date: string | null): string {
   if (!date) return "";
   const [year, month] = date.split("-");

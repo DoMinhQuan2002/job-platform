@@ -1,12 +1,12 @@
 # API Contract — Nhóm 4 — Thông báo
 
-**Số lượng API:** 5 · **Quyền:** AUTHENTICATED
+**Số lượng API:** 6 · **Quyền:** AUTHENTICATED
 
 Quy ước chung (Response/HTTP Status/phân trang): xem `system-logs.md` mục 0.
 
 Mọi API thao tác 1 thông báo phải kiểm tra `notifications.user_id` = người đang đăng nhập, sai thì trả **404** (không trả 403).
 
-**9 giá trị `type`:** ACCOUNT_LOCKED, ACCOUNT_UNLOCKED (USER) · COMPANY_LOCKED, COMPANY_UNLOCKED (COMPANY) · JOB_APPROVED, JOB_REJECTED, JOB_DELETED (JOB) · NEW_APPLICATION, APPLICATION_STATUS_CHANGED (APPLICATION). `title`/`content` backend tự sinh, client không gửi.
+**11 giá trị `type`:** ACCOUNT_LOCKED, ACCOUNT_UNLOCKED (USER) · COMPANY_LOCKED, COMPANY_UNLOCKED, COMPANY_APPROVED, COMPANY_REJECTED (COMPANY) · JOB_APPROVED, JOB_REJECTED, JOB_DELETED (JOB) · NEW_APPLICATION, APPLICATION_STATUS_CHANGED (APPLICATION). `title`/`content` backend tự sinh, client không gửi.
 
 ---
 
@@ -16,14 +16,20 @@ Mọi API thao tác 1 thông báo phải kiểm tra `notifications.user_id` = ng
 
 **Validation (query)**
 
-| Field  | Kiểu    | Bắt buộc | Ràng buộc                |
-| ------ | ------- | -------- | ------------------------ |
-| page   | number  |          | >= 1, mặc định 1         |
-| limit  | number  |          | 1–100, mặc định 20       |
-| isRead | boolean |          | Lọc đã đọc / chưa đọc    |
-| type   | string  |          | 1 trong 9 giá trị `type` |
+| Field  | Kiểu         | Bắt buộc | Ràng buộc                                                          |
+| ------ | ------------ | -------- | ------------------------------------------------------------------ |
+| page   | number       |          | >= 1, mặc định 1                                                   |
+| limit  | number       |          | 1–100, mặc định 20                                                 |
+| isRead | boolean      |          | Lọc đã đọc / chưa đọc                                              |
+| type   | string/mảng  |          | 1 hoặc nhiều trong 11 giá trị `type`, cách nhau bằng dấu phẩy (`?type=A,B`) hoặc lặp key (`?type=A&type=B`) |
+| from   | datetime ISO |          | Lọc `createdAt >= from`                                            |
+| to     | datetime ISO |          | Lọc `createdAt <= to`; `from` phải <= `to`                         |
 
 Sort cố định `createdAt desc`.
+
+`type` nhận nhiều giá trị để FE tự gộp nhóm tab (VD tab "Ứng tuyển" = `type=NEW_APPLICATION,APPLICATION_STATUS_CHANGED`) mà không cần BE định nghĩa nhóm cứng — mỗi role thấy tập `type` khác nhau nên gộp nhóm ở FE linh hoạt hơn. Số đếm cho mỗi tab lấy từ `pagination.total` của chính lần gọi đó, không cần endpoint đếm riêng.
+
+`from`/`to` phục vụ bộ lọc "Hôm nay/7 ngày qua/30 ngày qua/tùy chọn khác" — FE tự tính khoảng ngày rồi gửi lên, BE chỉ lọc theo `createdAt`.
 
 **HTTP Status:** 200 · 400 · 401
 
@@ -74,6 +80,16 @@ Sort cố định `createdAt desc`.
 }
 ```
 
+`400` — `from` sau `to`:
+
+```json
+{
+  "success": false,
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [{ "field": "from", "message": "from phải trước hoặc bằng to" }]
+}
+```
+
 `401`:
 
 ```json
@@ -86,7 +102,75 @@ Sort cố định `createdAt desc`.
 
 ---
 
-## 2. Đếm số thông báo chưa đọc
+## 2. Xem chi tiết một thông báo
+
+`GET /api/v1/notifications/{id}` · Quyền: AUTHENTICATED (chỉ thông báo của mình)
+
+Validation: `id` (path) — number, phải thuộc `notifications.user_id` của người đang đăng nhập.
+
+Ngoài các field của 1 item ở mục 1, trả thêm `job` — thông tin công việc liên quan, JOIN qua `applications` → `jobs` → `companies`. Chỉ `type = APPLICATION_STATUS_CHANGED` (target `APPLICATION`) mới có `job`; các type còn lại trả `job: null` vì không liên quan tới job (`ACCOUNT_*`) hoặc target không phải application (`COMPANY_*`, `JOB_*`). `job` cũng là `null` nếu application gốc đã bị xóa.
+
+**HTTP Status:** 200 · 401 · 404
+
+**200 OK** — type `APPLICATION_STATUS_CHANGED`
+
+```json
+{
+  "success": true,
+  "message": "Thành công",
+  "data": {
+    "id": 152,
+    "type": "APPLICATION_STATUS_CHANGED",
+    "title": "string",
+    "content": "string",
+    "targetType": "APPLICATION",
+    "targetId": 50,
+    "isRead": false,
+    "readAt": null,
+    "createdAt": "datetime",
+    "job": {
+      "id": 10,
+      "title": "Chuyên viên Digital Marketing",
+      "slug": "chuyen-vien-digital-marketing",
+      "address": "Hà Nội",
+      "jobType": "FULL_TIME",
+      "jobMode": "ONSITE",
+      "salaryMin": "15000000",
+      "salaryMax": "25000000",
+      "isNegotiable": false,
+      "company": { "id": 5, "name": "Công ty Cổ phần FPT", "logo": null },
+      "applicationId": 50,
+      "applicationStatus": "INTERVIEW"
+    }
+  }
+}
+```
+
+**200 OK** — type khác (VD `ACCOUNT_LOCKED`): giống mục 1, thêm `"job": null`.
+
+**Response lỗi**
+
+`401`:
+
+```json
+{
+  "success": false,
+  "message": "Chưa đăng nhập hoặc token không hợp lệ",
+  "errors": []
+}
+```
+
+`404`:
+
+```json
+{ "success": false, "message": "Không tìm thấy thông báo", "errors": [] }
+```
+
+`applicationStatus` đọc real-time từ `applications.status` tại thời điểm gọi API, không phải giá trị lưu lúc tạo thông báo (đơn có thể đã đổi trạng thái tiếp sau đó).
+
+---
+
+## 3. Đếm số thông báo chưa đọc
 
 `GET /api/v1/notifications/unread-count` · Quyền: AUTHENTICATED
 
@@ -114,9 +198,11 @@ Validation: không có tham số
 
 Dùng polling 30–60s cho badge (V1 chưa có WebSocket).
 
+Route `unread-count` phải khai báo trước `GET /{id}` để không bị Express khớp nhầm thành `{id}`.
+
 ---
 
-## 3. Đánh dấu một thông báo đã đọc
+## 4. Đánh dấu một thông báo đã đọc
 
 `PATCH /api/v1/notifications/{id}/read` · Quyền: AUTHENTICATED (chỉ thông báo của mình)
 
@@ -148,7 +234,7 @@ Gọi lại trên thông báo đã đọc vẫn trả 200, không đổi `readAt
 
 ---
 
-## 4. Đánh dấu tất cả thông báo đã đọc
+## 5. Đánh dấu tất cả thông báo đã đọc
 
 `PATCH /api/v1/notifications/read-all` · Quyền: AUTHENTICATED
 
@@ -184,7 +270,7 @@ Route `read-all` phải khai báo trước `{id}/read` để không bị Express
 
 ---
 
-## 5. Xóa một thông báo
+## 6. Xóa một thông báo
 
 `DELETE /api/v1/notifications/{id}` · Quyền: AUTHENTICATED (chỉ thông báo của mình)
 

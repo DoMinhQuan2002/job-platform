@@ -18,7 +18,7 @@ const candidateLinks = [
   ["Ứng tuyển của tôi", ROUTES.applications.root],
   ["Tạo CV", ROUTES.resume.root],
   ["Hồ sơ của tôi", ROUTES.candidate.profile],
-  ["Tài khoản", ROUTES.candidate.profile],
+  ["Tài khoản", ROUTES.candidate.account],
 ];
 
 const employerLinks = [
@@ -34,7 +34,7 @@ const companyLinks = [
   ["Tin tức", "/news"],
   ["Sự kiện", "/events"],
   ["Tuyển dụng nội bộ", "/careers"],
-  ["Liên hệ", "/contact"],
+  ["Liên hệ", "#footer-newsletter"],
 ];
 
 function FooterLinks({ title, links }: { title: string; links: string[][] }) {
@@ -133,7 +133,10 @@ export function Footer() {
           </section>
         </div>
 
-        <section className="mt-12 flex flex-col gap-5 rounded-xl bg-[#e8eaf2] p-5 md:flex-row md:items-center md:justify-between">
+        <section
+          id="footer-newsletter"
+          className="mt-12 flex scroll-mt-24 flex-col gap-5 rounded-xl bg-[#e8eaf2] p-5 md:flex-row md:items-center md:justify-between"
+        >
           <div className="flex items-center gap-4">
             <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-white text-primary">
               <Mail className="size-5" />
