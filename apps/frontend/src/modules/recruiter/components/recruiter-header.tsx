@@ -10,6 +10,7 @@ import { ROUTES } from "@/constants/routes";
 import { resolveStorageUrl } from "@/lib/utils";
 import { authApi } from "@/services/auth.service";
 import { notificationsApi } from "@/modules/notifications/api";
+import { NotificationDropdown } from "@/modules/notifications/components/notification-dropdown";
 import { useRecruiterCompany } from "./recruiter-company-context";
 
 /** Polling 30s + lắng nghe "jp-notifications-change" (đọc/xóa từ trang thông báo) */
@@ -130,18 +131,10 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
 
         {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
         <div className="ml-auto flex items-center gap-3">
-          <Link
-            href={ROUTES.recruiter.notifications}
-            className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
-            aria-label="Thông báo"
-          >
-            <Bell className="size-[18px]" />
-            {unreadCount > 0 && (
-              <span className="absolute -right-0.5 -top-1 grid min-w-[15px] h-[15px] px-1 place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Link>
+          <NotificationDropdown
+            baseHref={ROUTES.recruiter.notifications}
+            unreadCount={unreadCount}
+          />
 
           {/* Mobile chỉ hiện avatar; từ sm trở lên hiện thêm tên và mũi tên. */}
           <div className="relative ml-1">
