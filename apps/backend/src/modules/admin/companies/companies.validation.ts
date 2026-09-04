@@ -7,6 +7,16 @@ const FILTER_STATUSES = ["PENDING", "ACTIVE", "REJECTED", "BLOCKED"] as const;
 /** Dùng cho khóa/mở khóa — chỉ chuyển đổi giữa ACTIVE/BLOCKED, không đi qua PENDING/REJECTED. */
 const LOCK_STATUSES = ["ACTIVE", "BLOCKED"] as const;
 
+const isValidDateParam = (value: string) => {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const dateQueryParam = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày phải có định dạng YYYY-MM-DD")
+  .refine(isValidDateParam, "Ngày không hợp lệ");
+
 type ValidationError = { field: string; message: string };
 
 const fail = (schemaError: z.ZodError): never => {
@@ -31,7 +41,18 @@ const listQuerySchema = z.object({
     .default(20),
   search: z.string().trim().min(1).optional(),
   status: z.enum(FILTER_STATUSES, { error: "Giá trị status không hợp lệ" }).optional(),
-});
+  createdFrom: dateQueryParam.optional(),
+  createdTo: dateQueryParam.optional(),
+}).refine(
+  (data) =>
+    !data.createdFrom ||
+    !data.createdTo ||
+    new Date(data.createdFrom).getTime() <= new Date(data.createdTo).getTime(),
+  {
+    error: "createdFrom không được lớn hơn createdTo",
+    path: ["createdFrom"],
+  },
+);
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 

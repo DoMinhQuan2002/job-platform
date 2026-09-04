@@ -84,8 +84,22 @@ describe("Admin Companies Module", () => {
     getRawMany: vi.fn().mockResolvedValue([]),
   };
 
+  const mockCompanyStatsQueryBuilder = {
+    select: vi.fn().mockReturnThis(),
+    addSelect: vi.fn().mockReturnThis(),
+    setParameters: vi.fn().mockReturnThis(),
+    getRawOne: vi.fn().mockResolvedValue({
+      total: "1",
+      active: "1",
+      blocked: "0",
+      newThisMonth: "1",
+    }),
+  };
+
   const mockCompanyRepo = {
-    createQueryBuilder: vi.fn(() => mockQueryBuilder),
+    createQueryBuilder: vi.fn((alias?: string) =>
+      alias === "statsCompany" ? mockCompanyStatsQueryBuilder : mockQueryBuilder,
+    ),
     findOne: vi.fn(),
     save: vi.fn(),
   };
@@ -100,6 +114,12 @@ describe("Admin Companies Module", () => {
 
     mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
     mockJobCountQueryBuilder.getRawMany.mockResolvedValue([]);
+    mockCompanyStatsQueryBuilder.getRawOne.mockResolvedValue({
+      total: "0",
+      active: "0",
+      blocked: "0",
+      newThisMonth: "0",
+    });
 
     vi.spyOn(AppDataSource, "getRepository").mockImplementation((entity: any) => {
       if (entity === Company) return mockCompanyRepo as any;
@@ -134,12 +154,24 @@ describe("Admin Companies Module", () => {
       it("lists companies with owner and totalJobs", async () => {
         mockQueryBuilder.getManyAndCount.mockResolvedValue([[buildCompany()], 1]);
         mockJobCountQueryBuilder.getRawMany.mockResolvedValue([{ companyId: "5", count: "3" }]);
+        mockCompanyStatsQueryBuilder.getRawOne.mockResolvedValue({
+          total: "12",
+          active: "9",
+          blocked: "2",
+          newThisMonth: "4",
+        });
 
         const res = await request(testApp).get("/api/v1/admin/companies");
 
         expect(res.status).toBe(200);
         expect(res.body.data.items[0].owner).toEqual(owner);
         expect(res.body.data.items[0].totalJobs).toBe(3);
+        expect(res.body.data.stats).toEqual({
+          total: 12,
+          active: 9,
+          blocked: 2,
+          newThisMonth: 4,
+        });
       });
 
       it("defaults totalJobs to 0 when company has no jobs", async () => {
@@ -169,6 +201,29 @@ describe("Admin Companies Module", () => {
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("company.status = :status", {
           status: "BLOCKED",
         });
+      });
+
+      it("applies created date range filters", async () => {
+        await request(testApp).get(
+          "/api/v1/admin/companies?createdFrom=2026-08-01&createdTo=2026-08-31",
+        );
+
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          "company.createdAt >= :createdFrom",
+          { createdFrom: new Date("2026-08-01T00:00:00.000Z") },
+        );
+        expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+          "company.createdAt <= :createdTo",
+          { createdTo: new Date("2026-08-31T23:59:59.999Z") },
+        );
+      });
+
+      it("returns 400 when createdFrom is after createdTo", async () => {
+        const res = await request(testApp).get(
+          "/api/v1/admin/companies?createdFrom=2026-09-01&createdTo=2026-08-31",
+        );
+
+        expect(res.status).toBe(400);
       });
 
       it("returns 400 on invalid status filter", async () => {

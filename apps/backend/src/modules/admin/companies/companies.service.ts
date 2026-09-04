@@ -25,6 +25,45 @@ const countJobsByCompany = async (companyIds: string[]): Promise<Map<string, num
   return new Map(rows.map((row) => [row.companyId, Number(row.count)]));
 };
 
+const countCompanyStats = async () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const row = await repo()
+    .createQueryBuilder("statsCompany")
+    .select("COUNT(*)", "total")
+    .addSelect(
+      'COUNT(*) FILTER (WHERE "statsCompany"."status" = :activeStatus)',
+      "active",
+    )
+    .addSelect(
+      'COUNT(*) FILTER (WHERE "statsCompany"."status" = :blockedStatus)',
+      "blocked",
+    )
+    .addSelect(
+      'COUNT(*) FILTER (WHERE "statsCompany"."created_at" >= :thirtyDaysAgo)',
+      "newThisMonth",
+    )
+    .setParameters({
+      activeStatus: COMPANY_STATUS.ACTIVE,
+      blockedStatus: COMPANY_STATUS.BLOCKED,
+      thirtyDaysAgo,
+    })
+    .getRawOne<{
+      total: string | null;
+      active: string | null;
+      blocked: string | null;
+      newThisMonth: string | null;
+    }>();
+
+  return {
+    total: Number(row?.total ?? 0),
+    active: Number(row?.active ?? 0),
+    blocked: Number(row?.blocked ?? 0),
+    newThisMonth: Number(row?.newThisMonth ?? 0),
+  };
+};
+
 /** Shape trả về cho list — kèm `owner` (recruiter chủ sở hữu) và `totalJobs`. */
 const toListItem = (company: Company, totalJobs: number) => ({
   id: company.id,
@@ -54,6 +93,7 @@ const toDetail = (company: Company, totalJobs: number) => ({
 export type PaginatedCompanies = {
   items: ReturnType<typeof toListItem>[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
+  stats: Awaited<ReturnType<typeof countCompanyStats>>;
 };
 
 export const adminCompaniesService = {
@@ -62,18 +102,34 @@ export const adminCompaniesService = {
     const qb = repo().createQueryBuilder("company").innerJoinAndSelect("company.user", "owner");
 
     if (query.search) {
-      qb.andWhere("(company.name ILIKE :search OR company.email ILIKE :search)", {
-        search: `%${query.search}%`,
-      });
+      qb.andWhere(
+        "(company.name ILIKE :search OR company.email ILIKE :search OR company.taxCode ILIKE :search)",
+        {
+          search: `%${query.search}%`,
+        },
+      );
     }
     if (query.status) {
       qb.andWhere("company.status = :status", { status: query.status });
+    }
+    if (query.createdFrom) {
+      qb.andWhere("company.createdAt >= :createdFrom", {
+        createdFrom: new Date(`${query.createdFrom}T00:00:00.000Z`),
+      });
+    }
+    if (query.createdTo) {
+      qb.andWhere("company.createdAt <= :createdTo", {
+        createdTo: new Date(`${query.createdTo}T23:59:59.999Z`),
+      });
     }
 
     qb.orderBy("company.createdAt", "DESC");
     qb.skip((query.page - 1) * query.limit).take(query.limit);
 
-    const [companies, total] = await qb.getManyAndCount();
+    const [[companies, total], stats] = await Promise.all([
+      qb.getManyAndCount(),
+      countCompanyStats(),
+    ]);
     const jobCounts = await countJobsByCompany(companies.map((c) => c.id));
 
     return {
@@ -84,6 +140,7 @@ export const adminCompaniesService = {
         total,
         totalPages: Math.ceil(total / query.limit) || 1,
       },
+      stats,
     };
   },
 
@@ -124,6 +181,7 @@ export const adminCompaniesService = {
 
       const oldStatus = company.status;
       company.status = body.status as CompanyStatusValue;
+      company.rejectReason = body.status === COMPANY_STATUS.BLOCKED ? (body.reason ?? null) : null;
       await companyRepo.save(company);
 
       const isLocking = body.status === "BLOCKED";
@@ -154,6 +212,7 @@ export const adminCompaniesService = {
         id: company.id,
         name: company.name,
         status: company.status,
+        rejectReason: company.rejectReason,
         updatedAt: company.updatedAt,
       };
     });
