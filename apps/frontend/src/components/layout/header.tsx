@@ -75,6 +75,14 @@ export function Header() {
         .then((res) => {
           if (!active || !res?.data) return;
           const userMe = res.data;
+          setSession((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              fullName: userMe.fullName || prev.fullName,
+              avatar: userMe.avatar,
+            };
+          });
           const stored = getStoredUser();
           if (
             stored &&
@@ -398,6 +406,10 @@ function HeaderUserAvatar({
   const [failed, setFailed] = useState(false);
   const avatarUrl = resolveStorageUrl(avatar);
   const initials = fullName.slice(0, 2).toUpperCase() || "TK";
+
+  useEffect(() => {
+    setFailed(false);
+  }, [avatarUrl]);
 
   if (avatarUrl && !failed) {
     return (
