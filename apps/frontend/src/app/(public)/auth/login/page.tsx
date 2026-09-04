@@ -168,6 +168,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
+
           <p className="mt-8 text-center text-sm text-muted">
             Chưa có tài khoản?{" "}<Link href={ROUTES.auth.register} className="font-medium text-primary hover:underline">Đăng ký ngay</Link>
           </p>
@@ -184,6 +185,23 @@ export default function LoginPage() {
         showCancel={false}
       />
     </>
+  );
+}
+
+export function LoginSkeleton() {
+  return (
+    <div
+      className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12"
+      aria-busy="true"
+      aria-label="Đang tải trang đăng nhập"
+    >
+      <section className="hidden min-h-[560px] flex-col pb-8 pt-8 lg:flex" aria-hidden="true">
+        <div className="skeleton h-[560px] w-full rounded-2xl" />
+      </section>
+      <section className="w-full max-w-126 justify-self-end" aria-hidden="true">
+        <div className="skeleton h-[560px] w-full rounded-2xl" />
+      </section>
+    </div>
   );
 }
 
