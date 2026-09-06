@@ -5,6 +5,7 @@ import {
   setStoredUser,
 } from "@/lib/auth-token";
 import { http } from "@/services/http";
+import { cancelTokenRefresh, scheduleTokenRefresh } from "@/lib/token-refresh";
 import type { ApiSuccess } from "@/types/api";
 
 export type AuthRole = "CANDIDATE" | "RECRUITER";
@@ -49,6 +50,7 @@ const saveSession = (session: AuthSession, remember = false) => {
   setAuthPersistence(remember);
   setAccessToken(session.accessToken);
   setStoredUser(session.user);
+  scheduleTokenRefresh(); // Hẹn giờ refresh token TRƯỚC khi hết hạn
 };
 
 export const authApi = {
@@ -92,6 +94,7 @@ export const authApi = {
         method: "POST",
       });
     } finally {
+      cancelTokenRefresh(); // Turn off the clocks avoid refreshing token after logout
       clearAccessToken();
     }
   },
@@ -102,6 +105,7 @@ export const authApi = {
       skipAuth: true,
     });
     setAccessToken(response.data.accessToken);
+    scheduleTokenRefresh(); // Turn on the clocks again after refresh token
     return response;
   },
 
