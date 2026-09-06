@@ -175,7 +175,21 @@ export const authService = {
     }
 
     const code = await issueOtp("register", email);
-    await sendOtpMail(email, code, "register");
+
+    // Tai khoan da luu xong roi. Neu gui mail hong ma van giu OTP + cooldown thi
+    // user vua khong nhan duoc ma, vua bi chan 60s khong bam gui lai duoc.
+    try {
+      await sendOtpMail(email, code, "register");
+    } catch (error) {
+      console.error("Failed to send register OTP:", error);
+      await clearOtp("register", email);
+
+      throw new AppError(
+        502,
+        "MAIL_SEND_FAILED",
+        "Tài khoản đã được tạo nhưng chưa gửi được email xác thực. Vui lòng thử lại sau ít phút.",
+      );
+    }
 
     return { email, otpExpiresIn: OTP_TTL_SECONDS };
   },
@@ -232,7 +246,19 @@ export const authService = {
     }
 
     const code = await issueOtp("register", email);
-    await sendOtpMail(email, code, "register");
+
+    try {
+      await sendOtpMail(email, code, "register");
+    } catch (error) {
+      console.error("Failed to resend register OTP:", error);
+      await clearOtp("register", email);
+
+      throw new AppError(
+        502,
+        "MAIL_SEND_FAILED",
+        "Chưa gửi được email xác thực. Vui lòng thử lại sau ít phút.",
+      );
+    }
 
     return { otpExpiresIn: OTP_TTL_SECONDS };
   },
@@ -431,7 +457,19 @@ export const authService = {
     }
 
     const code = await issueOtp("forgot_password", email);
-    await sendOtpMail(email, code, "forgot_password");
+
+    try {
+      await sendOtpMail(email, code, "forgot_password");
+    } catch (error) {
+      console.error("Failed to resend forgot-password OTP:", error);
+      await clearOtp("forgot_password", email);
+
+      throw new AppError(
+        502,
+        "MAIL_SEND_FAILED",
+        "Chưa gửi được email xác thực. Vui lòng thử lại sau ít phút.",
+      );
+    }
   },
 
   /** 4.1 POST /oauth/google */
