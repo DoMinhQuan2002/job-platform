@@ -661,11 +661,10 @@ function StatusMessage({
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
-      className={`mt-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
-        tone === "error"
+      className={`mt-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${tone === "error"
           ? "bg-danger/10 text-danger"
           : "bg-success/10 text-success"
-      }`}
+        }`}
     >
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>
