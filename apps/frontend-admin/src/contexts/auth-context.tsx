@@ -80,9 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const user = getInitialUser();
     if (!user) {
       const token = getAccessToken();
-      const payload = token ? decodeJwtPayload(token) : null;
-      if (payload?.role !== "ADMIN") {
-        clearAccessToken();
+      if (token) {
+        const payload = decodeJwtPayload(token);
+        if (payload?.role !== "ADMIN") {
+          clearAccessToken();
+        }
       }
       return false;
     }
@@ -163,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((newToken) => {
         if (!isMounted) return;
         if (!newToken) {
+          clearAccessToken();
           setCurrentUser(null);
           setIsLoading(false);
           return;
@@ -202,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (isMounted) {
+          clearAccessToken();
           setCurrentUser(null);
           setIsLoading(false);
         }
@@ -215,7 +219,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Lắng nghe sự kiện thay đổi trạng thái xác thực trên toàn hệ thống
   useEffect(() => {
     const handleAuthChange = () => {
-      syncFromToken();
+      const valid = syncFromToken();
+      if (!valid) {
+        setCurrentUser(null);
+      }
     };
 
     window.addEventListener("jp-admin-auth-change", handleAuthChange);
