@@ -10,6 +10,7 @@ import {
   Info,
   Plus,
   RefreshCw,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -17,44 +18,99 @@ import { recruiterJobsApi, type RecruiterJobsResponse } from "@/services/recruit
 import { JobStatusTabs, type JobStatusFilter } from "./job-status-tabs";
 import { RecruiterJobsSkeleton } from "./recruiter-jobs-skeleton";
 import { RecruiterJobsTable } from "./recruiter-jobs-table";
+import {
+  RecruiterJobsFilterPanel,
+  type RecruiterJobsFilterValues,
+} from "./recruiter-jobs-filter-panel";
 
 export function RecruiterJobsPage() {
   const [status, setStatus] = useState<JobStatusFilter>("ALL");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(8);
   const [data, setData] = useState<RecruiterJobsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isTableLoading, setIsTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const beginRequest = useCallback(() => {
-    setData(null);
-    setIsLoading(true);
-    setError(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<RecruiterJobsFilterValues>({
+    salaryRange: "ALL",
+    location: "",
+    sort: "newest",
+  });
+
+  const resetFilters = useCallback(() => {
+    setIsTableLoading(true);
+    setFilters({
+      salaryRange: "ALL",
+      location: "",
+      sort: "newest",
+    });
+    setPage(1);
   }, []);
 
   const changeStatus = useCallback((nextStatus: JobStatusFilter) => {
-    beginRequest();
+    setIsTableLoading(true);
     setStatus(nextStatus);
     setPage(1);
-  }, [beginRequest]);
+  }, []);
 
   const retry = useCallback(() => {
-    beginRequest();
+    setIsTableLoading(true);
     setReloadKey((key) => key + 1);
-  }, [beginRequest]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
     let ignore = false;
+    setIsTableLoading(true);
+    setError(null);
+
+    let minSalary: number | undefined;
+    let maxSalary: number | undefined;
+    let isNegotiable: boolean | undefined;
+
+    switch (filters.salaryRange) {
+      case "UNDER_10M":
+        minSalary = 0;
+        maxSalary = 10000000;
+        break;
+      case "10M_20M":
+        minSalary = 10000000;
+        maxSalary = 20000000;
+        break;
+      case "20M_30M":
+        minSalary = 20000000;
+        maxSalary = 30000000;
+        break;
+      case "ABOVE_30M":
+        minSalary = 30000000;
+        break;
+      case "NEGOTIABLE":
+        isNegotiable = true;
+        break;
+    }
 
     recruiterJobsApi
       .list(
-        { status: status === "ALL" ? undefined : status, page, limit },
+        {
+          status: status === "ALL" ? undefined : status,
+          page,
+          limit,
+          location: filters.location.trim() || undefined,
+          minSalary,
+          maxSalary,
+          isNegotiable,
+          sort: filters.sort,
+        },
         controller.signal,
       )
       .then((response) => {
-        if (!ignore) setData(response.data);
+        if (!ignore) {
+          setData(response.data);
+          setError(null);
+        }
       })
       .catch((requestError: unknown) => {
         if (!ignore) {
@@ -66,20 +122,23 @@ export function RecruiterJobsPage() {
         }
       })
       .finally(() => {
-        if (!ignore) setIsLoading(false);
+        if (!ignore) {
+          setIsInitialLoading(false);
+          setIsTableLoading(false);
+        }
       });
 
     return () => {
       ignore = true;
       controller.abort();
     };
-  }, [status, page, limit, reloadKey]);
+  }, [status, page, limit, filters, reloadKey]);
 
-  if (isLoading && !data) return <RecruiterJobsSkeleton />;
+  if (isInitialLoading && !data) return <RecruiterJobsSkeleton />;
 
   if (error && !data) {
     return (
-      <div className="mx-auto flex min-h-[420px] max-w-6xl items-center justify-center">
+      <div className="flex min-h-[420px] w-full items-center justify-center">
         <div className="max-w-md rounded-lg border border-danger/20 bg-surface p-8 text-center shadow-sm">
           <AlertCircle className="mx-auto mb-3 size-10 text-danger" />
           <h1 className="font-semibold text-text">Không thể tải danh sách tin</h1>
@@ -87,7 +146,7 @@ export function RecruiterJobsPage() {
           <button
             type="button"
             onClick={retry}
-            className="mx-auto mt-5 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+            className="mx-auto mt-5 flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
           >
             <RefreshCw className="size-4" /> Thử lại
           </button>
@@ -117,8 +176,13 @@ export function RecruiterJobsPage() {
     pagination.totalItems,
   );
 
+  const hasActiveFilters =
+    filters.salaryRange !== "ALL" ||
+    filters.location.trim() !== "" ||
+    filters.sort !== "newest";
+
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="w-full space-y-6">
       <header>
         <h1 className="text-xl font-bold text-text">Quản lý tin tuyển dụng</h1>
         <p className="mt-1 text-xs text-muted">
@@ -132,24 +196,70 @@ export function RecruiterJobsPage() {
             <JobStatusTabs value={status} onChange={changeStatus} counts={counts} />
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-text hover:bg-background">
-              <Filter className="size-3.5" /> Bộ lọc <ChevronDown className="size-3" />
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                isFilterOpen || hasActiveFilters
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-border bg-surface text-text hover:bg-background"
+              }`}
+            >
+              <Filter className="size-3.5" />
+              <span>Bộ lọc</span>
+              {hasActiveFilters && (
+                <span className="size-1.5 rounded-full bg-primary" />
+              )}
+              <ChevronDown
+                className={`size-3 transition-transform ${isFilterOpen ? "rotate-180" : ""}`}
+              />
             </button>
-            <Link href="/recruiter/jobs/new" className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-hover">
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-medium text-muted hover:border-danger/30 hover:bg-danger/5 hover:text-danger transition animate-in fade-in"
+                title="Xóa tất cả bộ lọc đang chọn"
+              >
+                <RotateCcw className="size-3" />
+                <span>Xóa bộ lọc</span>
+              </button>
+            )}
+
+            <Link href="/recruiter/jobs/new" className="flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary-hover">
               <Plus className="size-4" /> Đăng tin mới
             </Link>
           </div>
         </div>
 
+        {/* Filter Panel */}
+        {isFilterOpen && (
+          <RecruiterJobsFilterPanel
+            initialValues={filters}
+            onApply={(newFilters) => {
+              setIsTableLoading(true);
+              setFilters(newFilters);
+              setPage(1);
+            }}
+            onReset={resetFilters}
+          />
+        )}
+
         {error && (
           <div className="flex items-center justify-between gap-3 border-b border-warning/20 bg-warning/10 px-5 py-3 text-xs text-warning">
             <span>Không thể cập nhật dữ liệu mới: {error}</span>
-            <button type="button" onClick={retry} className="font-semibold underline">Thử lại</button>
+            <button type="button" onClick={retry} className="cursor-pointer font-semibold underline">Thử lại</button>
           </div>
         )}
 
-        <div className={isLoading ? "pointer-events-none opacity-50" : ""}>
-          <RecruiterJobsTable jobs={data?.items ?? []} />
+        {/* Bảng dữ liệu: dùng skeleton rows load trực tiếp trong bảng, giữ nguyên toàn bộ giao diện trang */}
+        <div>
+          <RecruiterJobsTable
+            jobs={data?.items ?? []}
+            isLoading={isTableLoading}
+            onReload={retry}
+          />
         </div>
 
         <footer className="flex flex-col gap-3 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -162,11 +272,11 @@ export function RecruiterJobsPage() {
               <select
                 value={limit}
                 onChange={(event) => {
-                  beginRequest();
+                  setIsTableLoading(true);
                   setLimit(Number(event.target.value));
                   setPage(1);
                 }}
-                className="rounded-md border border-border bg-surface px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
+                className="cursor-pointer rounded-md border border-border bg-surface px-2 py-1.5 text-xs text-text outline-none focus:border-primary"
               >
                 <option value={8}>8</option>
                 <option value={10}>10</option>
@@ -177,11 +287,11 @@ export function RecruiterJobsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  beginRequest();
+                  setIsTableLoading(true);
                   setPage((current) => Math.max(1, current - 1));
                 }}
-                disabled={page <= 1 || isLoading}
-                className="grid size-8 place-items-center rounded border border-border text-muted hover:bg-background disabled:opacity-40"
+                disabled={page <= 1 || isTableLoading}
+                className="grid size-8 cursor-pointer place-items-center rounded border border-border text-muted hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Trang trước"
               >
                 <ChevronLeft className="size-3.5" />
@@ -190,11 +300,11 @@ export function RecruiterJobsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  beginRequest();
+                  setIsTableLoading(true);
                   setPage((current) => current + 1);
                 }}
-                disabled={page >= pagination.totalPages || isLoading}
-                className="grid size-8 place-items-center rounded border border-border text-muted hover:bg-background disabled:opacity-40"
+                disabled={page >= pagination.totalPages || isTableLoading}
+                className="grid size-8 cursor-pointer place-items-center rounded border border-border text-muted hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Trang sau"
               >
                 <ChevronRight className="size-3.5" />
@@ -213,9 +323,7 @@ export function RecruiterJobsPage() {
             <li>Để tin hiển thị công khai và nhận hồ sơ, bạn cần mở tin để chuyển sang trạng thái “Đang tuyển”.</li>
           </ul>
         </div>
-        <button type="button" className="flex shrink-0 items-center gap-2 rounded-lg border border-primary bg-surface px-3 py-2 text-xs font-medium text-primary hover:bg-primary/5">
-          <CircleHelp className="size-4" /> Xem hướng dẫn
-        </button>
+        
       </aside>
     </div>
   );

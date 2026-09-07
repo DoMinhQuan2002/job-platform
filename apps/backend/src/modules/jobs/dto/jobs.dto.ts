@@ -87,6 +87,20 @@ export const recruiterJobsQuerySchema = z.object({
     .regex(/^\d+$/, "category phải là số nguyên dương")
     .refine((id) => BigInt(id) > 0n, "category phải là số nguyên dương")
     .optional(),
+  location: z.string().trim().optional(),
+  minSalary: z.coerce.number().min(0, "minSalary không được âm").optional(),
+  maxSalary: z.coerce.number().min(0, "maxSalary không được âm").optional(),
+  isNegotiable: z
+    .preprocess((val) => {
+      if (val === "true" || val === true) return true;
+      if (val === "false" || val === false) return false;
+      return undefined;
+    }, z.boolean().optional())
+    .optional(),
+  sort: z
+    .enum(["newest", "oldest", "deadline_asc", "salary_asc", "salary_desc"])
+    .default("newest")
+    .optional(),
   page: z.coerce
     .number({ error: "page phải là số nguyên hợp lệ" })
     .int("page phải là số nguyên")

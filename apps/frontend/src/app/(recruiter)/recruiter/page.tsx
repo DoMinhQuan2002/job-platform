@@ -5,7 +5,7 @@ import { DashboardWelcome } from "@/modules/recruiter/components/dashboard-welco
 
 export default function RecruiterPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="w-full space-y-6">
       <section>
         <DashboardWelcome />
       </section>

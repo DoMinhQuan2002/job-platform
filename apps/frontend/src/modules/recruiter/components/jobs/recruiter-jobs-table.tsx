@@ -1,7 +1,7 @@
-import { Ellipsis, Eye, Pencil, Users } from "lucide-react";
+import { Eye, Pencil, Users } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import type { RecruiterJob, RecruiterJobStatus } from "@/services/recruiter-jobs.service";
+import { RecruiterJobActionsMenu } from "./recruiter-job-actions-menu";
 
 const statusStyles: Record<RecruiterJobStatus, string> = {
   OPEN: "border-success/20 bg-success/10 text-success",
@@ -44,15 +44,11 @@ const formatDate = (value: string) => {
 
 type RecruiterJobsTableProps = {
   jobs: RecruiterJob[];
+  isLoading?: boolean;
+  onReload?: () => void;
 };
 
-const ActionButton = ({ label, children }: { label: string; children: ReactNode }) => (
-  <button type="button" title={label} aria-label={label} className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
-    {children}
-  </button>
-);
-
-export function RecruiterJobsTable({ jobs }: RecruiterJobsTableProps) {
+export function RecruiterJobsTable({ jobs, isLoading, onReload }: RecruiterJobsTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[980px] text-left text-xs text-muted">
@@ -69,34 +65,78 @@ export function RecruiterJobsTable({ jobs }: RecruiterJobsTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {jobs.map((job, index) => (
-            <tr key={job.id} className="transition hover:bg-background/70">
-              <td className="px-5 py-4">{index + 1}</td>
-              <td className="px-5 py-4">
-                <p className="font-semibold text-text">{job.title}</p>
-                <p className="mt-1 text-[10px] text-muted">Mã tin: #{job.id}</p>
-              </td>
-              <td className="whitespace-nowrap px-5 py-4">{formatSalary(job)}</td>
-              <td className="max-w-40 truncate px-5 py-4" title={job.address}>{job.address}</td>
-              <td className="whitespace-nowrap px-5 py-4">{formatDate(job.deadline)}</td>
-              <td className="px-5 py-4">
-                <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-medium ${statusStyles[job.status]}`}>
-                  <i className="size-1.5 rounded-full bg-current" />
-                  {statusLabels[job.status]}
-                </span>
-              </td>
-              <td className="px-5 py-4 text-center font-medium text-text">{job.applicantCount}</td>
-              <td className="px-5 py-4">
-                <div className="flex items-center justify-center gap-1.5">
-                  <Link href={`/recruiter/jobs/${job.id}`} title="Xem chi tiết" aria-label="Xem chi tiết" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary"><Eye className="size-3.5" /></Link>
-                  <Link href={`/recruiter/jobs/${job.id}/edit`} title="Sửa tin" aria-label="Sửa tin" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary"><Pencil className="size-3.5" /></Link>
-                  <ActionButton label="Quản lý ứng viên"><Users className="size-3.5" /></ActionButton>
-                  <ActionButton label="Thao tác khác"><Ellipsis className="size-3.5" /></ActionButton>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {jobs.length === 0 && (
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <tr key={index} className="animate-pulse">
+                <td className="px-5 py-4">
+                  <div className="h-3 w-5 rounded bg-border/45" />
+                </td>
+                <td className="px-5 py-4 space-y-2">
+                  <div className="h-3.5 w-52 rounded bg-border/45" />
+                  <div className="h-2.5 w-20 rounded bg-border/30" />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="h-3 w-28 rounded bg-border/45" />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="h-3 w-32 rounded bg-border/45" />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="h-3 w-20 rounded bg-border/45" />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="h-5 w-20 rounded-full bg-border/45" />
+                </td>
+                <td className="px-5 py-4 text-center">
+                  <div className="mx-auto h-3 w-6 rounded bg-border/45" />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <div className="size-8 rounded-full bg-border/40" />
+                    <div className="size-8 rounded-full bg-border/40" />
+                    <div className="size-8 rounded-full bg-border/40" />
+                    <div className="size-8 rounded-full bg-border/40" />
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            jobs.map((job, index) => (
+              <tr key={job.id} className="transition hover:bg-background/70">
+                <td className="px-5 py-4">{index + 1}</td>
+                <td className="px-5 py-4">
+                  <p className="font-semibold text-text">{job.title}</p>
+                  <p className="mt-1 text-[10px] text-muted">Mã tin: #{job.id}</p>
+                </td>
+                <td className="whitespace-nowrap px-5 py-4">{formatSalary(job)}</td>
+                <td className="max-w-40 truncate px-5 py-4" title={job.address}>{job.address}</td>
+                <td className="whitespace-nowrap px-5 py-4">{formatDate(job.deadline)}</td>
+                <td className="px-5 py-4">
+                  <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-medium ${statusStyles[job.status]}`}>
+                    <i className="size-1.5 rounded-full bg-current" />
+                    {statusLabels[job.status]}
+                  </span>
+                </td>
+                <td className="px-5 py-4 text-center font-medium text-text">{job.applicantCount}</td>
+                <td className="px-5 py-4">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Link href={`/recruiter/jobs/${job.id}`} title="Xem chi tiết" aria-label="Xem chi tiết" className="grid size-8 cursor-pointer place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary"><Eye className="size-3.5" /></Link>
+                    <Link href={`/recruiter/jobs/${job.id}/edit`} title="Sửa tin" aria-label="Sửa tin" className="grid size-8 cursor-pointer place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary"><Pencil className="size-3.5" /></Link>
+                    <Link
+                      href={`/recruiter/candidates?jobId=${job.id}`}
+                      title="Quản lý ứng viên"
+                      aria-label="Quản lý ứng viên"
+                      className="grid size-8 cursor-pointer place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary"
+                    >
+                      <Users className="size-3.5" />
+                    </Link>
+                    <RecruiterJobActionsMenu job={job} onStatusChange={onReload} />
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+          {!isLoading && jobs.length === 0 && (
             <tr><td colSpan={8} className="px-5 py-16 text-center text-sm text-muted">Không có tin tuyển dụng ở trạng thái này.</td></tr>
           )}
         </tbody>

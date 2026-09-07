@@ -15,7 +15,6 @@ import {
   MapPin,
   Phone,
   RefreshCw,
-  Send,
   User,
   UserRoundX,
 } from "lucide-react";
@@ -25,6 +24,7 @@ import {
   type RecruiterApplicationStatus,
 } from "@/services/recruiter-applications.service";
 import { ROUTES } from "@/constants/routes";
+import { CandidateAvatar } from "@/modules/applications/components/candidate-avatar";
 
 type DetailTab = "INFO" | "CV" | "NOTES" | "HISTORY";
 
@@ -239,7 +239,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="w-full space-y-4">
         <div className="h-5 w-44 animate-pulse rounded bg-border" />
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
           <div className="space-y-4">
@@ -278,7 +278,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
   const availableStatusOptions = nextStatusOptions[application.status] ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="w-full space-y-4">
       <Link href={ROUTES.recruiter.candidates} className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
         <ArrowLeft className="size-3.5" /> Quay lại danh sách ứng viên
       </Link>
@@ -293,15 +293,12 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
         <div className="min-w-0 space-y-4">
           <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <span className="grid size-24 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                {candidateName
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(-2)
-                  .map((word) => word[0])
-                  .join("")
-                  .toUpperCase()}
-              </span>
+              <CandidateAvatar
+                name={candidateName}
+                avatarUrl={candidate?.avatar ?? fallbackCandidate?.avatar}
+                className="size-24"
+                fallbackClassName="bg-primary/10 text-primary font-bold text-2xl"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h1 className="text-2xl font-bold text-text">{candidateName}</h1>
@@ -322,7 +319,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
                   key={tab.value}
                   type="button"
                   onClick={() => setActiveTab(tab.value)}
-                  className={`shrink-0 border-b-2 px-4 py-2 text-xs font-semibold transition ${
+                  className={`shrink-0 cursor-pointer border-b-2 px-4 py-2 text-xs font-semibold transition ${
                     activeTab === tab.value
                       ? "border-primary text-primary"
                       : "border-transparent text-muted hover:text-text"
@@ -413,10 +410,20 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={openResume} disabled={!application.resumeSnapshotUrl} className="inline-flex items-center gap-2 rounded-lg border border-primary px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/5 disabled:opacity-50">
+                    <button
+                      type="button"
+                      onClick={openResume}
+                      disabled={!application.resumeSnapshotUrl}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-primary px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
                       <Eye className="size-3.5" /> Xem CV
                     </button>
-                    <button type="button" onClick={downloadResume} disabled={!application.resumeSnapshotUrl} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text hover:bg-surface disabled:opacity-50">
+                    <button
+                      type="button"
+                      onClick={downloadResume}
+                      disabled={!application.resumeSnapshotUrl}
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+                    >
                       <Download className="size-3.5" /> Tải xuống
                     </button>
                   </div>
@@ -526,18 +533,22 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
           <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
             <h2 className="mb-4 text-sm font-bold text-text">Thao tác nhanh</h2>
             <div className="space-y-2">
-              <button type="button" onClick={openResume} disabled={!application.resumeSnapshotUrl} className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text hover:bg-background disabled:opacity-50">
+              <button
+                type="button"
+                onClick={openResume}
+                disabled={!application.resumeSnapshotUrl}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text transition hover:bg-background hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Eye className="size-3.5" /> Xem CV
               </button>
-              <button type="button" onClick={downloadResume} disabled={!application.resumeSnapshotUrl} className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text hover:bg-background disabled:opacity-50">
+              <button
+                type="button"
+                onClick={downloadResume}
+                disabled={!application.resumeSnapshotUrl}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text transition hover:bg-background hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 <Download className="size-3.5" /> Tải CV về máy
               </button>
-              <button type="button" disabled className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text opacity-60">
-                <Send className="size-3.5" /> Gửi tin nhắn
-              </button>
-              {/* <button type="button" disabled={updating || application.status === "REJECTED" || application.status === "WITHDRAWN"} onClick={() => void updateStatus("REJECTED")} className="flex w-full items-center justify-center gap-2 rounded-lg border border-danger/20 px-3 py-2 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50">
-                <UserRoundX className="size-3.5" /> Loại ứng viên
-              </button> */}
             </div>
           </section>
         </aside>

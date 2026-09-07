@@ -48,10 +48,10 @@ export function RecruiterJobDetailPage({ id }: { id: string }) {
   };
 
   if (!job && !error) return <JobDetailSkeleton />;
-  if (!job) return <div className="mx-auto flex min-h-[420px] max-w-6xl items-center justify-center"><div className="max-w-md rounded-lg border border-danger/20 bg-surface p-8 text-center shadow-sm"><CircleAlert className="mx-auto mb-3 size-10 text-danger" /><h1 className="font-semibold text-text">Không thể tải chi tiết tin</h1><p className="mt-2 text-sm text-muted">{error}</p><div className="mt-5 flex justify-center gap-2"><Link href="/recruiter/jobs" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text">Quay lại</Link><button type="button" onClick={retry} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div></div>;
+  if (!job) return <div className="flex min-h-[420px] w-full items-center justify-center"><div className="max-w-md rounded-lg border border-danger/20 bg-surface p-8 text-center shadow-sm"><CircleAlert className="mx-auto mb-3 size-10 text-danger" /><h1 className="font-semibold text-text">Không thể tải chi tiết tin</h1><p className="mt-2 text-sm text-muted">{error}</p><div className="mt-5 flex justify-center gap-2"><Link href="/recruiter/jobs" className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text">Quay lại</Link><button type="button" onClick={retry} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div></div>;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="w-full space-y-4">
       <Link href="/recruiter/jobs" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><ArrowLeft className="size-3.5" />Quay lại danh sách tin</Link>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="space-y-4"><JobSummaryCard job={job} /><JobDetailContent job={job} /></div>

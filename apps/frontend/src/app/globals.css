@@ -272,5 +272,6 @@ body {
   @media (width > 1536px) {
     max-width: 1400px;
   }
+  @media (width > 1920px) { max-width: 1680px; } /* Cho màn Full HD & 2K */
 }
 

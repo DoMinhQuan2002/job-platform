@@ -57,7 +57,7 @@ describe("Jobs Module - Public Query", () => {
 
       const result = await jobService.getJobs({ companyId: "5", page: 1, size: 20 });
 
-      expect(qbMock.where).toHaveBeenCalledWith("job.status = :status", { status: JOB_STATUS.APPROVED });
+      expect(qbMock.where).toHaveBeenCalledWith("job.status = :status", { status: JOB_STATUS.OPEN });
       expect(qbMock.andWhere).toHaveBeenCalledWith("job.deadline >= CURRENT_DATE");
       expect(qbMock.andWhere).toHaveBeenCalledWith("job.companyId = :companyId", { companyId: "5" });
       expect(result.items).toHaveLength(1);
@@ -173,6 +173,39 @@ describe("Jobs Module - Public Query", () => {
 
       expect(res.status).toBe(400);
       expect(res.body.errors[0].code).toBe("BAD_REQUEST");
+    });
+  });
+
+  describe("Recruiter Jobs Query Schema", () => {
+    it("should parse filter parameters correctly", async () => {
+      const { recruiterJobsQuerySchema } = await import("./dto/jobs.dto");
+      const parsed = recruiterJobsQuerySchema.parse({
+        location: "Hà Nội",
+        minSalary: "10000000",
+        maxSalary: "20000000",
+        isNegotiable: "true",
+        sort: "salary_desc",
+        page: "2",
+        limit: "15",
+      });
+
+      expect(parsed.location).toBe("Hà Nội");
+      expect(parsed.minSalary).toBe(10000000);
+      expect(parsed.maxSalary).toBe(20000000);
+      expect(parsed.isNegotiable).toBe(true);
+      expect(parsed.sort).toBe("salary_desc");
+      expect(parsed.page).toBe(2);
+      expect(parsed.limit).toBe(15);
+    });
+
+    it("should reject negative salary or invalid sort", async () => {
+      const { recruiterJobsQuerySchema } = await import("./dto/jobs.dto");
+      const result = recruiterJobsQuerySchema.safeParse({
+        minSalary: -500,
+        sort: "invalid_sort",
+      });
+
+      expect(result.success).toBe(false);
     });
   });
 });

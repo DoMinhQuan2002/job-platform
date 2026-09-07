@@ -19,7 +19,7 @@ export const getSupabaseConfig = () => ({
   url: required("SUPABASE_URL"),
   serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
   publicBucket: process.env.SUPABASE_STORAGE_BUCKET?.trim() || "job-platform-assets",
-  privateBucket: process.env.SUPABASE_STORAGE_PRIVATE_BUCKET?.trim() || "",
+  privateBucket: process.env.SUPABASE_STORAGE_PRIVATE_BUCKET?.trim() || "job-platform-private",
 });
 
 export const getSupabaseClient = () => {
