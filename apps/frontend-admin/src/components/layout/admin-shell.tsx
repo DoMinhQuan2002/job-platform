@@ -99,7 +99,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
   // 3. Đã xác thực thành công -> Render Dashboard
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#f8fafc] text-slate-900">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-slate-900">
       {/* Left Sidebar: 260px */}
       <AdminSidebar
         open={sidebarOpen}
@@ -116,7 +116,7 @@ export function AdminShell({ children }: AdminShellProps) {
         />
 
         {/* Scrollable Page Body */}
-        <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-background p-6 lg:p-8">
           {children}
         </main>
       </div>

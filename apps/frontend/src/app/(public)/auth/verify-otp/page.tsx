@@ -127,13 +127,69 @@ type VerifyOtpFormProps = {
   initialExpiresIn: number;
 };
 
+const getOtpStorageKey = (prefix: string, email: string) =>
+  `jp_otp_${prefix}_${email.trim().toLowerCase()}`;
+
+const getOrSetTargetTimestamp = (key: string, durationSeconds: number): number => {
+  if (typeof window === "undefined") return Date.now() + durationSeconds * 1000;
+  try {
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      const parsed = Number(saved);
+      if (Number.isFinite(parsed) && parsed > Date.now()) {
+        return parsed;
+      }
+    }
+    const newTarget = Date.now() + durationSeconds * 1000;
+    sessionStorage.setItem(key, String(newTarget));
+    return newTarget;
+  } catch {
+    return Date.now() + durationSeconds * 1000;
+  }
+};
+
+const setTargetTimestamp = (key: string, durationSeconds: number): number => {
+  const newTarget = Date.now() + durationSeconds * 1000;
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem(key, String(newTarget));
+    } catch {}
+  }
+  return newTarget;
+};
+
+const clearOtpStorage = (email: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(getOtpStorageKey("exp", email));
+    sessionStorage.removeItem(getOtpStorageKey("resend", email));
+  } catch {}
+};
+
 function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   const router = useRouter();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [digits, setDigits] = useState(() => Array<string>(OTP_LENGTH).fill(""));
-  const [expiresIn, setExpiresIn] = useState(initialExpiresIn);
-  const [resendCooldown, setResendCooldown] = useState(
-    RESEND_COOLDOWN_SECONDS,
+
+  const expKey = getOtpStorageKey("exp", email);
+  const resendKey = getOtpStorageKey("resend", email);
+
+  // Target timestamps cố định
+  const expireTargetRef = useRef<number>(
+    getOrSetTargetTimestamp(expKey, initialExpiresIn),
+  );
+  const resendTargetRef = useRef<number>(
+    getOrSetTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS),
+  );
+
+  const calculateRemaining = (targetTime: number) =>
+    Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
+
+  const [expiresIn, setExpiresIn] = useState(() =>
+    calculateRemaining(expireTargetRef.current),
+  );
+  const [resendCooldown, setResendCooldown] = useState(() =>
+    calculateRemaining(resendTargetRef.current),
   );
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -141,9 +197,13 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    // Cập nhật lại ngay khi mount để đảm bảo chính xác theo đồng hồ máy
+    setExpiresIn(calculateRemaining(expireTargetRef.current));
+    setResendCooldown(calculateRemaining(resendTargetRef.current));
+
     const timer = window.setInterval(() => {
-      setExpiresIn((current) => Math.max(0, current - 1));
-      setResendCooldown((current) => Math.max(0, current - 1));
+      setExpiresIn(calculateRemaining(expireTargetRef.current));
+      setResendCooldown(calculateRemaining(resendTargetRef.current));
     }, 1_000);
 
     return () => window.clearInterval(timer);
@@ -218,6 +278,7 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
 
     try {
       const response = await authApi.verifyRegisterCode({ email, code });
+      clearOtpStorage(email);
       setSuccess(response.message || "Xác thực tài khoản thành công.");
       router.replace(`${ROUTES.auth.login}?verified=1`);
     } catch (submitError) {
@@ -241,8 +302,13 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
     try {
       const response = await authApi.resendRegisterCode({ email });
       setDigits(Array<string>(OTP_LENGTH).fill(""));
-      setExpiresIn(response.data.otpExpiresIn);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      
+      // Đặt timestamp đích mới vào Storage
+      expireTargetRef.current = setTargetTimestamp(expKey, response.data.otpExpiresIn);
+      resendTargetRef.current = setTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS);
+
+      setExpiresIn(calculateRemaining(expireTargetRef.current));
+      setResendCooldown(calculateRemaining(resendTargetRef.current));
       setSuccess(response.message || "Mã xác thực mới đã được gửi.");
       inputRefs.current[0]?.focus();
     } catch (resendError) {
