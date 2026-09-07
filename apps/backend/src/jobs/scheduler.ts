@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { closeExpiredJobs } from "./close-expired-jobs";
+import { runSetAllAvatars } from "./run-set-all-avatars";
 
 /**
  * Khởi động tất cả cron job của hệ thống.
@@ -23,5 +24,24 @@ export function startScheduler(): void {
     },
   );
 
-  console.log("[scheduler] Đã khởi động. Cron job đóng tin hết hạn chạy lúc 00:05 ICT mỗi ngày.");
+  // Mỗi giờ đúng phút 0 (ICT): sync avatar bulk 1 lần.
+  cron.schedule(
+    "0 * * * *",
+    async () => {
+      console.log("[scheduler] Bắt đầu set-all-avatars (hourly)...");
+      try {
+        await runSetAllAvatars();
+        console.log("[scheduler] set-all-avatars xong.");
+      } catch (error) {
+        console.error("[scheduler] Lỗi set-all-avatars:", error);
+      }
+    },
+    {
+      timezone: "Asia/Ho_Chi_Minh",
+    },
+  );
+
+  console.log(
+    "[scheduler] Đã khởi động. Đóng tin hết hạn 00:05 ICT mỗi ngày; set-all-avatars mỗi giờ :00 ICT.",
+  );
 }
