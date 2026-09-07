@@ -11,7 +11,6 @@ export const loginSchema = z.object({
     .string()
     .min(1, "Vui lòng nhập mật khẩu.")
     .max(64, "Mật khẩu không được vượt quá 64 ký tự."),
-  rememberMe: z.boolean(),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
