@@ -3,8 +3,12 @@ import { ASSET_TYPE, storageService, validateUpload } from "@/common/storage";
 import { hashPassword, verifyPassword } from "@/common/security/password";
 import { AppDataSource } from "@/data-source";
 import { SessionEntity, UserEntity } from "@/database/entities";
+import { sendOtpMail } from "@/common/mail/mailer";
+import { OTP_RESEND_COOLDOWN_SECONDS } from "../auth/auth.constants";
+import { getResendCooldown, issueOtp, verifyOtp } from "../auth/auth.otp";
 import type { ChangeMyPasswordDto } from "./dto/change-my-password.dto";
 import type { UpdateMyProfileDto } from "./dto/update-my-profile.dto";
+import type { VerifyEmailDto } from "./dto/verify-email.dto";
 
 export const usersService = {
 
@@ -79,5 +83,47 @@ export const usersService = {
       await manager.update(UserEntity, { id: userId }, { passwordHash: await hashPassword(input.newPassword) });
       await manager.createQueryBuilder().update(SessionEntity).set({ isRevoked: true }).where("user_id = :userId AND is_revoked = false", { userId }).execute();
     });
+  },
+
+  async sendEmailVerificationOtp(userId: string) {
+    const user = await AppDataSource.getRepository(UserEntity).findOne({ where: { id: userId } });
+    if (!user) throw new AppError(404, "USER_NOT_FOUND", "Không tìm thấy tài khoản");
+    if (user.emailVerifiedAt) throw new AppError(400, "EMAIL_ALREADY_VERIFIED", "Email này đã được xác thực");
+
+    const cooldown = await getResendCooldown("verify_email", user.email);
+    if (cooldown > 0) {
+      throw new AppError(429, "RATE_LIMITED", `Vui lòng đợi ${cooldown} giây trước khi yêu cầu mã mới`, {
+        cooldownSeconds: cooldown,
+      });
+    }
+
+    const code = await issueOtp("verify_email", user.email);
+    await sendOtpMail(user.email, code, "verify_email");
+
+    return {
+      email: user.email,
+      cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+    };
+  },
+
+  async verifyEmail(userId: string, input: VerifyEmailDto) {
+    const user = await AppDataSource.getRepository(UserEntity).findOne({ where: { id: userId } });
+    if (!user) throw new AppError(404, "USER_NOT_FOUND", "Không tìm thấy tài khoản");
+    if (user.emailVerifiedAt) throw new AppError(400, "EMAIL_ALREADY_VERIFIED", "Email này đã được xác thực");
+
+    const result = await verifyOtp("verify_email", user.email, input.code);
+    if (result === "NOT_FOUND") {
+      throw new AppError(400, "OTP_NOT_FOUND_OR_EXPIRED", "Mã xác thực không tồn tại hoặc đã hết hạn");
+    }
+    if (result === "MISMATCH") {
+      throw new AppError(400, "OTP_INVALID", "Mã xác thực không chính xác");
+    }
+
+    user.emailVerifiedAt = new Date();
+    await AppDataSource.getRepository(UserEntity).save(user);
+
+    return {
+      emailVerifiedAt: user.emailVerifiedAt,
+    };
   },
 };

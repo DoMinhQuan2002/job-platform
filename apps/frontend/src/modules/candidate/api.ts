@@ -32,6 +32,18 @@ export const candidateApi = {
   changePassword: (body: ChangePasswordInput) =>
     http<ApiSuccess<null>>("/users/me/password", { method: "PATCH", body }),
 
+  sendEmailVerificationOtp: () =>
+    http<ApiSuccess<{ email: string; cooldownSeconds: number }>>(
+      "/users/me/email/send-otp",
+      { method: "POST" },
+    ),
+
+  verifyEmail: (code: string) =>
+    http<ApiSuccess<{ emailVerifiedAt: string }>>(
+      "/users/me/email/verify-otp",
+      { method: "POST", body: { code } },
+    ),
+
   getMe: () => http<ApiSuccess<CandidateProfile>>("/candidates/me"),
 
   updateMe: (body: UpdateCandidateProfileInput) =>

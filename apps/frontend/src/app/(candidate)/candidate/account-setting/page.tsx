@@ -4,7 +4,9 @@
 
 import Link from "next/link";
 import {
+  AlertCircle,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   Link2,
   LoaderCircle,
@@ -35,6 +37,7 @@ import { CandidateWorkspaceLayout } from "@/modules/candidate/components";
 import type { AccountUser, CandidateProfile } from "@/modules/candidate/types";
 import { locationsApi } from "@/modules/locations/api";
 import type { Province, Ward } from "@/modules/locations/types";
+import { EmailVerificationModal } from "./email-verification-modal";
 
 type Tab = "profile" | "security";
 type AccountForm = {
@@ -230,7 +233,9 @@ export default function AccountSettingPage() {
           onAccountChange={syncAccount}
         />
       )}
-      {tab === "security" && <SecurityTab account={account} />}
+      {tab === "security" && (
+        <SecurityTab account={account} onAccountChange={syncAccount} />
+      )}
     </CandidateWorkspaceLayout>
   );
 }
@@ -254,6 +259,7 @@ function ProfileTab({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(true);
@@ -364,8 +370,36 @@ function ProfileTab({
               maxLength={100}
             />
           </Field>
-          <Field label="Email" icon={<Mail />}>
-            <input className={fieldClass} value={form.email} disabled />
+          <Field
+            label="Email"
+            icon={<Mail />}
+            badge={
+              account.emailVerifiedAt ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  <CheckCircle2 className="size-3 text-emerald-600" />
+                  Đã xác thực
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                  <AlertCircle className="size-3 text-amber-600" />
+                  Chưa xác thực
+                </span>
+              )
+            }
+          >
+            <div className="flex gap-2">
+              <input className={fieldClass} value={form.email} disabled />
+              {!account.emailVerifiedAt && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsVerifyModalOpen(true)}
+                  className="h-11 shrink-0 border-primary text-xs font-semibold text-primary hover:bg-primary/5"
+                >
+                  Xác thực ngay
+                </Button>
+              )}
+            </div>
           </Field>
           <Field label="Số điện thoại" icon={<Phone />}>
             <input
@@ -512,11 +546,30 @@ function ProfileTab({
           </p>
         </section>
       </div>
+
+      <EmailVerificationModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        email={account.email}
+        onSuccess={(emailVerifiedAt) => {
+          onAccountChange({
+            ...account,
+            emailVerifiedAt,
+          });
+        }}
+      />
     </div>
   );
 }
 
-function SecurityTab({ account }: { account: AccountUser }) {
+function SecurityTab({
+  account,
+  onAccountChange,
+}: {
+  account: AccountUser;
+  onAccountChange?: (v: AccountUser) => void;
+}) {
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [v, setV] = useState({
     currentPassword: "",
     newPassword: "",
@@ -525,35 +578,101 @@ function SecurityTab({ account }: { account: AccountUser }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const emailCard = (
+    <div className="rounded-xl border border-[#ccd1dc] bg-white p-6 shadow-sm sm:p-7">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3.5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Mail className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-bold text-[#20242c]">
+                Xác thực địa chỉ Email
+              </h3>
+              {account.emailVerifiedAt ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  <CheckCircle2 className="size-3 text-emerald-600" />
+                  Đã xác thực
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                  <AlertCircle className="size-3 text-amber-600" />
+                  Chưa xác thực
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted">
+              Email:{" "}
+              <span className="font-medium text-foreground">
+                {account.email}
+              </span>
+            </p>
+            <p className="text-xs text-muted">
+              {account.emailVerifiedAt
+                ? "Tài khoản của bạn đã được bảo vệ và xác thực qua địa chỉ email này."
+                : "Xác thực email giúp bạn nhận thông báo tuyển dụng và bảo vệ an toàn tài khoản."}
+            </p>
+          </div>
+        </div>
+        {!account.emailVerifiedAt && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsVerifyModalOpen(true)}
+            className="shrink-0 border-primary text-xs font-semibold text-primary hover:bg-primary/5"
+          >
+            Xác thực ngay
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
   if (account.hasPassword === false) {
     return (
-      <div className="max-w-2xl rounded-xl border border-[#ccd1dc] bg-white p-7 shadow-sm">
-        <PanelHeading
-          title="Bảo mật tài khoản"
-          description="Quản lý phương thức đăng nhập và bảo mật của bạn."
-        />
-        <div className="mt-6 rounded-xl border border-[#e2e8f0] bg-slate-50/70 p-5">
-          <div className="flex items-start gap-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-              <span className="text-base font-bold text-[#4285f4]">G</span>
-            </span>
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-[#20242c]">
-                Tài khoản đăng nhập bằng Google
-              </h3>
-              <p className="text-sm leading-relaxed text-muted">
-                Tài khoản của bạn (
-                <span className="font-medium text-foreground">
-                  {account.email}
-                </span>
-                ) được liên kết và bảo vệ an toàn thông qua Google.
-              </p>
-              <p className="pt-1 text-xs text-muted">
-                Bạn không cần sử dụng mật khẩu riêng để đăng nhập vào hệ thống.
-              </p>
+      <div className="max-w-2xl space-y-6">
+        {emailCard}
+        <div className="rounded-xl border border-[#ccd1dc] bg-white p-7 shadow-sm">
+          <PanelHeading
+            title="Bảo mật tài khoản"
+            description="Quản lý phương thức đăng nhập và bảo mật của bạn."
+          />
+          <div className="mt-6 rounded-xl border border-[#e2e8f0] bg-slate-50/70 p-5">
+            <div className="flex items-start gap-3.5">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+                <span className="text-base font-bold text-[#4285f4]">G</span>
+              </span>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-[#20242c]">
+                  Tài khoản đăng nhập bằng Google
+                </h3>
+                <p className="text-sm leading-relaxed text-muted">
+                  Tài khoản của bạn (
+                  <span className="font-medium text-foreground">
+                    {account.email}
+                  </span>
+                  ) được liên kết và bảo vệ an toàn thông qua Google.
+                </p>
+                <p className="pt-1 text-xs text-muted">
+                  Bạn không cần sử dụng mật khẩu riêng để đăng nhập vào hệ thống.
+                </p>
+              </div>
             </div>
           </div>
         </div>
+
+        <EmailVerificationModal
+          isOpen={isVerifyModalOpen}
+          onClose={() => setIsVerifyModalOpen(false)}
+          email={account.email}
+          onSuccess={(emailVerifiedAt) => {
+            onAccountChange?.({
+              ...account,
+              emailVerifiedAt,
+            });
+          }}
+        />
       </div>
     );
   }
@@ -580,61 +699,81 @@ function SecurityTab({ account }: { account: AccountUser }) {
     }
   };
   return (
-    <form
-      onSubmit={submit}
-      className="w-full rounded-xl border border-[#ccd1dc] bg-white p-7 shadow-sm"
-    >
-      <PanelHeading
-        title="Đổi mật khẩu"
-        description="Sử dụng mật khẩu mạnh và không dùng lại ở dịch vụ khác."
-      />
-      <div className="mt-6 space-y-5">
-        <Password
-          label="Mật khẩu hiện tại"
-          value={v.currentPassword}
-          onChange={(value) => setV({ ...v, currentPassword: value })}
-        />
-        <Password
-          label="Mật khẩu mới"
-          value={v.newPassword}
-          onChange={(value) => setV({ ...v, newPassword: value })}
-        />
-        <Password
-          label="Xác nhận mật khẩu mới"
-          value={v.confirmPassword}
-          onChange={(value) => setV({ ...v, confirmPassword: value })}
-        />
-      </div>
-      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
-      <Button
-        type="submit"
-        className="mt-6"
-        disabled={
-          saving || !v.currentPassword || !v.newPassword || !v.confirmPassword
-        }
+    <div className="max-w-2xl space-y-6">
+      {emailCard}
+      <form
+        onSubmit={submit}
+        className="w-full rounded-xl border border-[#ccd1dc] bg-white p-7 shadow-sm"
       >
-        {saving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
-      </Button>
-    </form>
+        <PanelHeading
+          title="Đổi mật khẩu"
+          description="Sử dụng mật khẩu mạnh và không dùng lại ở dịch vụ khác."
+        />
+        <div className="mt-6 space-y-5">
+          <Password
+            label="Mật khẩu hiện tại"
+            value={v.currentPassword}
+            onChange={(value) => setV({ ...v, currentPassword: value })}
+          />
+          <Password
+            label="Mật khẩu mới"
+            value={v.newPassword}
+            onChange={(value) => setV({ ...v, newPassword: value })}
+          />
+          <Password
+            label="Xác nhận mật khẩu mới"
+            value={v.confirmPassword}
+            onChange={(value) => setV({ ...v, confirmPassword: value })}
+          />
+        </div>
+        {error && <p className="mt-4 text-sm text-danger">{error}</p>}
+        <Button
+          type="submit"
+          className="mt-6"
+          disabled={
+            saving || !v.currentPassword || !v.newPassword || !v.confirmPassword
+          }
+        >
+          {saving ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+        </Button>
+      </form>
+
+      <EmailVerificationModal
+        isOpen={isVerifyModalOpen}
+        onClose={() => setIsVerifyModalOpen(false)}
+        email={account.email}
+        onSuccess={(emailVerifiedAt) => {
+          onAccountChange?.({
+            ...account,
+            emailVerifiedAt,
+          });
+        }}
+      />
+    </div>
   );
 }
 
 function Field({
   label,
   icon,
+  badge,
   children,
   className,
 }: {
   label: string;
   icon: ReactNode;
+  badge?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <label className={cn("space-y-2", className)}>
-      <span className="flex items-center gap-2 text-sm font-medium [&_svg]:size-4 [&_svg]:text-muted">
-        {icon}
-        {label}
+      <span className="flex items-center justify-between text-sm font-medium">
+        <span className="flex items-center gap-2 [&_svg]:size-4 [&_svg]:text-muted">
+          {icon}
+          {label}
+        </span>
+        {badge}
       </span>
       {children}
     </label>

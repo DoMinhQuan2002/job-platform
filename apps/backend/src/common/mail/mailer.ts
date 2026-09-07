@@ -52,9 +52,19 @@ export const sendMail = async (input: {
   }
 };
 
-export const sendOtpMail = (to: string, code: string, purpose: "register" | "forgot_password") => {
-  const subject =
-    purpose === "register" ? "Mã xác thực đăng ký tài khoản" : "Mã xác thực đặt lại mật khẩu";
+export const sendOtpMail = (
+  to: string,
+  code: string,
+  purpose: "register" | "forgot_password" | "verify_email",
+) => {
+  let subject = "Mã xác thực tài khoản";
+  if (purpose === "register") {
+    subject = "Mã xác thực đăng ký tài khoản";
+  } else if (purpose === "forgot_password") {
+    subject = "Mã xác thực đặt lại mật khẩu";
+  } else if (purpose === "verify_email") {
+    subject = "Mã xác thực email tài khoản";
+  }
 
   return sendMail({
     to,
