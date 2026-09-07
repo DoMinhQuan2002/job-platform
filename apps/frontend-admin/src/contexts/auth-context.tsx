@@ -275,7 +275,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    return {
+      currentUser: null,
+      isAuthenticated: false,
+      isLoading: true,
+      login: async () => ({
+        success: false,
+        message: "Hệ thống đang khởi tạo, vui lòng thử lại.",
+      }),
+      logout: async () => {},
+      refreshSession: async () => false,
+    };
   }
   return context;
 }

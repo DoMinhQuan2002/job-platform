@@ -11,7 +11,7 @@ export const REFRESH_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 ngay
 export const REFRESH_TOKEN_COOKIE = "refresh_token";
 export const COOKIE_PATH = "/api/v1";
 
-export type OtpPurpose = "register" | "forgot_password";
+export type OtpPurpose = "register" | "forgot_password" | "verify_email";
 
 export const otpKey = (purpose: OtpPurpose, email: string) => `otp:${purpose}:${email}`;
 export const otpCooldownKey = (purpose: OtpPurpose, email: string) =>
