@@ -19,43 +19,43 @@ type Props = {
   className?: string;
 };
 
-const defaultLocations = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Cần Thơ"];
+const defaultLocations = ["Hà Nội", "TP. Hồ Chí Minh", "Thành phố Hồ Chí Minh", "Đà Nẵng", "Cần Thơ"];
 
 const VIETNAM_PROVINCES = [
   "An Giang",
-  "Bà Rịa - Vũng Tàu",
-  "Bắc Giang",
   "Bắc Ninh",
-  "Bến Tre",
-  "Bình Định",
-  "Bình Dương",
-  "Bình Phước",
-  "Bình Thuận",
   "Cà Mau",
+  "Cao Bằng",
   "Cần Thơ",
   "Đà Nẵng",
   "Đắk Lắk",
+  "Điện Biên",
   "Đồng Nai",
   "Đồng Tháp",
   "Gia Lai",
-  "Hà Giang",
-  "Hà Nam",
   "Hà Nội",
   "Hà Tĩnh",
-  "Hải Dương",
   "Hải Phòng",
+  "Huế",
   "Hưng Yên",
   "Khánh Hòa",
-  "Kiên Giang",
+  "Lai Châu",
   "Lâm Đồng",
-  "Long An",
+  "Lạng Sơn",
+  "Lào Cai",
   "Nghệ An",
+  "Ninh Bình",
   "Phú Thọ",
+  "Quảng Ngãi",
   "Quảng Ninh",
+  "Quảng Trị",
+  "Sơn La",
+  "Tây Ninh",
   "Thái Nguyên",
   "Thanh Hóa",
-  "Thừa Thiên Huế",
   "TP. Hồ Chí Minh",
+  "Tuyên Quang",
+  "Vĩnh Long",
 ];
 
 const salaries = [
