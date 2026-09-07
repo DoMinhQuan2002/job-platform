@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { googleLogout } from "@react-oauth/google";
-import { Bell, ChevronDown, LogOut, Menu, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ROUTES } from "@/constants/routes";
 import { resolveStorageUrl } from "@/lib/utils";
@@ -135,16 +135,7 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
           {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
           <CandidateSearchBar className="hidden xl:block" />
 
-          <button
-            type="button"
-            className="relative rounded-md p-1.5 text-slate-700 hover:bg-slate-100"
-            aria-label="Thông báo"
-          >
-            <Bell className="size-[18px]" />
-            <span className="absolute -right-0.5 -top-1 grid size-[15px] place-items-center rounded-full bg-red-500 text-[9px] font-semibold text-white">
-              5
-            </span>
-          </button>
+        
           <NotificationDropdown
             baseHref={ROUTES.recruiter.notifications}
             unreadCount={unreadCount}
