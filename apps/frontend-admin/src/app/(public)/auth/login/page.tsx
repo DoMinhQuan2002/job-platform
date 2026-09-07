@@ -56,8 +56,8 @@ function LoginForm() {
     reason === "session_expired"
       ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
       : reason === "unauthorized"
-      ? "Bạn cần đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục."
-      : "";
+        ? "Bạn cần đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục."
+        : "";
 
   // Nếu đã đăng nhập thành công là ADMIN, tự động chuyển hướng vào Dashboard
   useEffect(() => {

@@ -5,7 +5,8 @@ export const forgotPasswordSchema = z.object({
     .string()
     .trim()
     .min(1, "Vui lòng nhập email.")
-    .email("Địa chỉ email không hợp lệ."),
+    .email("Địa chỉ email không hợp lệ.")
+    .max(254, "Email không được vượt quá 254 ký tự."),
 });
 
 export const resetPasswordSchema = z
@@ -13,6 +14,7 @@ export const resetPasswordSchema = z
     password: z
       .string()
       .min(8, "Mật khẩu phải có ít nhất 8 ký tự.")
+      .max(64, "Mật khẩu không được vượt quá 64 ký tự.")
       .regex(/[a-z]/, "Mật khẩu phải có chữ thường.")
       .regex(/[A-Z]/, "Mật khẩu phải có chữ hoa.")
       .regex(/\d/, "Mật khẩu phải có ít nhất một chữ số."),
