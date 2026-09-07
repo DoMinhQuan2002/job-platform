@@ -19,43 +19,43 @@ type Props = {
   className?: string;
 };
 
-const defaultLocations = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Cần Thơ"];
+const defaultLocations = ["Hà Nội", "TP. Hồ Chí Minh", "Thành phố Hồ Chí Minh", "Đà Nẵng", "Cần Thơ"];
 
 const VIETNAM_PROVINCES = [
   "An Giang",
-  "Bà Rịa - Vũng Tàu",
-  "Bắc Giang",
   "Bắc Ninh",
-  "Bến Tre",
-  "Bình Định",
-  "Bình Dương",
-  "Bình Phước",
-  "Bình Thuận",
   "Cà Mau",
+  "Cao Bằng",
   "Cần Thơ",
   "Đà Nẵng",
   "Đắk Lắk",
+  "Điện Biên",
   "Đồng Nai",
   "Đồng Tháp",
   "Gia Lai",
-  "Hà Giang",
-  "Hà Nam",
   "Hà Nội",
   "Hà Tĩnh",
-  "Hải Dương",
   "Hải Phòng",
+  "Huế",
   "Hưng Yên",
   "Khánh Hòa",
-  "Kiên Giang",
+  "Lai Châu",
   "Lâm Đồng",
-  "Long An",
+  "Lạng Sơn",
+  "Lào Cai",
   "Nghệ An",
+  "Ninh Bình",
   "Phú Thọ",
+  "Quảng Ngãi",
   "Quảng Ninh",
+  "Quảng Trị",
+  "Sơn La",
+  "Tây Ninh",
   "Thái Nguyên",
   "Thanh Hóa",
-  "Thừa Thiên Huế",
   "TP. Hồ Chí Minh",
+  "Tuyên Quang",
+  "Vĩnh Long",
 ];
 
 const salaries = [
@@ -65,6 +65,16 @@ const salaries = [
   { label: "20 - 30 triệu", min: "20000000", max: "30000000" },
   { label: "Trên 30 triệu", min: "30000000", max: "" },
 ];
+
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+}
 
 export function JobsFilterPanel({
   filters,
@@ -82,9 +92,12 @@ export function JobsFilterPanel({
     filters.location && !defaultLocations.includes(filters.location)
   );
 
-  const filteredProvinces = VIETNAM_PROVINCES.filter((p) =>
-    p.toLowerCase().includes(locationSearch.toLowerCase().trim())
-  );
+  const filteredProvinces = VIETNAM_PROVINCES.filter((province) => {
+    if (!locationSearch.trim()) return true;
+    const normalizedProvince = removeVietnameseTones(province);
+    const normalizedQuery = removeVietnameseTones(locationSearch);
+    return normalizedProvince.includes(normalizedQuery);
+  });
 
   const handleSelectProvince = (province: string) => {
     onChange("location", province);
