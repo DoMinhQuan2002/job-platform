@@ -101,9 +101,9 @@ export type JobDetail = {
   deadline: string;
   summary: string;
   tags: string[];
-  description: string[];
-  requirements: string[];
-  benefits: string[];
+  description: string;
+  requirements: string;
+  benefits: string;
   skills: {
     required: string[];
     optional: string[];

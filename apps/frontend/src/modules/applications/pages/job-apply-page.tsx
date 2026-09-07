@@ -21,8 +21,14 @@ import {
   notifyApplicationsChanged,
 } from "../lib/use-applied-jobs";
 
+function stripHtml(html?: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function toJobDetail(jobId: string, raw: unknown): JobDetail {
   const summary = summarizeJob(raw);
+  const plainDescription = stripHtml(summary.description);
   return {
     id: jobId,
     title: summary.title,
@@ -35,7 +41,7 @@ function toJobDetail(jobId: string, raw: unknown): JobDetail {
       size: summary.companySize,
       website: summary.companyWebsite,
       address: summary.companyAddress || summary.location,
-      about: summary.companyAbout || summary.description.join(" "),
+      about: summary.companyAbout || plainDescription,
     },
     salary: summary.salary,
     location: summary.location,
@@ -45,17 +51,13 @@ function toJobDetail(jobId: string, raw: unknown): JobDetail {
     quantity: summary.quantity,
     deadline: summary.deadline,
     summary:
-      summary.description[0] ||
+      plainDescription ||
       summary.companyAbout ||
       "Chi tiết công việc được cập nhật từ tin tuyển dụng.",
     tags: summary.tags.length ? summary.tags : [summary.category],
-    description: summary.description.length
-      ? summary.description
-      : ["Chưa có mô tả chi tiết."],
-    requirements: summary.requirements.length
-      ? summary.requirements
-      : ["Chưa có yêu cầu chi tiết."],
-    benefits: summary.benefits.length ? summary.benefits : ["Thỏa thuận khi phỏng vấn."],
+    description: summary.description || "<p>Chưa có mô tả chi tiết.</p>",
+    requirements: summary.requirements || "<p>Chưa có yêu cầu chi tiết.</p>",
+    benefits: summary.benefits || "<p>Thỏa thuận khi phỏng vấn.</p>",
     skills: {
       required: summary.tags,
       optional: [],
