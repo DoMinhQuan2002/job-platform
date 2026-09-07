@@ -20,9 +20,10 @@ const LOG_ACTIONS = [
   "UPDATE_JOB_CATEGORY",
   "DELETE_JOB_CATEGORY",
   "LOGIN_FAILED",
+  "UPDATE_APPLICATION_STATUS",
 ] as const satisfies readonly LogAction[];
 
-const TARGET_TYPES = ["USER", "COMPANY", "JOB", "JOB_CATEGORY"] as const;
+const TARGET_TYPES = ["USER", "COMPANY", "JOB", "JOB_CATEGORY", "APPLICATION"] as const;
 
 type ValidationError = { field: string; message: string };
 

@@ -4,6 +4,8 @@ import { AppDataSource } from "../../src/data-source";
 import { UserEntity, UserStatus } from "../../src/database/entities/user.entity";
 import { storageService, validateUpload } from "../../src/common/storage";
 import { hashPassword, verifyPassword } from "../../src/common/security/password";
+import { sendOtpMail } from "../../src/common/mail/mailer";
+import { getResendCooldown, issueOtp, verifyOtp } from "../../src/modules/auth/auth.otp";
 
 vi.mock("../../src/common/storage", () => ({
   ASSET_TYPE: { USER_AVATAR: "user_avatar" },
@@ -13,6 +15,16 @@ vi.mock("../../src/common/storage", () => ({
 
 vi.mock("../../src/common/security/password", () => ({
   verifyPassword: vi.fn(), hashPassword: vi.fn(),
+}));
+
+vi.mock("../../src/common/mail/mailer", () => ({
+  sendOtpMail: vi.fn(),
+}));
+
+vi.mock("../../src/modules/auth/auth.otp", () => ({
+  issueOtp: vi.fn(),
+  verifyOtp: vi.fn(),
+  getResendCooldown: vi.fn(),
 }));
 
 describe("UsersService", () => {
@@ -188,5 +200,88 @@ describe("UsersService", () => {
     await usersService.changeMyPassword("10", { currentPassword: "Current@123", newPassword: "NewPassword@123" });
     expect(hashPassword).toHaveBeenCalledWith("NewPassword@123");
     expect(manager.update).toHaveBeenCalledWith(UserEntity, { id: "10" }, { passwordHash: "new-hash" });
+  });
+
+  describe("sendEmailVerificationOtp", () => {
+    it("throws USER_NOT_FOUND when user does not exist", async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      await expect(usersService.sendEmailVerificationOtp("10")).rejects.toMatchObject({
+        statusCode: 404,
+        code: "USER_NOT_FOUND",
+      });
+    });
+
+    it("throws EMAIL_ALREADY_VERIFIED when user email is already verified", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: new Date() }));
+      await expect(usersService.sendEmailVerificationOtp("10")).rejects.toMatchObject({
+        statusCode: 400,
+        code: "EMAIL_ALREADY_VERIFIED",
+      });
+    });
+
+    it("throws RATE_LIMITED when resend cooldown is active", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: null }));
+      vi.mocked(getResendCooldown).mockResolvedValue(45);
+      await expect(usersService.sendEmailVerificationOtp("10")).rejects.toMatchObject({
+        statusCode: 429,
+        code: "RATE_LIMITED",
+      });
+    });
+
+    it("issues OTP and sends mail when valid", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: null, email: "user@test.com" }));
+      vi.mocked(getResendCooldown).mockResolvedValue(0);
+      vi.mocked(issueOtp).mockResolvedValue("654321");
+      const result = await usersService.sendEmailVerificationOtp("10");
+      expect(issueOtp).toHaveBeenCalledWith("verify_email", "user@test.com");
+      expect(sendOtpMail).toHaveBeenCalledWith("user@test.com", "654321", "verify_email");
+      expect(result).toEqual({ email: "user@test.com", cooldownSeconds: 60 });
+    });
+  });
+
+  describe("verifyEmail", () => {
+    it("throws USER_NOT_FOUND when user does not exist", async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      await expect(usersService.verifyEmail("10", { code: "123456" })).rejects.toMatchObject({
+        statusCode: 404,
+        code: "USER_NOT_FOUND",
+      });
+    });
+
+    it("throws EMAIL_ALREADY_VERIFIED when user email is already verified", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: new Date() }));
+      await expect(usersService.verifyEmail("10", { code: "123456" })).rejects.toMatchObject({
+        statusCode: 400,
+        code: "EMAIL_ALREADY_VERIFIED",
+      });
+    });
+
+    it("throws OTP_NOT_FOUND_OR_EXPIRED when OTP not found or expired", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: null }));
+      vi.mocked(verifyOtp).mockResolvedValue("NOT_FOUND");
+      await expect(usersService.verifyEmail("10", { code: "123456" })).rejects.toMatchObject({
+        statusCode: 400,
+        code: "OTP_NOT_FOUND_OR_EXPIRED",
+      });
+    });
+
+    it("throws OTP_INVALID when OTP mismatch", async () => {
+      userRepo.findOne.mockResolvedValue(buildUser({ emailVerifiedAt: null }));
+      vi.mocked(verifyOtp).mockResolvedValue("MISMATCH");
+      await expect(usersService.verifyEmail("10", { code: "123456" })).rejects.toMatchObject({
+        statusCode: 400,
+        code: "OTP_INVALID",
+      });
+    });
+
+    it("marks emailVerifiedAt and saves user when OTP is OK", async () => {
+      const user = buildUser({ emailVerifiedAt: null, email: "user@test.com" });
+      userRepo.findOne.mockResolvedValue(user);
+      vi.mocked(verifyOtp).mockResolvedValue("OK");
+      const result = await usersService.verifyEmail("10", { code: "123456" });
+      expect(verifyOtp).toHaveBeenCalledWith("verify_email", "user@test.com", "123456");
+      expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({ emailVerifiedAt: expect.any(Date) }));
+      expect(result.emailVerifiedAt).toBeInstanceOf(Date);
+    });
   });
 });

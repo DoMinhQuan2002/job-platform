@@ -53,7 +53,7 @@ export function JobFilterCard({
       status: "",
       categoryId: "",
       startDate: "",
-      endDate: "",
+      endDate: new Date().toISOString().slice(0, 10),
     };
     setFormValues(emptyValues);
     onReset();
@@ -164,6 +164,7 @@ export function JobFilterCard({
               <input
                 type="date"
                 value={formValues.startDate}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => handleChange("startDate", e.target.value)}
                 className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors"
               />
@@ -180,6 +181,7 @@ export function JobFilterCard({
               <input
                 type="date"
                 value={formValues.endDate}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => handleChange("endDate", e.target.value)}
                 className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors"
               />

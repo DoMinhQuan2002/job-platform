@@ -1,10 +1,11 @@
-﻿import {
+import {
   clearAccessToken,
   setAuthPersistence,
   setAccessToken,
   setStoredUser,
 } from "@/lib/auth-token";
 import { http } from "@/services/http";
+import { cancelTokenRefresh, scheduleTokenRefresh } from "@/lib/token-refresh";
 import type { ApiSuccess } from "@/types/api";
 
 export type AuthUser = {
@@ -44,6 +45,7 @@ const saveSession = (session: AuthSession, remember = false) => {
   setAuthPersistence(remember);
   setAccessToken(session.accessToken);
   setStoredUser(session.user);
+  scheduleTokenRefresh(); // Hẹn giờ refresh token TRƯỚC khi hết hạn
 };
 
 export const authApi = {
@@ -69,6 +71,7 @@ export const authApi = {
         method: "POST",
       });
     } finally {
+      cancelTokenRefresh();
       clearAccessToken();
     }
   },
@@ -80,6 +83,7 @@ export const authApi = {
     });
     if (response && response.data) {
       setAccessToken(response.data.accessToken);
+      scheduleTokenRefresh();
     }
     return response;
   },

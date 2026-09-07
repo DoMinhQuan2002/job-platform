@@ -16,7 +16,6 @@ import {
   Phone,
   RefreshCw,
   User,
-  UserRoundX,
 } from "lucide-react";
 import {
   recruiterApplicationsApi,
@@ -73,12 +72,12 @@ const formatDateTime = (value?: string | null) => {
   return Number.isNaN(date.getTime())
     ? value
     : date.toLocaleString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 };
 
 const getAge = (dateOfBirth?: string | null) => {
@@ -98,6 +97,15 @@ const monthLabel = (start?: string | null, end?: string | null, isCurrent?: bool
   return `${from} - ${to}`;
 };
 
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase() || "UV";
+
 function StatusBadge({ status }: { status: RecruiterApplicationStatus }) {
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${statusStyles[status]}`}>
@@ -105,6 +113,7 @@ function StatusBadge({ status }: { status: RecruiterApplicationStatus }) {
     </span>
   );
 }
+
 
 function Section({
   title,
@@ -158,6 +167,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
   const candidate = application?.candidateProfile;
   const fallbackCandidate = application?.candidate;
   const candidateName = candidate?.fullName ?? fallbackCandidate?.fullName ?? "Ứng viên";
+  const candidateAvatar = candidate?.avatar ?? fallbackCandidate?.avatar;
   const age = getAge(candidate?.dateOfBirth);
 
   const timeline = useMemo(() => {

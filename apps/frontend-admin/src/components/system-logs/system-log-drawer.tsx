@@ -16,7 +16,7 @@ import {
   formatLogDateTime,
   formatOperationName,
   formatTargetTypeName,
-  getActionCategory,
+  getActionBadge,
   getUserDisplayName,
 } from "./system-log-helpers";
 
@@ -44,7 +44,7 @@ export function SystemLogDrawer({
 
   if (!isOpen || !log) return null;
 
-  const category = getActionCategory(log.action);
+  const actionBadge = getActionBadge(log.action);
   const userDisplay = getUserDisplayName(log);
   const operationName = formatOperationName(log.action);
   const targetName = formatTargetTypeName(log.targetType, log.targetLabel);
@@ -97,25 +97,27 @@ export function SystemLogDrawer({
                 </span>
                 <p className="text-sm font-semibold text-slate-900">
                   {userDisplay.primary}{" "}
-                  <span className="text-slate-500 font-normal text-xs">
-                    {userDisplay.secondary}
-                  </span>
+                  {userDisplay.secondary && (
+                    <span className="text-slate-500 font-normal text-xs">
+                      {userDisplay.secondary}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Item: Loại hoạt động */}
+          {/* Item: Hành động (Action từ DB) */}
           <div className="flex items-start gap-3.5">
             <div className="text-slate-400 mt-0.5 shrink-0">
               <Tag className="w-5 h-5 stroke-[1.8]" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium mb-1">Loại hoạt động</p>
+              <p className="text-xs text-slate-500 font-medium mb-1">Hành động</p>
               <span
-                className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-bold border ${category.badgeClass}`}
+                className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-bold border ${actionBadge.badgeClass}`}
               >
-                {category.label}
+                {actionBadge.label}
               </span>
             </div>
           </div>
@@ -128,7 +130,7 @@ export function SystemLogDrawer({
             <div>
               <p className="text-xs text-slate-500 font-medium">Nội dung</p>
               <p className="text-sm font-semibold text-slate-900 mt-0.5 leading-snug">
-                {log.description || formatOperationName(log.action)}
+                {log.description || operationName}
               </p>
             </div>
           </div>
@@ -143,11 +145,7 @@ export function SystemLogDrawer({
               <p className="text-sm font-semibold text-slate-900 mt-0.5">
                 {targetName}
               </p>
-              {log.targetId && (
-                <span className="text-[11px] text-slate-400 font-mono">
-                  ID: #{log.targetId}
-                </span>
-              )}
+
             </div>
           </div>
 
@@ -157,9 +155,9 @@ export function SystemLogDrawer({
               <ShieldCheck className="w-5 h-5 stroke-[1.8]" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium">Thao tác</p>
-              <p className="text-sm font-semibold text-slate-900 mt-0.5">
-                {operationName}
+              <p className="text-xs text-slate-500 font-medium">Mã hành động</p>
+              <p className="text-xs font-mono font-semibold text-slate-700 mt-0.5 bg-slate-100 px-2 py-1 rounded inline-block">
+                {log.action}
               </p>
             </div>
           </div>

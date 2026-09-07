@@ -24,6 +24,8 @@ vi.mock("../../src/modules/users/users.controller", () => ({
     uploadAvatar: vi.fn((req, res) => res.status(200).json({ handler: "uploadAvatar", file: req.file?.fieldname })),
     deleteAvatar: vi.fn((_req, res) => res.status(200).json({ handler: "deleteAvatar" })),
     changePassword: vi.fn((_req, res) => res.status(200).json({ handler: "changePassword" })),
+    sendEmailVerificationOtp: vi.fn((_req, res) => res.status(200).json({ handler: "sendEmailVerificationOtp" })),
+    verifyEmail: vi.fn((_req, res) => res.status(200).json({ handler: "verifyEmail" })),
   },
 }));
 
@@ -43,6 +45,8 @@ describe("Users routes", () => {
     ["patch", "/api/v1/users/me", "updateMe"],
     ["delete", "/api/v1/users/me/avatar", "deleteAvatar"],
     ["patch", "/api/v1/users/me/password", "changePassword"],
+    ["post", "/api/v1/users/me/email/send-otp", "sendEmailVerificationOtp"],
+    ["post", "/api/v1/users/me/email/verify-otp", "verifyEmail"],
   ] as const)("maps %s %s to %s", async (method, url, handler) => {
     const response = await request(app)[method](url).send({});
     expect(response.status).toBe(200);
@@ -65,6 +69,8 @@ describe("Users routes", () => {
       request(app).post("/api/v1/users/me/avatar"),
       request(app).delete("/api/v1/users/me/avatar"),
       request(app).patch("/api/v1/users/me/password").send({}),
+      request(app).post("/api/v1/users/me/email/send-otp").send({}),
+      request(app).post("/api/v1/users/me/email/verify-otp").send({ code: "123456" }),
     ]);
     expect(responses.every((response) => response.status === 401)).toBe(true);
     expect(usersController.getMe).not.toHaveBeenCalled();

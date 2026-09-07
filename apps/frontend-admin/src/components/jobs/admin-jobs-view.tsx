@@ -37,7 +37,7 @@ export function AdminJobsView() {
     status: "",
     categoryId: "",
     startDate: "",
-    endDate: "",
+    endDate: new Date().toISOString().slice(0, 10),
   });
 
   // Data & Loading
@@ -142,6 +142,8 @@ export function AdminJobsView() {
           status: queryStatus,
           companyId: filterValues.companyId || undefined,
           categoryId: filterValues.categoryId || undefined,
+          startDate: filterValues.startDate || undefined,
+          endDate: filterValues.endDate || undefined,
         },
         controller.signal
       )
@@ -226,7 +228,7 @@ export function AdminJobsView() {
       status: "",
       categoryId: "",
       startDate: "",
-      endDate: "",
+      endDate: new Date().toISOString().slice(0, 10),
     });
     setActiveTab("ALL");
     setPage(1);

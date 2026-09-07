@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { parseChangeMyPasswordDto } from "./dto/change-my-password.dto";
 import { parseUpdateMyProfileDto } from "./dto/update-my-profile.dto";
+import { parseVerifyEmailDto } from "./dto/verify-email.dto";
 import { usersService } from "./users.service";
 
 export const usersController = {
@@ -24,4 +25,13 @@ export const usersController = {
     await usersService.changeMyPassword(req.user!.id, parseChangeMyPasswordDto(req.body));
     res.status(200).json({ success: true, message: "Đổi mật khẩu thành công", data: null });
   },
+  sendEmailVerificationOtp: async (req: Request, res: Response) => {
+    const data = await usersService.sendEmailVerificationOtp(req.user!.id);
+    res.status(200).json({ success: true, message: "Đã gửi mã xác thực đến email của bạn", data });
+  },
+  verifyEmail: async (req: Request, res: Response) => {
+    const data = await usersService.verifyEmail(req.user!.id, parseVerifyEmailDto(req.body));
+    res.status(200).json({ success: true, message: "Xác thực email thành công", data });
+  },
 };
+

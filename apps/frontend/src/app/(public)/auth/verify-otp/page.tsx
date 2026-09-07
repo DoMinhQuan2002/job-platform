@@ -127,29 +127,118 @@ type VerifyOtpFormProps = {
   initialExpiresIn: number;
 };
 
+const getOtpStorageKey = (prefix: string, email: string) =>
+  `jp_otp_${prefix}_${email.trim().toLowerCase()}`;
+
+const getOrSetTargetTimestamp = (key: string, durationSeconds: number): number => {
+  if (typeof window === "undefined") return Date.now() + durationSeconds * 1000;
+  try {
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      const parsed = Number(saved);
+      if (Number.isFinite(parsed)) {
+        // Đã có mốc thời gian lưu trong session, trả về luôn (kể cả khi đã hết hạn để không bị reset lại 60s khi F5)
+        return parsed;
+      }
+    }
+    const newTarget = Date.now() + durationSeconds * 1000;
+    sessionStorage.setItem(key, String(newTarget));
+    return newTarget;
+  } catch {
+    return Date.now() + durationSeconds * 1000;
+  }
+};
+
+const setTargetTimestamp = (key: string, durationSeconds: number): number => {
+  const newTarget = Date.now() + durationSeconds * 1000;
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem(key, String(newTarget));
+    } catch {}
+  }
+  return newTarget;
+};
+
+const MAX_OTP_ATTEMPTS = 5;
+
+const getOtpAttempts = (email: string): number => {
+  if (typeof window === "undefined") return 0;
+  try {
+    const saved = sessionStorage.getItem(getOtpStorageKey("attempts", email));
+    const parsed = Number(saved);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const setOtpAttempts = (email: string, attempts: number) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(getOtpStorageKey("attempts", email), String(attempts));
+  } catch {}
+};
+
+const clearOtpStorage = (email: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(getOtpStorageKey("exp", email));
+    sessionStorage.removeItem(getOtpStorageKey("resend", email));
+    sessionStorage.removeItem(getOtpStorageKey("attempts", email));
+  } catch {}
+};
+
 function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   const router = useRouter();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [digits, setDigits] = useState(() => Array<string>(OTP_LENGTH).fill(""));
+
+  const expKey = getOtpStorageKey("exp", email);
+  const resendKey = getOtpStorageKey("resend", email);
+
+  // Target timestamps cố định
+  const expireTargetRef = useRef<number>(0);
+  const resendTargetRef = useRef<number>(0);
+
+  const calculateRemaining = (targetTime: number) =>
+    Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
+
+  // Khởi tạo state bằng initialExpiresIn để Server SSR và Client lần đầu render khớp 100%
   const [expiresIn, setExpiresIn] = useState(initialExpiresIn);
-  const [resendCooldown, setResendCooldown] = useState(
-    RESEND_COOLDOWN_SECONDS,
-  );
+  const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS);
+  const [failedAttempts, setFailedAttempts] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const isLocked = failedAttempts >= MAX_OTP_ATTEMPTS;
+
   useEffect(() => {
+    // Sau khi mount trên browser, đọc mốc thời gian và số lần nhập sai từ sessionStorage
+    expireTargetRef.current = getOrSetTargetTimestamp(expKey, initialExpiresIn);
+    resendTargetRef.current = getOrSetTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS);
+    const attempts = getOtpAttempts(email);
+    setFailedAttempts(attempts);
+
+    if (attempts >= MAX_OTP_ATTEMPTS) {
+      setError("Bạn đã nhập sai mã OTP quá 5 lần. Vui lòng bấm 'Gửi lại mã' để nhận mã mới.");
+    }
+
+    // Cập nhật lại ngay theo timestamp thực tế
+    setExpiresIn(calculateRemaining(expireTargetRef.current));
+    setResendCooldown(calculateRemaining(resendTargetRef.current));
+
     const timer = window.setInterval(() => {
-      setExpiresIn((current) => Math.max(0, current - 1));
-      setResendCooldown((current) => Math.max(0, current - 1));
+      setExpiresIn(calculateRemaining(expireTargetRef.current));
+      setResendCooldown(calculateRemaining(resendTargetRef.current));
     }, 1_000);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [email, expKey, resendKey, initialExpiresIn]);
 
   const updateDigits = (startIndex: number, value: string) => {
+    if (isLocked) return;
     const numbers = value.replace(/\D/g, "").slice(0, OTP_LENGTH - startIndex);
     if (!numbers) return;
 
@@ -166,6 +255,7 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   };
 
   const handleChange = (index: number, value: string) => {
+    if (isLocked) return;
     if (!value) {
       setDigits((current) => {
         const next = [...current];
@@ -179,6 +269,7 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   };
 
   const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
+    if (isLocked) return;
     if (event.key === "Backspace" && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -191,12 +282,17 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   };
 
   const handlePaste = (index: number, event: ClipboardEvent<HTMLInputElement>) => {
+    if (isLocked) return;
     event.preventDefault();
     updateDigits(index, event.clipboardData.getData("text"));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isLocked) {
+      setError("Bạn đã nhập sai mã OTP quá 5 lần. Vui lòng gửi lại mã mới.");
+      return;
+    }
     const code = digits.join("");
 
     if (!email) {
@@ -218,14 +314,29 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
 
     try {
       const response = await authApi.verifyRegisterCode({ email, code });
+      clearOtpStorage(email);
       setSuccess(response.message || "Xác thực tài khoản thành công.");
       router.replace(`${ROUTES.auth.login}?verified=1`);
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể xác thực mã OTP. Vui lòng thử lại.",
-      );
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      setOtpAttempts(email, nextAttempts);
+
+      // Reset các ô input OTP về rỗng
+      setDigits(Array<string>(OTP_LENGTH).fill(""));
+
+      if (nextAttempts >= MAX_OTP_ATTEMPTS) {
+        setError("Bạn đã nhập sai mã OTP 5 lần liên tiếp. Vui lòng bấm 'Gửi lại mã' để nhận mã mới.");
+      } else {
+        const remainingAttempts = MAX_OTP_ATTEMPTS - nextAttempts;
+        const backendMsg =
+          submitError instanceof Error
+            ? submitError.message
+            : "Mã OTP không chính xác hoặc đã hết hạn.";
+        setError(`${backendMsg} (Còn lại ${remainingAttempts} lần thử)`);
+        // Tự động focus vào ô đầu tiên để người dùng nhập lại ngay
+        inputRefs.current[0]?.focus();
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -241,8 +352,17 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
     try {
       const response = await authApi.resendRegisterCode({ email });
       setDigits(Array<string>(OTP_LENGTH).fill(""));
-      setExpiresIn(response.data.otpExpiresIn);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      
+      // Reset số lần nhập sai khi gửi mã mới
+      setFailedAttempts(0);
+      setOtpAttempts(email, 0);
+
+      // Đặt timestamp đích mới vào Storage
+      expireTargetRef.current = setTargetTimestamp(expKey, response.data.otpExpiresIn);
+      resendTargetRef.current = setTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS);
+
+      setExpiresIn(calculateRemaining(expireTargetRef.current));
+      setResendCooldown(calculateRemaining(resendTargetRef.current));
       setSuccess(response.message || "Mã xác thực mới đã được gửi.");
       inputRefs.current[0]?.focus();
     } catch (resendError) {
@@ -308,7 +428,8 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
                 maxLength={1}
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 aria-label={`Chữ số OTP thứ ${index + 1}`}
-                className="aspect-square min-w-0 rounded-lg border border-border bg-white text-center text-lg font-semibold text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                disabled={isLocked}
+                className="aspect-square min-w-0 rounded-lg border border-border bg-white text-center text-lg font-semibold text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               />
             ))}
           </div>
@@ -332,8 +453,8 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
         <Button
           type="submit"
           size="lg"
-          className="mt-6 h-14 w-full text-base font-semibold hover:bg-primary-hover"
-          disabled={!codeComplete || !email || isVerifying}
+          className="mt-6 h-14 w-full text-base font-semibold hover:bg-primary-hover disabled:cursor-not-allowed"
+          disabled={!codeComplete || !email || isVerifying || isLocked}
         >
           {isVerifying ? (
             <>

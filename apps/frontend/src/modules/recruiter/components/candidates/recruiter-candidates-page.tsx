@@ -20,6 +20,7 @@ import {
   UserRoundX,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -95,6 +96,7 @@ function statusBadge(status: RecruiterApplicationStatus) {
     </span>
   );
 }
+
 
 type StatCardProps = {
   label: string;
@@ -434,7 +436,6 @@ export function RecruiterCandidatesPage() {
                 <option key={job.id} value={job.id}>{job.title}</option>
               ))}
             </select>
-
             {/* Button Toggle Bộ lọc */}
             <button
               type="button"

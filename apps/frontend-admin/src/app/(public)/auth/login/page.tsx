@@ -7,7 +7,6 @@ import {
   BriefcaseBusiness,
   Eye,
   EyeOff,
-  Info,
   LoaderCircle,
   LockKeyhole,
   Mail,
@@ -49,15 +48,16 @@ function LoginForm() {
   const reason = searchParams.get("reason");
   const { login, isAuthenticated, isLoading } = useAuth();
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-
   const reasonMessage =
     reason === "session_expired"
       ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
       : reason === "unauthorized"
-      ? "Bạn cần đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục."
-      : "";
+        ? "Bạn cần đăng nhập bằng tài khoản Quản trị viên (Admin) để tiếp tục."
+        : "";
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [reasonDialogOpen, setReasonDialogOpen] = useState(Boolean(reasonMessage));
 
   // Nếu đã đăng nhập thành công là ADMIN, tự động chuyển hướng vào Dashboard
   useEffect(() => {
@@ -72,16 +72,16 @@ function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError("");
     try {
-      const res = await login(
-        { email: values.email.trim(), password: values.password },
-        { remember: values.rememberMe },
-      );
+      const res = await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
 
       if (!res.success) {
         setSubmitError(
@@ -102,41 +102,42 @@ function LoginForm() {
 
   return (
     <>
-      <div className="h-full container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
-        <section
-          className="hidden flex-col pb-8 pt-8 lg:flex"
-          aria-labelledby="login-introduction"
-        >
-          <h1
-            id="login-introduction"
-            className="mb-6 text-4xl font-bold leading-tight tracking-tight text-text xl:text-5xl"
+      <div className="flex min-h-screen w-full items-center justify-center p-4 sm:p-6 lg:p-10">
+        <div className="container mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <section
+            className="hidden flex-col justify-center pb-8 pt-8 lg:flex"
+            aria-labelledby="login-introduction"
           >
-            Kết nối đúng cơ hội,
-            <br />
-            bứt phá <span className="text-primary">sự nghiệp</span>
-          </h1>
-          <p className="mb-10 max-w-md leading-relaxed text-muted">
-            Hệ thống Quản trị Việc làm & Tuyển dụng Job Platform.
-          </p>
-          <ul className="space-y-7">
-            {features.map(({ icon: Icon, title, description }) => (
-              <li key={title} className="flex items-start gap-4">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Icon className="size-6" aria-hidden="true" />
-                </span>
-                <div>
-                  <h2 className="text-lg font-semibold text-text">{title}</h2>
-                  <p className="mt-0.5 text-sm text-muted">{description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+            <h1
+              id="login-introduction"
+              className="mb-6 text-4xl font-bold leading-tight tracking-tight text-text xl:text-5xl"
+            >
+              Kết nối đúng cơ hội,
+              <br />
+              bứt phá <span className="text-primary">sự nghiệp</span>
+            </h1>
+            <p className="mb-10 max-w-md leading-relaxed text-muted">
+              Hệ thống Quản trị Việc làm & Tuyển dụng Job Platform.
+            </p>
+            <ul className="space-y-7">
+              {features.map(({ icon: Icon, title, description }) => (
+                <li key={title} className="flex items-start gap-4">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Icon className="size-6" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h2 className="text-lg font-semibold text-text">{title}</h2>
+                    <p className="mt-0.5 text-sm text-muted">{description}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-        <section
-          className="justify-self-end w-full max-w-126 rounded-2xl border border-border/70 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-12"
-          aria-labelledby="login-title"
-        >
+          <section
+            className="w-full max-w-126 justify-self-center lg:justify-self-end rounded-2xl border border-border/70 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-12"
+            aria-labelledby="login-title"
+          >
           <header className="mb-8 text-center">
             <h1
               id="login-title"
@@ -148,13 +149,6 @@ function LoginForm() {
               Giao diện đăng nhập trang Quản trị viên
             </p>
           </header>
-
-          {reasonMessage && !submitError && (
-            <div className="mb-5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800">
-              <Info className="size-4 shrink-0 text-amber-600" />
-              <span>{reasonMessage}</span>
-            </div>
-          )}
 
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field label="Email" htmlFor="email" error={errors.email?.message}>
@@ -203,17 +197,6 @@ function LoginForm() {
               </button>
             </Field>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-1">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
-                <input
-                  type="checkbox"
-                  className="size-4 rounded border-slate-300 accent-primary cursor-pointer"
-                  {...register("rememberMe")}
-                />
-                Ghi nhớ đăng nhập
-              </label>
-            </div>
-
             <Button
               type="submit"
               size="lg"
@@ -232,6 +215,7 @@ function LoginForm() {
           </form>
         </section>
       </div>
+    </div>
 
       <AppAlertDialog
         open={Boolean(submitError)}
@@ -244,6 +228,31 @@ function LoginForm() {
         confirmLabel="Đã hiểu"
         showCancel={false}
         onConfirm={() => setSubmitError("")}
+      />
+
+      <AppAlertDialog
+        open={reasonDialogOpen && Boolean(reasonMessage)}
+        onOpenChange={(open) => {
+          setReasonDialogOpen(open);
+          if (!open) {
+            router.replace(ADMIN_ROUTES.login);
+          }
+        }}
+        title={
+          reason === "session_expired"
+            ? "Phiên đăng nhập đã hết hạn"
+            : reason === "unauthorized"
+              ? "Yêu cầu quyền Quản trị viên"
+              : "Thông báo"
+        }
+        description={reasonMessage}
+        tone="warning"
+        confirmLabel="Đã hiểu"
+        showCancel={false}
+        onConfirm={() => {
+          setReasonDialogOpen(false);
+          router.replace(ADMIN_ROUTES.login);
+        }}
       />
     </>
   );

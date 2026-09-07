@@ -89,6 +89,19 @@ export const decodeJwtPayload = (token: string): JwtPayload | null => {
   }
 };
 
+export const getAccessTokenExpiry = (): number | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const payload = decodeJwtPayload(token);
+  return payload?.exp ? payload.exp * 1000 : null;
+};
+
+export const isAccessTokenExpired = (): boolean => {
+  const expiresAt = getAccessTokenExpiry();
+  return expiresAt !== null && expiresAt <= Date.now();
+};
+
 export const isTokenExpired = (token: string | null): boolean => {
   if (!token) return true;
   const payload = decodeJwtPayload(token);

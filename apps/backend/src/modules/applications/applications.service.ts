@@ -1,3 +1,4 @@
+import { In } from "typeorm";
 import { AppDataSource } from "../../data-source";
 import { ApplicationEntity } from "../../database/entities/application.entity";
 import { SavedJobEntity } from "../../database/entities/saved-job.entity";
@@ -13,6 +14,8 @@ import { JobCategory } from "../../database/entities/job-category.entity";
 import { ApplicationStatus } from "../../common/constants";
 import { JOB_STATUS } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
+import { storageService } from "../../common/storage/storage.service";
+import { ASSET_TYPE } from "../../common/storage/asset-types";
 import { notificationService } from "../notifications/notification.service";
 import {
   ALLOWED_STATUS_TRANSITIONS,
@@ -100,6 +103,9 @@ export type ApplicationDetailDto = ApplicationListItemDto & {
     updatedAt: Date;
   };
 };
+
+const resolveCandidateAvatarUrl = (avatar?: string | null): string | null =>
+  storageService.resolvePublicUrl(avatar, ASSET_TYPE.USER_AVATAR);
 
 type ApplicationListRaw = {
   id: string;
@@ -675,7 +681,7 @@ export class ApplicationsService {
   }
 
   /** 8. List saved jobs */
-  async listSavedJobs(userId: string): Promise<SavedJobEntity[]> {
+  async listSavedJobs(userId: string): Promise<(SavedJobEntity & { hasApplied: boolean })[]> {
     const candidate = await this.candidateProfileRepo.findOne({
       where: { userId },
     });
@@ -683,7 +689,7 @@ export class ApplicationsService {
       return [];
     }
 
-    return this.savedJobRepo.find({
+    const savedJobs = await this.savedJobRepo.find({
       where: {
         candidateId: candidate.id,
       },
@@ -692,6 +698,29 @@ export class ApplicationsService {
         createdAt: "DESC",
       },
     });
+
+    if (savedJobs.length === 0) {
+      return [];
+    }
+
+    const jobIds = savedJobs.map((s) => s.jobId);
+    const applications = await this.applicationRepo.find({
+      where: {
+        candidateId: candidate.id,
+        jobId: In(jobIds),
+      },
+    });
+
+    const activeAppliedJobIds = new Set(
+      applications
+        .filter((a) => a.status !== ApplicationStatus.WITHDRAWN)
+        .map((a) => String(a.jobId)),
+    );
+
+    return savedJobs.map((item) => ({
+      ...item,
+      hasApplied: activeAppliedJobIds.has(String(item.jobId)),
+    })) as any;
   }
 
   private createApplicationListQuery() {
@@ -789,7 +818,7 @@ export class ApplicationsService {
             fullName: row.candidateName,
             email: row.candidateEmail,
             phone: row.candidatePhone,
-            avatar: row.candidateAvatar,
+            avatar: resolveCandidateAvatarUrl(row.candidateAvatar),
             experienceCount: Number(row.experienceCount ?? 0),
           }
         : undefined,
@@ -878,7 +907,7 @@ export class ApplicationsService {
             fullName: candidate.user.fullName,
             email: candidate.user.email,
             phone: candidate.user.phone,
-            avatar: candidate.user.avatar,
+            avatar: resolveCandidateAvatarUrl(candidate.user.avatar),
             experienceCount: workExperiences.length,
           }
         : undefined,
@@ -935,7 +964,7 @@ export class ApplicationsService {
             fullName: candidate.user.fullName,
             email: candidate.user.email,
             phone: candidate.user.phone,
-            avatar: candidate.user.avatar,
+            avatar: resolveCandidateAvatarUrl(candidate.user.avatar),
             dateOfBirth: candidate.user.dateOfBirth,
             addressDetail: candidate.user.addressDetail,
             bio: candidate.bio,

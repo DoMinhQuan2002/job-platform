@@ -32,6 +32,7 @@ export type SavedJobRecord = {
   jobId: string;
   createdAt: string;
   job?: Record<string, unknown>;
+  hasApplied?: boolean;
 };
 
 /** Saved job đã enrich job info cho UI */
@@ -49,6 +50,7 @@ export type SavedJob = {
   createdAt: string;
   statusBadge?: SavedJobStatusBadge | null;
   isApplyDisabled?: boolean;
+  hasApplied?: boolean;
 };
 
 export type ApplyJobInput = {
@@ -101,9 +103,9 @@ export type JobDetail = {
   deadline: string;
   summary: string;
   tags: string[];
-  description: string[];
-  requirements: string[];
-  benefits: string[];
+  description: string;
+  requirements: string;
+  benefits: string;
   skills: {
     required: string[];
     optional: string[];

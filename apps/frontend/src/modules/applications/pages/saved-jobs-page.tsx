@@ -22,6 +22,7 @@ import { ApplyModal } from "../components/apply-modal";
 import { applicationsApi } from "../api";
 import { summarizeJob } from "../lib/job-summary";
 import { formatDate } from "../lib/status";
+import { useAppliedJobsMap } from "../lib/use-applied-jobs";
 
 type SortOption = "newest" | "salary" | "title";
 
@@ -38,6 +39,7 @@ export function SavedJobsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [applyingJob, setApplyingJob] = useState<SavedJob | null>(null);
+  const appliedJobsMap = useAppliedJobsMap();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,6 +65,7 @@ export function SavedJobsPage() {
             createdAt: item.createdAt,
             statusBadge: summary.statusBadge,
             isApplyDisabled: summary.isApplyDisabled,
+            hasApplied: Boolean(item.hasApplied),
           } satisfies SavedJob;
         }
 
@@ -79,6 +82,7 @@ export function SavedJobsPage() {
           createdAt: item.createdAt,
           statusBadge: { text: "Ngừng nhận hồ sơ", variant: "hidden" },
           isApplyDisabled: true,
+          hasApplied: Boolean(item.hasApplied),
         } satisfies SavedJob;
       });
       setSavedJobs(mapped);
@@ -226,7 +230,10 @@ export function SavedJobsPage() {
                 {paginatedJobs.map((job) => (
                   <SavedJobCard
                     key={job.id}
-                    job={job}
+                    job={{
+                      ...job,
+                      hasApplied: Boolean(job.hasApplied || appliedJobsMap[job.jobId]),
+                    }}
                     onApply={setApplyingJob}
                     onUnsave={handleUnsaveJob}
                   />
@@ -296,7 +303,13 @@ export function SavedJobsPage() {
           companyName={applyingJob.companyName}
           location={applyingJob.location}
           salary={applyingJob.salary}
-          onApplySuccess={() => setApplyingJob(null)}
+          onApplySuccess={() => {
+            const targetJobId = applyingJob.jobId;
+            setSavedJobs((prev) =>
+              prev.map((j) => (j.jobId === targetJobId ? { ...j, hasApplied: true } : j)),
+            );
+            setApplyingJob(null);
+          }}
         />
       ) : null}
     </>

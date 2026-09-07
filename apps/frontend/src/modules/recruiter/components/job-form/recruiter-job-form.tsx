@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Bold, Eye, Italic, List, LoaderCircle, Plus, RefreshCw, Underline, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Eye, LoaderCircle, Plus, RefreshCw, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -28,78 +28,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 
-// ─── RichTextEditor ───────────────────────────────────────────────────────────
-type RichTextEditorProps = {
-  label: string;
-  required?: boolean;
-  placeholder?: string;
-  value: string;
-  onChange: (html: string) => void;
-  error?: string;
-};
-
-function RichTextEditor({ label, required, placeholder, value, onChange, error }: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const lastHtml = useRef(value);
-
-  // Sync initial / reset value into contentEditable (only when value changes from outside)
-  const handleInput = () => {
-    const html = editorRef.current?.innerHTML ?? "";
-    lastHtml.current = html;
-    onChange(html);
-  };
-
-  const exec = (cmd: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false);
-    handleInput();
-  };
-
-  return (
-    <div>
-      <label className={labelClass}>
-        {label} {required && <span className="text-danger">*</span>}
-      </label>
-      <div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
-        {/* Toolbar */}
-        <div className="flex h-9 items-center gap-0.5 border-b border-border bg-background px-2">
-          {([
-            { cmd: "bold",                icon: Bold,      title: "In đậm"                  },
-            { cmd: "italic",              icon: Italic,    title: "In nghiêng"               },
-            { cmd: "underline",           icon: Underline, title: "Gạch chân"                },
-            { cmd: "insertUnorderedList", icon: List,      title: "Danh sách gạch đầu dòng"  },
-          ] as const).map(({ cmd, icon: Icon, title }) => (
-            <button
-              key={cmd}
-              type="button"
-              title={title}
-              onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
-              className="grid size-7 place-items-center rounded text-muted transition hover:bg-primary/8 hover:text-primary active:scale-90"
-            >
-              <Icon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-
-        {/* Editable area */}
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleInput}
-          dangerouslySetInnerHTML={{ __html: value }}
-          data-placeholder={placeholder}
-          className={[
-            "prose prose-xs min-h-[8rem] max-w-none p-3 text-xs leading-relaxed text-text outline-none",
-            "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
-            "empty:before:pointer-events-none empty:before:text-muted/60 empty:before:content-[attr(data-placeholder)]",
-          ].join(" ")}
-        />
-      </div>
-      <FieldError message={error} />
-    </div>
-  );
-}
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 
 export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {

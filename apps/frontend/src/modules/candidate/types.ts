@@ -67,6 +67,7 @@ export type AccountUser = {
   dateOfBirth: string | null;
   addressDetail: string | null;
   wardCode: string | null;
+  emailVerifiedAt?: string | null;
   hasPassword?: boolean;
 };
 
