@@ -136,7 +136,7 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   });
 
   if (loading || companyLoading) return <JobFormSkeleton />;
-  if (loadError || companyError || !company) return <div className="mx-auto grid min-h-[400px] max-w-6xl place-items-center"><div className="rounded-lg border border-danger/20 bg-surface p-8 text-center"><p className="text-sm text-danger">{loadError ?? companyError ?? "Không tìm thấy hồ sơ công ty."}</p><button type="button" onClick={() => { setLoading(true); setLoadError(null); setReloadKey((key) => key + 1); reloadCompany(); }} className="mx-auto mt-4 flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div>;
+  if (loadError || companyError || !company) return <div className="flex min-h-[400px] w-full items-center justify-center"><div className="rounded-lg border border-danger/20 bg-surface p-8 text-center"><p className="text-sm text-danger">{loadError ?? companyError ?? "Không tìm thấy hồ sơ công ty."}</p><button type="button" onClick={() => { setLoading(true); setLoadError(null); setReloadKey((key) => key + 1); reloadCompany(); }} className="mx-auto mt-4 flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div>;
 
   const addSkill = (skillId: string) => {
     if (!skillId || selectedSkills.some((skill) => skill.skillId === skillId)) return;
@@ -146,8 +146,8 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   const cancelHref = mode === "edit" && jobId ? `/recruiter/jobs/${jobId}` : "/recruiter/jobs";
 
   return (
-    <div className="-m-4 min-h-[calc(100%+2rem)] bg-white p-4 md:-m-5 md:min-h-[calc(100%+2.5rem)] md:p-5 lg:-m-6 lg:min-h-[calc(100%+3rem)] lg:p-6">
-    <form onSubmit={submit} className="mx-auto max-w-6xl pb-20">
+    <div className="w-full">
+    <form onSubmit={submit} className="w-full pb-20">
       <Link href={cancelHref} className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><ArrowLeft className="size-3.5" />Quay lại</Link>
       <div className="mb-6"><h1 className="text-xl font-bold text-text">{mode === "create" ? "Đăng tin tuyển dụng" : "Chỉnh sửa tin tuyển dụng"}</h1><p className="mt-1 text-xs text-muted">Vui lòng nhập đầy đủ thông tin để tin tuyển dụng được duyệt nhanh chóng.</p></div>
 
@@ -214,7 +214,11 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
         <JobPreviewCard values={values} companyName={company.name} categories={categories} skills={skills} />
       </div>
 
-      <div className="fixed bottom-0 right-0 z-30 flex w-full justify-end gap-3 border-t border-border bg-surface/95 px-6 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] backdrop-blur lg:w-[calc(100%-16rem)]"><Link href={cancelHref} className="rounded-lg border border-border px-5 py-2 text-xs font-medium text-text hover:bg-background">Hủy</Link><button type="button" onClick={() => document.getElementById("job-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2 text-xs font-medium text-primary hover:bg-primary/5"><Eye className="size-4" />Xem trước</button><button type="submit" disabled={isSubmitting} className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2 text-xs font-medium text-white hover:bg-primary-hover disabled:opacity-60">{isSubmitting && <LoaderCircle className="size-4 animate-spin" />}{mode === "create" ? "Gửi duyệt" : "Lưu thay đổi"}</button></div>
+      <div className="fixed bottom-0 right-0 z-30 flex w-full items-center justify-end gap-3 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] backdrop-blur sm:px-6 lg:w-[calc(100%-16rem)] lg:px-8">
+        <Link href={cancelHref} className="rounded-lg border border-border px-5 py-2 text-xs font-medium text-text hover:bg-background">Hủy</Link>
+        <button type="button" onClick={() => document.getElementById("job-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2 text-xs font-medium text-primary hover:bg-primary/5"><Eye className="size-4" />Xem trước</button>
+        <button type="submit" disabled={isSubmitting} className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2 text-xs font-medium text-white hover:bg-primary-hover disabled:opacity-60">{isSubmitting && <LoaderCircle className="size-4 animate-spin" />}{mode === "create" ? "Gửi duyệt" : "Lưu thay đổi"}</button>
+      </div>
     </form>
     </div>
   );

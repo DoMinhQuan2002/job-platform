@@ -77,13 +77,31 @@ export type RecruiterCompany = { id: string; name: string; address: string; logo
 export type JobCategoryOption = { id: string; name: string; slug: string };
 export type SkillOption = { id: string; name: string; category: string; status?: string };
 
+export type RecruiterJobsQuery = {
+  status?: RecruiterJobStatus;
+  page: number;
+  limit: number;
+  keyword?: string;
+  location?: string;
+  minSalary?: number;
+  maxSalary?: number;
+  isNegotiable?: boolean;
+  sort?: "newest" | "oldest" | "deadline_asc" | "salary_asc" | "salary_desc";
+};
+
 export const recruiterJobsApi = {
-  list: (query: { status?: RecruiterJobStatus; page: number; limit: number }, signal?: AbortSignal) => {
+  list: (query: RecruiterJobsQuery, signal?: AbortSignal) => {
     const params = new URLSearchParams({
       page: String(query.page),
       limit: String(query.limit),
     });
     if (query.status) params.set("status", query.status);
+    if (query.keyword) params.set("keyword", query.keyword);
+    if (query.location) params.set("location", query.location);
+    if (query.minSalary !== undefined) params.set("minSalary", String(query.minSalary));
+    if (query.maxSalary !== undefined) params.set("maxSalary", String(query.maxSalary));
+    if (query.isNegotiable !== undefined) params.set("isNegotiable", String(query.isNegotiable));
+    if (query.sort) params.set("sort", query.sort);
 
     return http<ApiSuccess<RecruiterJobsResponse>>(`/recruiter/jobs?${params.toString()}`, {
       signal,

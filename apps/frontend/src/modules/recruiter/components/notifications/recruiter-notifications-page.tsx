@@ -170,7 +170,7 @@ export function RecruiterNotificationsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full space-y-6">
         <header className="space-y-1.5">
           <nav className="flex items-center gap-1.5 text-xs text-muted">
             <Link href={ROUTES.recruiter.root} className="flex items-center gap-1 hover:text-primary">

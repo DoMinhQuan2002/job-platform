@@ -617,9 +617,46 @@ export const jobService = {
       queryBuilder.andWhere("job.categoryId = :categoryId", { categoryId: query.category });
     }
 
+    if (query.location?.trim()) {
+      queryBuilder.andWhere("job.address ILIKE :location", { location: `%${query.location.trim()}%` });
+    }
+
+    if (query.isNegotiable === true) {
+      queryBuilder.andWhere("job.isNegotiable = true");
+    } else {
+      if (query.minSalary !== undefined) {
+        queryBuilder.andWhere("(job.isNegotiable = true OR job.salaryMax >= :minSalary)", {
+          minSalary: query.minSalary,
+        });
+      }
+      if (query.maxSalary !== undefined) {
+        queryBuilder.andWhere("(job.isNegotiable = true OR job.salaryMin <= :maxSalary)", {
+          maxSalary: query.maxSalary,
+        });
+      }
+    }
+
     const totalItems = await queryBuilder.getCount();
+
+    switch (query.sort) {
+      case "oldest":
+        queryBuilder.orderBy("job.createdAt", "ASC");
+        break;
+      case "deadline_asc":
+        queryBuilder.orderBy("job.deadline", "ASC");
+        break;
+      case "salary_asc":
+        queryBuilder.orderBy("job.salaryMin", "ASC", "NULLS LAST");
+        break;
+      case "salary_desc":
+        queryBuilder.orderBy("job.salaryMax", "DESC", "NULLS LAST");
+        break;
+      case "newest":
+      default:
+        queryBuilder.orderBy("job.createdAt", "DESC");
+    }
+
     const { entities: jobs, raw } = await queryBuilder
-      .orderBy("job.createdAt", "DESC")
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
       .getRawAndEntities();
