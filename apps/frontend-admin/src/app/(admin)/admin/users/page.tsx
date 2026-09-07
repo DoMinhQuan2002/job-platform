@@ -27,6 +27,7 @@ import {
 import { LockUserModal } from "@/components/users/lock-user-modal";
 import { UnlockUserModal } from "@/components/users/unlock-user-modal";
 import { getAvatarUrl } from "@/lib/media";
+import { Select } from "@/components/ui/select";
 
 const getInitials = (name?: string) => {
   if (!name) return "US";
@@ -665,48 +666,42 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Role Dropdown */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-36">
                 <span className="text-xs font-semibold text-[#444653]">
                   Vai trò
                 </span>
-                <div className="relative">
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => {
-                      setRoleFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="appearance-none rounded-lg border border-[#C4C5D5] bg-[#F7F9FB] py-2 pl-3.5 pr-8 text-xs font-medium text-[#191C1E] outline-none transition-colors focus:border-[#00288E] focus:bg-white cursor-pointer"
-                  >
-                    <option value="ALL">Tất cả</option>
-                    <option value="CANDIDATE">Ứng viên</option>
-                    <option value="RECRUITER">Nhà tuyển dụng</option>
-                    <option value="ADMIN">Quản trị viên</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 size-3.5 text-[#444653]" />
-                </div>
+                <Select
+                  value={roleFilter}
+                  onChange={(e) => {
+                    setRoleFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  size="md"
+                >
+                  <option value="ALL">Tất cả</option>
+                  <option value="CANDIDATE">Ứng viên</option>
+                  <option value="RECRUITER">Nhà tuyển dụng</option>
+                  <option value="ADMIN">Quản trị viên</option>
+                </Select>
               </div>
 
               {/* Status Dropdown */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 min-w-40">
                 <span className="text-xs font-semibold text-[#444653]">
                   Trạng thái
                 </span>
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="appearance-none rounded-lg border border-[#C4C5D5] bg-[#F7F9FB] py-2 pl-3.5 pr-8 text-xs font-medium text-[#191C1E] outline-none transition-colors focus:border-[#00288E] focus:bg-white cursor-pointer"
-                  >
-                    <option value="ALL">Tất cả</option>
-                    <option value="ACTIVE">Đang hoạt động</option>
-                    <option value="BANNED">Đang bị khóa</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 size-3.5 text-[#444653]" />
-                </div>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  size="md"
+                >
+                  <option value="ALL">Tất cả</option>
+                  <option value="ACTIVE">Đang hoạt động</option>
+                  <option value="BANNED">Đang bị khóa</option>
+                </Select>
               </div>
 
               {/* Register Date Dropdown with Range Popover */}
@@ -1168,19 +1163,19 @@ export default function AdminUsersPage() {
           {/* Page size selector */}
           <div className="flex items-center gap-2">
             <span>Hiển thị</span>
-            <div className="relative">
-              <select
-                value={pageSize}
+            <div className="w-20">
+              <Select
+                value={String(pageSize)}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="appearance-none rounded-lg border border-[#C4C5D5] bg-white py-1 pl-2.5 pr-7 text-xs font-semibold text-[#191C1E] outline-none cursor-pointer"
+                size="sm"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
-              </select>
+              </Select>
               <ChevronDown className="pointer-events-none absolute right-2 top-1.5 size-3 text-[#444653]" />
             </div>
             <span>trên mỗi trang</span>

@@ -53,8 +53,7 @@ function Select({ value, defaultValue, onChange, disabled, className, children, 
             data-slot="select-content"
             className="min-w-[var(--anchor-width)] max-w-[min(24rem,var(--available-width))] origin-[var(--transform-origin)] overflow-hidden rounded-lg border border-border bg-white text-foreground shadow-lg outline-none transition-[transform,opacity] duration-100 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0"
           >
-            <SelectPrimitive.ScrollUpArrow className="flex h-7 items-center justify-center border-b border-border bg-white text-muted-foreground"><ChevronUp className="size-4" /></SelectPrimitive.ScrollUpArrow>
-            <SelectPrimitive.List className="max-h-72 overflow-y-auto p-1 scroll-py-1">
+            <SelectPrimitive.List className="max-h-72 overflow-y-auto p-1 scroll-py-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-300">
               {options.map((option) => (
                 <SelectPrimitive.Item
                   key={option.value}
@@ -66,7 +65,6 @@ function Select({ value, defaultValue, onChange, disabled, className, children, 
                 </SelectPrimitive.Item>
               ))}
             </SelectPrimitive.List>
-            <SelectPrimitive.ScrollDownArrow className="flex h-7 items-center justify-center border-t border-border bg-white text-muted-foreground"><ChevronDown className="size-4" /></SelectPrimitive.ScrollDownArrow>
           </SelectPrimitive.Popup>
         </SelectPrimitive.Positioner>
       </SelectPrimitive.Portal>

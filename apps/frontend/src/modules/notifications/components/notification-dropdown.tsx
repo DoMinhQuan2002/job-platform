@@ -45,12 +45,20 @@ export function NotificationDropdown({
     };
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open) {
+      setLoading(true);
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  };
+
   // Tải danh sách 5 thông báo mới nhất khi mở dropdown
   useEffect(() => {
     if (!open) return;
 
     let active = true;
-    setLoading(true);
 
     notificationsApi
       .list({ page: 1, limit: 5 })
@@ -103,7 +111,7 @@ export function NotificationDropdown({
     <div ref={dropdownRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleToggle}
         className="relative cursor-pointer rounded-md p-1.5 text-slate-700 transition hover:bg-slate-100"
         aria-label="Thông báo"
         aria-expanded={open}

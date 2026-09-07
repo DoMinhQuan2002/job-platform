@@ -7,6 +7,8 @@ interface NotificationListProps {
   items: AdminNotificationItem[];
   selectedId: string | null;
   onSelectNotification: (item: AdminNotificationItem) => void;
+  page?: number;
+  limit?: number;
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -30,43 +32,43 @@ export function getNotificationIcon(type: string, isSelected = false) {
   if (type.startsWith("COMPANY")) {
     return (
       <div
-        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-blue-600 transition-colors ${
+        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-blue-600 transition-colors ${
           isSelected ? "bg-blue-100" : "bg-blue-50"
         }`}
       >
-        <Building2 className="w-5 h-5" />
+        <Building2 className="w-4 h-4" />
       </div>
     );
   }
-  if (type.startsWith("ACCOUNT")) {
+  if (type.startsWith("ACCOUNT") || type.includes("USER")) {
     return (
       <div
-        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-emerald-600 transition-colors ${
+        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-emerald-600 transition-colors ${
           isSelected ? "bg-emerald-100" : "bg-emerald-50"
         }`}
       >
-        <User className="w-5 h-5" />
+        <User className="w-4 h-4" />
       </div>
     );
   }
   if (type.startsWith("JOB") || type.includes("APPLICATION")) {
     return (
       <div
-        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-orange-500 transition-colors ${
-          isSelected ? "bg-orange-100" : "bg-orange-50"
+        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-amber-600 transition-colors ${
+          isSelected ? "bg-amber-100" : "bg-amber-50"
         }`}
       >
-        <Briefcase className="w-5 h-5" />
+        <Briefcase className="w-4 h-4" />
       </div>
     );
   }
   return (
     <div
-      className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-amber-500 transition-colors ${
+      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-amber-500 transition-colors ${
         isSelected ? "bg-amber-100" : "bg-amber-50"
       }`}
     >
-      <Bell className="w-5 h-5" />
+      <Bell className="w-4 h-4" />
     </div>
   );
 }
@@ -75,10 +77,12 @@ export function NotificationList({
   items,
   selectedId,
   onSelectNotification,
+  page = 1,
+  limit = 10,
 }: NotificationListProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+      <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-2xs">
         <Bell className="mx-auto size-12 text-slate-300" />
         <h3 className="mt-3 text-sm font-bold text-slate-800">
           Không tìm thấy thông báo
@@ -91,50 +95,77 @@ export function NotificationList({
   }
 
   return (
-    <div className="flex flex-col space-y-2" data-purpose="notification-list">
-      {items.map((item) => {
-        const isSelected = selectedId === item.id;
-        return (
-          <div
-            key={item.id}
-            onClick={() => onSelectNotification(item)}
-            className={`flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition border ${
-              isSelected
-                ? "bg-blue-50/70 border-blue-200 shadow-xs"
-                : "bg-white border-slate-100 hover:border-slate-200 hover:shadow-xs"
-            }`}
-          >
-            {/* Left Info */}
-            <div className="flex items-center gap-3.5 min-w-0">
-              {getNotificationIcon(item.type, isSelected)}
-              <div className="min-w-0 pr-2">
-                <h4
-                  className={`text-sm leading-snug truncate ${
-                    isSelected || !item.isRead
-                      ? "font-semibold text-slate-900"
-                      : "font-medium text-slate-800"
+    <div
+      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs"
+      data-purpose="notification-list"
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr className="border-b border-slate-100 bg-white text-[11px] font-bold tracking-wider text-[#334155] uppercase">
+              <th className="py-4 px-4 w-14 text-center">STT</th>
+              <th className="py-4 px-4">NỘI DUNG</th>
+              <th className="py-4 px-4 w-44">THỜI GIAN</th>
+              <th className="py-4 px-6 w-36 text-center">TRẠNG THÁI</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100/80">
+            {items.map((item, index) => {
+              const isSelected = selectedId === item.id;
+              const stt = (page - 1) * limit + index + 1;
+
+              return (
+                <tr
+                  key={item.id}
+                  onClick={() => onSelectNotification(item)}
+                  className={`group cursor-pointer transition-colors hover:bg-slate-50/70 ${
+                    isSelected ? "bg-blue-50/50" : "bg-white"
                   }`}
                 >
-                  {item.title}
-                </h4>
-                <p className="text-xs text-slate-500 truncate mt-0.5">
-                  {item.content}
-                </p>
-              </div>
-            </div>
+                  {/* STT */}
+                  <td className="py-4 px-4 text-center font-normal text-slate-400 text-xs">
+                    {stt}
+                  </td>
 
-            {/* Right Meta */}
-            <div className="flex items-center gap-2 flex-shrink-0 pl-2">
-              <span className="text-xs text-slate-400 whitespace-nowrap">
-                {formatRelativeTime(item.createdAt)}
-              </span>
-              {!item.isRead && (
-                <span className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
-              )}
-            </div>
-          </div>
-        );
-      })}
+                  {/* NỘI DUNG */}
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-3.5">
+                      {getNotificationIcon(item.type, isSelected)}
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-slate-900 leading-snug truncate">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-slate-500 truncate mt-0.5 font-normal">
+                          {item.content}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* THỜI GIAN */}
+                  <td className="py-4 px-4 text-xs text-slate-500 whitespace-nowrap">
+                    {formatRelativeTime(item.createdAt)}
+                  </td>
+
+                  {/* TRẠNG THÁI */}
+                  <td className="py-4 px-6 text-center whitespace-nowrap">
+                    {!item.isRead ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1 text-xs font-medium text-blue-600">
+                        <span>Chưa đọc</span>
+                        <span className="size-1.5 rounded-full bg-blue-600" />
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center rounded-full bg-slate-100/90 px-3.5 py-1 text-xs font-medium text-slate-500">
+                        Đã đọc
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

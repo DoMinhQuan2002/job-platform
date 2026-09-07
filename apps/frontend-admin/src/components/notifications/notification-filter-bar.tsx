@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, ChevronDown, X } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 export type NotificationStatusFilter = "ALL" | "UNREAD" | "READ";
 
@@ -18,9 +19,9 @@ export function NotificationFilterBar({
   onStatusFilterChange,
 }: NotificationFilterBarProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       {/* Search Input */}
-      <div className="relative w-64">
+      <div className="relative w-64 md:w-72">
         <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
           <Search className="size-4" />
         </span>
@@ -29,7 +30,7 @@ export function NotificationFilterBar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Tìm kiếm thông báo..."
-          className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-8 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-2xs"
         />
         {search && (
           <button
@@ -44,19 +45,16 @@ export function NotificationFilterBar({
       </div>
 
       {/* Status Filter Dropdown */}
-      <div className="relative">
-        <select
+      <div className="w-44">
+        <Select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value as NotificationStatusFilter)}
-          className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm font-medium text-slate-700 cursor-pointer focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          size="md"
         >
           <option value="ALL">Tất cả trạng thái</option>
           <option value="UNREAD">Chưa đọc</option>
           <option value="READ">Đã đọc</option>
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-          <ChevronDown className="size-4" />
-        </div>
+        </Select>
       </div>
     </div>
   );
