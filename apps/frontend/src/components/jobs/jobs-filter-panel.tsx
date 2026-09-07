@@ -66,6 +66,16 @@ const salaries = [
   { label: "Trên 30 triệu", min: "30000000", max: "" },
 ];
 
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+}
+
 export function JobsFilterPanel({
   filters,
   categories,
@@ -82,9 +92,12 @@ export function JobsFilterPanel({
     filters.location && !defaultLocations.includes(filters.location)
   );
 
-  const filteredProvinces = VIETNAM_PROVINCES.filter((p) =>
-    p.toLowerCase().includes(locationSearch.toLowerCase().trim())
-  );
+  const filteredProvinces = VIETNAM_PROVINCES.filter((province) => {
+    if (!locationSearch.trim()) return true;
+    const normalizedProvince = removeVietnameseTones(province);
+    const normalizedQuery = removeVietnameseTones(locationSearch);
+    return normalizedProvince.includes(normalizedQuery);
+  });
 
   const handleSelectProvince = (province: string) => {
     onChange("location", province);
