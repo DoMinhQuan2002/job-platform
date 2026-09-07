@@ -34,7 +34,7 @@ const companyLinks = [
   ["Tin tức", "/news"],
   ["Sự kiện", "/events"],
   ["Tuyển dụng nội bộ", "/careers"],
-  ["Liên hệ", "#footer-newsletter"],
+  ["Liên hệ", "#footer-contact"],
 ];
 
 function FooterLinks({ title, links }: { title: string; links: string[][] }) {
@@ -106,7 +106,7 @@ export function Footer() {
           <FooterLinks title="Dành cho doanh nghiệp" links={employerLinks} />
           <FooterLinks title="Về JobPlatform" links={companyLinks} />
 
-          <section>
+          <section id="footer-contact" className="scroll-mt-24">
             <h2 className="mb-6 text-sm font-bold text-slate-900">
               Liên hệ với chúng tôi
             </h2>
@@ -150,6 +150,11 @@ export function Footer() {
               </p>
             </div>
           </div>
+          {/*
+            Chưa có API newsletter ở BE -> khoá form lại thay vì để user gõ email
+            rồi không có gì xảy ra. Khi nào có POST /api/v1/newsletter/subscribe
+            thì bỏ disabled và thêm onSubmit (nhớ thêm "use client" cho file này).
+          */}
           <form
             className="flex w-full flex-col gap-2 sm:flex-row md:max-w-[460px]"
             action="#"
@@ -160,15 +165,16 @@ export function Footer() {
             <input
               id="footer-email"
               type="email"
-              required
-              placeholder="Nhập email của bạn"
-              className="h-11 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-4 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              disabled
+              placeholder="Tính năng đang được phát triển"
+              className="h-11 min-w-0 flex-1 cursor-not-allowed rounded-lg border border-slate-300 bg-slate-100 px-4 text-xs text-slate-400 outline-none"
             />
             <button
               type="submit"
-              className="h-11 rounded-lg bg-[#3367d6] px-6 text-sm font-semibold text-white transition hover:bg-[#2857bb]"
+              disabled
+              className="h-11 cursor-not-allowed rounded-lg bg-slate-400 px-6 text-sm font-semibold text-white"
             >
-              Đăng ký nhận tin
+              Sắp ra mắt
             </button>
           </form>
         </section>

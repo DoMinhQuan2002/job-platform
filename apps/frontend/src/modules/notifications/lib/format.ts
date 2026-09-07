@@ -63,6 +63,35 @@ export const CANDIDATE_NOTIFICATION_TABS: Array<{
   { value: "APPLICATION", label: "Ứng tuyển", types: ["APPLICATION_STATUS_CHANGED"] },
 ];
 
+/**
+ * Nhóm tab cho màn nhà tuyển dụng.
+ */
+export const RECRUITER_NOTIFICATION_TABS: Array<{
+  value: string;
+  label: string;
+  types?: NotificationType[];
+}> = [
+  { value: "ALL", label: "Tất cả" },
+  { value: "APPLICATIONS", label: "Ứng viên mới", types: ["NEW_APPLICATION"] },
+  {
+    value: "JOBS",
+    label: "Tin đăng",
+    types: ["JOB_APPROVED", "JOB_REJECTED", "JOB_DELETED"],
+  },
+  {
+    value: "SYSTEM",
+    label: "Hệ thống & Công ty",
+    types: [
+      "COMPANY_APPROVED",
+      "COMPANY_REJECTED",
+      "COMPANY_LOCKED",
+      "COMPANY_UNLOCKED",
+      "ACCOUNT_LOCKED",
+      "ACCOUNT_UNLOCKED",
+    ],
+  },
+];
+
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return "—";
   const date = new Date(iso);

@@ -15,6 +15,10 @@ import { ResumeEntity } from "../src/database/entities/resume.entity";
 import { Job } from "../src/database/entities/job.entity";
 import { Company } from "../src/database/entities/company.entity";
 import { UserEntity } from "../src/database/entities/user.entity";
+import { EducationEntity } from "../src/database/entities/education.entity";
+import { WorkExperienceEntity } from "../src/database/entities/work-experience.entity";
+import { CandidateSkillEntity } from "../src/database/entities/candidate-skill.entity";
+import { JobCategory } from "../src/database/entities/job-category.entity";
 import { ApplicationStatus } from "../src/common/constants";
 import { JOB_STATUS } from "../src/common/constants/job";
 import { notificationService } from "../src/modules/notifications/notification.service";
@@ -52,12 +56,33 @@ describe("Applications & Saved Jobs Module", () => {
 
   const mockApplicationQueryBuilder = {
     innerJoin: vi.fn().mockReturnThis(),
+    leftJoin: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    addSelect: vi.fn().mockReturnThis(),
+    groupBy: vi.fn().mockReturnThis(),
+    addGroupBy: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     andWhere: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockReturnThis(),
     addOrderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    offset: vi.fn().mockReturnThis(),
     take: vi.fn().mockReturnThis(),
     skip: vi.fn().mockReturnThis(),
+    getRawMany: vi.fn().mockResolvedValue([
+      {
+        id: "app_1",
+        candidateId: "cand_1",
+        jobId: "10",
+        status: ApplicationStatus.APPLIED,
+        appliedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        jobTitle: "Senior Backend Developer",
+        companyName: "Tech Corp",
+        jobStatus: JOB_STATUS.APPROVED,
+      },
+    ]),
     getMany: vi
       .fn()
       .mockResolvedValue([
@@ -112,6 +137,23 @@ describe("Applications & Saved Jobs Module", () => {
     findOne: vi.fn(),
   };
 
+  const mockEducationRepo = {
+    find: vi.fn().mockResolvedValue([]),
+  };
+
+  const mockWorkExperienceRepo = {
+    find: vi.fn().mockResolvedValue([]),
+  };
+
+  const mockCandidateSkillRepo = {
+    find: vi.fn().mockResolvedValue([]),
+  };
+
+  const mockJobCategoryRepo = {
+    find: vi.fn().mockResolvedValue([]),
+    findOne: vi.fn().mockResolvedValue(null),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     currentUser = null;
@@ -123,6 +165,26 @@ describe("Applications & Saved Jobs Module", () => {
     mockCandidateProfileRepo.findOne.mockResolvedValue(null);
     mockResumeRepo.findOne.mockResolvedValue(null);
     mockJobRepo.findOne.mockResolvedValue(null);
+    mockEducationRepo.find.mockResolvedValue([]);
+    mockWorkExperienceRepo.find.mockResolvedValue([]);
+    mockCandidateSkillRepo.find.mockResolvedValue([]);
+    mockJobCategoryRepo.find.mockResolvedValue([]);
+    mockJobCategoryRepo.findOne.mockResolvedValue(null);
+
+    mockApplicationQueryBuilder.getRawMany.mockResolvedValue([
+      {
+        id: "app_1",
+        candidateId: "cand_1",
+        jobId: "10",
+        status: ApplicationStatus.APPLIED,
+        appliedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        jobTitle: "Senior Backend Developer",
+        companyName: "Tech Corp",
+        jobStatus: JOB_STATUS.APPROVED,
+      },
+    ]);
 
     vi.spyOn(AppDataSource, "getRepository").mockImplementation(
       (entity: any) => {
@@ -134,6 +196,10 @@ describe("Applications & Saved Jobs Module", () => {
         if (entity === Job) return mockJobRepo as any;
         if (entity === Company) return mockCompanyRepo as any;
         if (entity === UserEntity) return mockUserRepo as any;
+        if (entity === EducationEntity) return mockEducationRepo as any;
+        if (entity === WorkExperienceEntity) return mockWorkExperienceRepo as any;
+        if (entity === CandidateSkillEntity) return mockCandidateSkillRepo as any;
+        if (entity === JobCategory) return mockJobCategoryRepo as any;
         return {} as any;
       },
     );

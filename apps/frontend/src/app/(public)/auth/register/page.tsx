@@ -67,8 +67,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
-  const [, setUnverifiedEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -93,7 +91,6 @@ export default function RegisterPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError("");
-    setSubmitSuccess("");
 
     try {
       const response = await authApi.register({
@@ -103,18 +100,28 @@ export default function RegisterPage() {
         role: values.role,
       });
 
-      setSubmitSuccess(
-        response.message ||
-        "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
-      );
+      // Thành công thì chuyển thẳng sang trang nhập OTP, không cần hiện thêm gì.
       const query = new URLSearchParams({
         email: response.data.email,
         expiresIn: String(response.data.otpExpiresIn),
       });
       router.push(`${ROUTES.auth.verifyOtp}?${query.toString()}`);
     } catch (error) {
-      if (error instanceof ApiError && error.code === "EMAIL_NOT_VERIFIED") {
-        setUnverifiedEmail(values.email.trim());
+      const code = error instanceof ApiError ? error.code : "";
+
+      // BE trả 409 khi email đã đăng ký VÀ đã xác thực xong.
+      if (code === "EMAIL_ALREADY_EXISTS") {
+        setSubmitError(
+          'Email này đã được đăng ký. Bạn hãy đăng nhập, hoặc dùng "Quên mật khẩu" nếu không nhớ mật khẩu.',
+        );
+        return;
+      }
+
+      // Tài khoản đã tạo nhưng email xác thực chưa gửi được.
+      if (code === "MAIL_SEND_FAILED") {
+        setSubmitError(
+          "Tài khoản đã được tạo nhưng hệ thống chưa gửi được email xác thực. Vui lòng đăng ký lại sau ít phút.",
+        );
         return;
       }
 

@@ -1,7 +1,17 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, RefreshCw, UserPlus, Users } from "lucide-react";
-import { useEffect, useReducer } from "react";
+import { ArrowRight, Bell, CheckCircle2, RefreshCw, UserPlus, Users } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useReducer, useState } from "react";
+import { ROUTES } from "@/constants/routes";
+import { cn } from "@/lib/utils";
+import { notificationsApi } from "@/modules/notifications/api";
+import {
+  NOTIFICATION_ICON,
+  formatRelativeTime,
+  notificationIconClass,
+} from "@/modules/notifications/lib/format";
+import type { NotificationItem } from "@/modules/notifications/types";
 import {
   recruiterStatisticsApi,
   type RecentJob,
@@ -182,63 +192,122 @@ export function RecentJobs() {
       </div>
 
       {/* bỏ div justify-end thừa, button tự nằm cuối vì flex-col + flex-1 ở trên */}
-      <button
-        type="button"
-        className="flex w-full shrink-0 items-center justify-between border-t border-border p-4 text-sm font-medium text-primary hover:bg-background/50"
-        onClick={() => window.location.assign("/recruiter/jobs")}
+      <Link
+        href="/recruiter/jobs"
+        className="group flex w-full shrink-0 cursor-pointer items-center justify-between border-t border-border p-4 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary-hover"
       >
-        Xem tất cả tin đăng <ArrowRight className="size-4" />
-      </button>
+        <span>Xem tất cả tin đăng</span>
+        <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+      </Link>
     </section>
   );
 }
 
-// ─── RecentActivity (giữ nguyên static, chưa có API) ─────────────────────────
+// ─── RecentActivity (thông báo thật từ hệ thống) ─────────────────────────────
 export function RecentActivity() {
-  const items = [
-    {
-      icon: UserPlus,
-      text: "Nguyễn Văn A đã ứng tuyển vào Digital Marketing.",
-      time: "2 phút trước",
-      color: "text-primary bg-primary/10",
-    },
-    {
-      icon: CheckCircle2,
-      text: "Tin Nhân viên Kinh doanh đã được duyệt.",
-      time: "15 phút trước",
-      color: "text-success bg-success/10",
-    },
-    {
-      icon: Users,
-      text: "Công ty của bạn đã được xác thực.",
-      time: "2 giờ trước",
-      color: "text-purple bg-purple/10",
-    },
-  ];
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadActivities = () => {
+    setLoading(true);
+    setError(null);
+    notificationsApi
+      .list({ page: 1, limit: 5 })
+      .then((res) => {
+        setNotifications(res.data?.items ?? []);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Không tải được hoạt động gần đây.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    loadActivities();
+    window.addEventListener("jp-notifications-change", loadActivities);
+    return () => {
+      window.removeEventListener("jp-notifications-change", loadActivities);
+    };
+  }, []);
 
   return (
     <section className="flex rounded-lg border border-border bg-surface shadow-sm">
       <div className="flex w-full flex-col">
         <h2 className="border-b border-border p-5 font-bold">Hoạt động gần đây</h2>
-        <div className="flex-1 space-y-5 p-5">
-          {items.map(({ icon: Icon, text, time, color }) => (
-            <div key={text} className="flex gap-3">
-              <span className={`grid size-8 shrink-0 place-items-center rounded-full ${color}`}>
-                <Icon className="size-4" />
-              </span>
-              <div>
-                <p className="text-sm leading-relaxed">{text}</p>
-                <span className="text-xs text-muted">{time}</span>
-              </div>
+        <div className="flex-1 space-y-4 p-5">
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Sk className="size-8 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Sk className="h-4 w-full" />
+                    <Sk className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <p className="text-xs text-danger">{error}</p>
+              <button
+                type="button"
+                onClick={loadActivities}
+                className="mt-2 text-xs font-medium text-primary hover:underline"
+              >
+                Thử lại
+              </button>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted">
+              Chưa có hoạt động nào gần đây.
+            </div>
+          ) : (
+            notifications.map((item) => {
+              const Icon = NOTIFICATION_ICON[item.type] ?? Bell;
+              const colorClass = notificationIconClass(item.type);
+              const relativeTime = formatRelativeTime(item.createdAt);
+
+              return (
+                <Link
+                  key={item.id}
+                  href={`${ROUTES.recruiter.notifications}/${item.id}`}
+                  className="group -mx-2 -my-1.5 flex cursor-pointer items-start gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50"
+                >
+                  <span
+                    className={cn(
+                      "grid size-8 shrink-0 place-items-center rounded-full transition-transform group-hover:scale-105",
+                      colorClass,
+                    )}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-snug text-slate-800 transition-colors group-hover:text-primary">
+                      {item.title}
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                      {item.content}
+                    </p>
+                    <span className="mt-1 block text-[11px] text-muted">
+                      {relativeTime}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })
+          )}
         </div>
-        <button
-          type="button"
-          className="flex w-full items-center justify-between border-t border-border p-4 text-sm font-medium text-primary"
+        <Link
+          href={ROUTES.recruiter.notifications}
+          className="group flex w-full cursor-pointer items-center justify-between border-t border-border p-4 text-sm font-medium text-primary transition-colors hover:bg-primary/5 hover:text-primary-hover"
         >
-          Xem tất cả hoạt động <ArrowRight className="size-4" />
-        </button>
+          <span>Xem tất cả hoạt động</span>
+          <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+        </Link>
       </div>
     </section>
   );

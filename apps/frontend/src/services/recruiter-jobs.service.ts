@@ -73,7 +73,7 @@ export type RecruiterJobInput = {
   skills: Array<{ skillId: string; isRequired: boolean }>;
 };
 
-export type RecruiterCompany = { id: string; name: string; address: string };
+export type RecruiterCompany = { id: string; name: string; address: string; logo?: string | null };
 export type JobCategoryOption = { id: string; name: string; slug: string };
 export type SkillOption = { id: string; name: string; category: string; status?: string };
 
