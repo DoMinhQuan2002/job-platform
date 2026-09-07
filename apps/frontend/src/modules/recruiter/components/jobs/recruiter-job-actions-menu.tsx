@@ -136,16 +136,27 @@ export function RecruiterJobActionsMenu({ job, onStatusChange }: RecruiterJobAct
     }
   };
 
+  const isRestricted = job.status === "PENDING" || job.status === "REJECTED";
+
   return (
     <>
       <button
         ref={buttonRef}
         type="button"
-        title="Thao tác khác"
+        disabled={isRestricted}
+        title={
+          isRestricted
+            ? "Tin đang chờ duyệt hoặc bị từ chối không thể thay đổi trạng thái"
+            : "Thao tác khác"
+        }
         aria-label="Thao tác khác"
         aria-expanded={isOpen}
         onClick={toggleMenu}
-        className="grid size-8 cursor-pointer place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary focus:outline-none"
+        className={`grid size-8 place-items-center rounded-full border border-border transition focus:outline-none ${
+          isRestricted
+            ? "cursor-not-allowed text-muted/30 opacity-60"
+            : "cursor-pointer text-muted hover:bg-background hover:text-primary"
+        }`}
       >
         <Ellipsis className="size-3.5" />
       </button>

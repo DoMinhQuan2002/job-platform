@@ -134,36 +134,50 @@ export function JobDetailSidebar({ job, updatingStatus, onUpdateStatus }: JobDet
             <UserSearch className="size-4" />
             Xem ứng viên
           </Link>
-          {job.status === "OPEN" ? (
-            <button
-              type="button"
-              disabled={updatingStatus}
-              onClick={() => onUpdateStatus("CLOSED")}
-              className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Power className="size-4 text-danger" />
-              Đóng tin
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={updatingStatus}
-              onClick={() => onUpdateStatus("OPEN")}
-              className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background hover:text-success disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Power className="size-4 text-success" />
-              Mở tin
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={updatingStatus}
-            onClick={() => onUpdateStatus("HIDDEN")}
-            className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <EyeOff className="size-4" />
-            Ẩn tin
-          </button>
+          {(() => {
+            const isRestricted = job.status === "PENDING" || job.status === "REJECTED";
+            const restrictedTitle = isRestricted
+              ? "Tin đang chờ duyệt hoặc bị từ chối không thể thay đổi trạng thái"
+              : undefined;
+
+            return (
+              <>
+                {job.status === "OPEN" ? (
+                  <button
+                    type="button"
+                    disabled={updatingStatus || isRestricted}
+                    title={restrictedTitle}
+                    onClick={() => onUpdateStatus("CLOSED")}
+                    className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Power className="size-4 text-danger" />
+                    Đóng tin
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={updatingStatus || isRestricted}
+                    title={restrictedTitle}
+                    onClick={() => onUpdateStatus("OPEN")}
+                    className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background hover:text-success disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Power className="size-4 text-success" />
+                    Mở tin
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={updatingStatus || isRestricted}
+                  title={restrictedTitle}
+                  onClick={() => onUpdateStatus("HIDDEN")}
+                  className="flex cursor-pointer flex-col items-center gap-1 rounded-md border border-border p-3 text-[10px] text-muted transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <EyeOff className="size-4" />
+                  Ẩn tin
+                </button>
+              </>
+            );
+          })()}
           <button
             type="button"
             disabled
