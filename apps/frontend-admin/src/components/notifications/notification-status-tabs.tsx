@@ -22,7 +22,7 @@ export function NotificationStatusTabs({
 }: NotificationStatusTabsProps) {
   return (
     <div
-      className="border-b border-slate-200 mb-6 flex space-x-6 text-sm font-medium overflow-x-auto"
+      className="border-b border-slate-200/80 mb-6 flex space-x-8 text-sm font-medium overflow-x-auto"
       data-purpose="status-tabs"
     >
       {TABS.map((tab) => {
@@ -34,14 +34,14 @@ export function NotificationStatusTabs({
             key={tab.key}
             type="button"
             onClick={() => onChange(tab.key)}
-            className={`pb-3 whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
+            className={`pb-3 whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 cursor-pointer ${
               isActive
                 ? "text-blue-600 border-blue-600 font-semibold"
-                : "text-slate-500 border-transparent hover:text-slate-800"
+                : "text-slate-500 border-transparent hover:text-slate-700"
             }`}
           >
             <span>{tab.label}</span>
-            <span className="text-xs">({count})</span>
+            <span>({count})</span>
           </button>
         );
       })}

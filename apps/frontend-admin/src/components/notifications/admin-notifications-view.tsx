@@ -177,35 +177,6 @@ export function AdminNotificationsView() {
     }
   };
 
-  // Handle Mark All Read
-  const handleMarkAllRead = async () => {
-    if (isMarkingAll) return;
-    setIsMarkingAll(true);
-    try {
-      const count = await adminNotificationsApi.markAllRead();
-      setData((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          items: prev.items.map((item) => ({
-            ...item,
-            isRead: true,
-            readAt: new Date().toISOString(),
-          })),
-        };
-      });
-      setSelectedNotification((prev) =>
-        prev ? { ...prev, isRead: true, readAt: new Date().toISOString() } : null
-      );
-      addToast("success", `Đã đánh dấu ${count || "tất cả"} thông báo là đã đọc.`);
-      void fetchCounts();
-    } catch {
-      addToast("error", "Không thể đánh dấu đã đọc tất cả.");
-    } finally {
-      setIsMarkingAll(false);
-    }
-  };
-
   // Handle Delete Single Notification
   const handleDelete = async (id: string) => {
     try {
@@ -266,37 +237,31 @@ export function AdminNotificationsView() {
       </div>
 
       {/* Page Title & Header Actions with Search and Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Thông báo</h2>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Thông báo</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Xem và theo dõi tất cả thông báo trong hệ thống.
           </p>
         </div>
 
         {/* Filters: Search and Status dropdown */}
-        <div className="flex items-center gap-3">
-          <NotificationFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            statusFilter={statusFilter}
-            onStatusFilterChange={(val) => {
-              setStatusFilter(val);
-              setPage(1);
-            }}
-          />
+        <NotificationFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={(val) => {
+            setStatusFilter(val);
+            setPage(1);
+          }}
+        />
+      </div>
 
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            disabled={isMarkingAll}
-            title="Đánh dấu tất cả đã đọc"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            <CheckCheck className={`size-4 text-blue-600 ${isMarkingAll ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Đọc tất cả</span>
-          </button>
-        </div>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2">
+        <span className="hover:text-slate-700 cursor-pointer">Dashboard</span>
+        <span className="text-slate-400">&gt;</span>
+        <span className="font-semibold text-slate-900">Thông báo</span>
       </div>
 
       {/* Filter Tabs */}
@@ -342,6 +307,8 @@ export function AdminNotificationsView() {
               items={filteredItems}
               selectedId={selectedNotification?.id ?? null}
               onSelectNotification={handleSelectNotification}
+              page={page}
+              limit={limit}
             />
 
             {/* Pagination */}

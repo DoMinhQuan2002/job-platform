@@ -14,6 +14,7 @@ import {
   CategoryToastContainer,
   type CategoryToastNotification,
 } from "./job-category-modals";
+import { Select } from "@/components/ui/select";
 
 export const slugify = (value: string): string =>
   value
@@ -261,31 +262,14 @@ export function JobCategoryForm({ initialData, mode }: JobCategoryFormProps) {
             >
               Trạng thái <span className="text-red-500 font-bold">*</span>
             </label>
-            <div className="relative">
-              <select
-                id="category-status"
-                name="category-status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as JobCategoryStatus)}
-                className="w-full appearance-none rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-900 pl-8 pr-10 py-2.5 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none transition-colors cursor-pointer"
-              >
-                <option value="ACTIVE">Hoạt động</option>
-                <option value="INACTIVE">Không hoạt động</option>
-              </select>
-
-              {/* Status Dot indicator */}
-              <span
-                className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full pointer-events-none ${
-                  status === "ACTIVE" ? "bg-emerald-500" : "bg-amber-500"
-                }`}
-              />
-
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500">
-                <svg className="w-4 h-4 stroke-[2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
+            <Select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as JobCategoryStatus)}
+              size="lg"
+            >
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="INACTIVE">Không hoạt động</option>
+            </Select>
             <p className="text-xs text-slate-500 mt-2">Chọn trạng thái hiển thị của ngành nghề.</p>
           </div>
 

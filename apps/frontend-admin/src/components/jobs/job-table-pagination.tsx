@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 interface JobTablePaginationProps {
   page: number;
@@ -57,17 +58,16 @@ export function JobTablePagination({
       {/* Items per page selector */}
       <div className="flex items-center gap-2">
         <span>Hiển thị</span>
-        <div className="relative">
-          <select
-            value={limit}
+        <div className="w-20">
+          <Select
+            value={String(limit)}
             onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="h-8 pl-2.5 pr-7 py-1 text-xs font-medium border border-slate-200 rounded-md bg-white text-slate-700 appearance-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
+            size="sm"
           >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-2.5 pointer-events-none" />
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </Select>
         </div>
         <span>trên tổng số {total} tin</span>
       </div>

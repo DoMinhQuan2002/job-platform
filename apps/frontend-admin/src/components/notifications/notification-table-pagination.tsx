@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 interface NotificationTablePaginationProps {
   page: number;
@@ -41,7 +42,7 @@ export function NotificationTablePagination({
 
   return (
     <div
-      className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500"
+      className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 text-xs text-slate-500 font-normal"
       data-purpose="pagination"
     >
       <div>
@@ -50,19 +51,16 @@ export function NotificationTablePagination({
 
       <div className="flex items-center gap-3">
         {/* Page size selector */}
-        <div className="relative">
-          <select
-            value={limit}
+        <div className="w-28">
+          <Select
+            value={String(limit)}
             onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white px-3 py-1.5 pr-8 text-xs text-slate-700 shadow-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            size="sm"
           >
-            <option value={10}>10 / trang</option>
-            <option value={20}>20 / trang</option>
-            <option value={50}>50 / trang</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-slate-400">
-            <ChevronDown className="size-3.5" />
-          </div>
+            <option value="10">10 / trang</option>
+            <option value="20">20 / trang</option>
+            <option value="50">50 / trang</option>
+          </Select>
         </div>
 
         {/* Pagination buttons */}
@@ -72,7 +70,7 @@ export function NotificationTablePagination({
             type="button"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex size-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Trang trước"
           >
             <ChevronLeft className="size-4" />
@@ -96,9 +94,9 @@ export function NotificationTablePagination({
                 key={pNum}
                 type="button"
                 onClick={() => onPageChange(pNum)}
-                className={`flex size-8 items-center justify-center rounded-lg font-medium shadow-xs transition-colors ${
+                className={`flex size-8 items-center justify-center rounded-xl text-xs font-semibold shadow-2xs transition-all ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-blue-500/20 font-bold"
+                    ? "bg-blue-600 text-white shadow-blue-500/20"
                     : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
@@ -112,7 +110,7 @@ export function NotificationTablePagination({
             type="button"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-xs transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex size-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
             aria-label="Trang sau"
           >
             <ChevronRight className="size-4" />
