@@ -59,9 +59,25 @@ const reasonBodySchema = z.object({
     .max(500, "Lý do phải từ 10 đến 500 ký tự"),
 });
 
-/** Validate body `reason` — dùng chung cho từ chối và xóa tin. */
+/** Validate body `reason` cho từ chối tin (bắt buộc 10 - 500 ký tự). */
 export const validateReasonBody = (body: unknown): string => {
   const result = reasonBodySchema.safeParse(body);
   if (!result.success) throw fail(result.error);
   return result.data.reason;
+};
+
+const deleteReasonBodySchema = z
+  .object({
+    reason: z.string().max(500, "Lý do không được vượt quá 500 ký tự").optional(),
+  })
+  .optional();
+
+/** Validate body cho xóa tin (lý do là tùy chọn, tối đa 500 ký tự). */
+export const validateDeleteReasonBody = (body: unknown): string | undefined => {
+  if (!body || typeof body !== "object" || Object.keys(body).length === 0) {
+    return undefined;
+  }
+  const result = deleteReasonBodySchema.safeParse(body);
+  if (!result.success) throw fail(result.error);
+  return result.data?.reason;
 };

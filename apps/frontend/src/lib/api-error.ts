@@ -12,6 +12,11 @@ export class ApiError extends Error {
   }
 }
 
+type AppErrorEntry = {
+  code?: string;
+  details?: unknown;
+};
+
 type AppErrorBody = {
   success?: boolean;
   code?: string;
@@ -22,6 +27,18 @@ type AppErrorBody = {
 
 const isAppErrorBody = (value: unknown): value is AppErrorBody => {
   return typeof value === "object" && value !== null;
+};
+
+/**
+ * BE đặt mã lỗi trong errors[0].code, KHÔNG phải ở gốc body.
+ * Xem apps/backend/src/common/middlewares/error.middleware.ts.
+ * Thiếu bước này thì error.code luôn là "UNKNOWN_ERROR".
+ */
+const firstErrorEntry = (errors: unknown): AppErrorEntry | null => {
+  if (!Array.isArray(errors) || errors.length === 0) return null;
+
+  const first: unknown = errors[0];
+  return typeof first === "object" && first !== null ? (first as AppErrorEntry) : null;
 };
 
 export const toApiError = (error: unknown): ApiError => {
@@ -41,11 +58,13 @@ export const toApiErrorFromResponse = async (response: Response): Promise<ApiErr
     const body: unknown = await response.json();
 
     if (isAppErrorBody(body) && (body.code || body.message || body.errors)) {
+      const entry = firstErrorEntry(body.errors);
+
       return new ApiError(
         response.status,
-        body.code || "UNKNOWN_ERROR",
+        body.code || entry?.code || "UNKNOWN_ERROR",
         body.message || response.statusText,
-        body.details ?? body.errors ?? null,
+        body.details ?? entry?.details ?? body.errors ?? null,
       );
     }
   } catch {

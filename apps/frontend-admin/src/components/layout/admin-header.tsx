@@ -10,10 +10,16 @@ import {
   User,
 } from "lucide-react";
 import { ADMIN_ROUTES } from "@/constants/routes";
-import {
-  NotificationsNavIcon,
-  SettingsNavIcon,
-} from "@/components/icons/admin-nav-icons";
+import { NotificationsNavIcon, SettingsNavIcon } from "@/components/icons/admin-nav-icons";
+import { useAuth } from "@/contexts/auth-context";
+import { getAvatarUrl } from "@/lib/media";
+
+const getInitials = (name?: string) => {
+  if (!name) return "AD";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
@@ -24,7 +30,9 @@ export function AdminHeader({
   onToggleSidebar,
   onRequestLogout,
 }: AdminHeaderProps) {
+  const { currentUser } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside or escape
@@ -98,15 +106,25 @@ export function AdminHeader({
             onClick={() => setDropdownOpen((prev) => !prev)}
             aria-expanded={dropdownOpen}
             aria-haspopup="menu"
-            className="flex items-center gap-2.5 rounded-lg py-1 px-1.5 transition-colors hover:bg-slate-50 focus:outline-none"
+            className="flex items-center gap-2.5 rounded-lg py-1 px-1.5 transition-colors hover:bg-slate-50 focus:outline-none cursor-pointer"
           >
-            {/* Blue Avatar with AD text */}
-            <div className="grid size-9 place-items-center rounded-full bg-[#00288E] text-xs font-bold text-white shadow-xs">
-              AD
-            </div>
+            {/* Avatar */}
+            {getAvatarUrl(currentUser?.avatar) && !avatarError ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={getAvatarUrl(currentUser?.avatar)!}
+                alt={currentUser?.fullName || "Admin"}
+                className="size-9 rounded-full object-cover shadow-xs border border-slate-200"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="grid size-9 place-items-center rounded-full bg-[#00288E] text-xs font-bold text-white shadow-xs">
+                {getInitials(currentUser?.fullName || "Admin")}
+              </div>
+            )}
 
-            <span className="hidden text-sm font-semibold text-slate-800 sm:inline-block">
-              Admin
+            <span className="hidden text-sm font-semibold text-slate-800 sm:inline-block max-w-[140px] truncate">
+              {currentUser?.fullName || "Admin"}
             </span>
 
             <ChevronDown
@@ -120,11 +138,15 @@ export function AdminHeader({
           {dropdownOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg animate-in fade-in zoom-in-95 duration-100 z-50"
+              className="absolute right-0 top-full mt-2 w-60 rounded-xl border border-slate-100 bg-white p-1.5 shadow-lg animate-in fade-in zoom-in-95 duration-100 z-50"
             >
               <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                <p className="text-xs font-semibold text-slate-900">Quản trị viên</p>
-                <p className="text-xs text-slate-500 truncate">admin@jobplatform.vn</p>
+                <p className="text-xs font-semibold text-slate-900 truncate">
+                  {currentUser?.fullName || "Quản trị viên"}
+                </p>
+                <p className="text-xs text-slate-500 truncate mt-0.5">
+                  {currentUser?.email || "admin@jobplatform.vn"}
+                </p>
               </div>
 
               <Link

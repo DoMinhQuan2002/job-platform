@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ROUTES } from "@/constants/routes";
+import { JobSkillsCollapse } from "@/components/jobs/job-skills-collapse";
+import { resolveStorageUrl } from "@/lib/utils";
 import type { Job, JobSort } from "@/modules/jobs/types";
 import type { Company } from "../types";
 
@@ -48,10 +50,7 @@ export function getCompanyMark(name: string) {
 
 export function normalizeLogo(logo?: string | null) {
   if (!logo) return "";
-  if (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/")) {
-    return logo;
-  }
-  return "";
+  return resolveStorageUrl(logo) || "";
 }
 
 export function normalizeWebsite(website?: string | null) {
@@ -216,15 +215,12 @@ function CompanyJobCard({ company, job }: { company: Company; job: Job }) {
           </div>
 
           {skills.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {skills.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600"
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="mt-3 min-w-0 max-w-full">
+              <JobSkillsCollapse
+                skills={skills}
+                tagClassName="rounded bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 whitespace-nowrap shrink-0"
+                badgeClassName="rounded bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 whitespace-nowrap shrink-0 hover:bg-slate-200 cursor-default"
+              />
             </div>
           ) : null}
         </div>

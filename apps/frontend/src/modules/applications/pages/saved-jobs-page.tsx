@@ -46,40 +46,41 @@ export function SavedJobsPage() {
     try {
       const res = await applicationsApi.listSavedJobs();
       const records = res.data ?? [];
-      const mapped = await Promise.all(
-        records.map(async (item) => {
-          try {
-            const jobRes = await applicationsApi.getJobDetail(item.jobId);
-            const summary = summarizeJob(jobRes.data);
-            return {
-              id: item.id,
-              jobId: item.jobId,
-              title: summary.title,
-              companyName: summary.companyName,
-              companyLogoUrl: summary.companyLogoUrl,
-              location: summary.location,
-              experience: summary.experience,
-              salary: summary.salary,
-              category: summary.category,
-              savedDate: formatDate(item.createdAt),
-              createdAt: item.createdAt,
-            } satisfies SavedJob;
-          } catch {
-            return {
-              id: item.id,
-              jobId: item.jobId,
-              title: `Job #${item.jobId}`,
-              companyName: "Nhà tuyển dụng",
-              location: "—",
-              experience: "—",
-              salary: "Thỏa thuận",
-              category: "Tuyển dụng",
-              savedDate: formatDate(item.createdAt),
-              createdAt: item.createdAt,
-            } satisfies SavedJob;
-          }
-        }),
-      );
+      const mapped = records.map((item) => {
+        if (item.job) {
+          const summary = summarizeJob(item.job);
+          return {
+            id: item.id,
+            jobId: item.jobId,
+            title: summary.title,
+            companyName: summary.companyName,
+            companyLogoUrl: summary.companyLogoUrl,
+            location: summary.location,
+            experience: summary.experience,
+            salary: summary.salary,
+            category: summary.category,
+            savedDate: formatDate(item.createdAt),
+            createdAt: item.createdAt,
+            statusBadge: summary.statusBadge,
+            isApplyDisabled: summary.isApplyDisabled,
+          } satisfies SavedJob;
+        }
+
+        return {
+          id: item.id,
+          jobId: item.jobId,
+          title: `Job #${item.jobId}`,
+          companyName: "Nhà tuyển dụng",
+          location: "—",
+          experience: "—",
+          salary: "Thỏa thuận",
+          category: "Tuyển dụng",
+          savedDate: formatDate(item.createdAt),
+          createdAt: item.createdAt,
+          statusBadge: { text: "Ngừng nhận hồ sơ", variant: "hidden" },
+          isApplyDisabled: true,
+        } satisfies SavedJob;
+      });
       setSavedJobs(mapped);
       setCurrentPage(1);
     } catch (err) {

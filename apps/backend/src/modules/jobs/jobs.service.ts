@@ -1,6 +1,7 @@
 import { Brackets, In } from "typeorm";
 import { AppError } from "../../common/errors/app-error";
 import { ApplicationStatus } from "../../common/constants";
+import { ASSET_TYPE, storageService } from "../../common/storage";
 import {
   COMPANY_STATUS,
   JOB_CATEGORY_STATUS,
@@ -430,6 +431,12 @@ export const jobService = {
     const savedJobIds = await getSavedJobIds(userId, jobs.map((job) => job.id));
     const items = jobs.map((job) => ({
       ...job,
+      company: job.company
+        ? {
+            ...job.company,
+            logo: storageService.resolvePublicUrl(job.company.logo, ASSET_TYPE.COMPANY_LOGO),
+          }
+        : job.company,
       isSaved: savedJobIds.has(job.id),
     }));
 
@@ -457,7 +464,16 @@ export const jobService = {
       );
     }
     const savedJobIds = await getSavedJobIds(userId, [job.id]);
-    return { ...job, isSaved: savedJobIds.has(job.id) };
+    return {
+      ...job,
+      company: job.company
+        ? {
+            ...job.company,
+            logo: storageService.resolvePublicUrl(job.company.logo, ASSET_TYPE.COMPANY_LOGO),
+          }
+        : job.company,
+      isSaved: savedJobIds.has(job.id),
+    };
   },
 
   /** Cập nhật job thuộc quyền quản lý của recruiter hoặc admin. */

@@ -29,7 +29,7 @@ const loginResult = {
   accessToken: "access-token",
   expiresIn: 900,
   refreshToken: "refresh-token-value",
-  user: { id: 1024, email: "a@example.com", fullName: "Nguyen Van A", role: "CANDIDATE" },
+  user: { id: 1024, email: "a@example.com", fullName: "Nguyen Van A", role: "CANDIDATE", avatar: null },
 };
 
 const getCookie = (res: request.Response, name: string) =>

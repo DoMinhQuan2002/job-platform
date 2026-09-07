@@ -9,6 +9,7 @@ import { UserEntity } from "../../database/entities/user.entity";
 import { EducationEntity } from "../../database/entities/education.entity";
 import { WorkExperienceEntity } from "../../database/entities/work-experience.entity";
 import { CandidateSkillEntity } from "../../database/entities/candidate-skill.entity";
+import { JobCategory } from "../../database/entities/job-category.entity";
 import { ApplicationStatus } from "../../common/constants";
 import { JOB_STATUS } from "../../common/constants/job";
 import { AppError } from "../../common/errors/app-error";
@@ -41,6 +42,36 @@ export type ApplicationListItemDto = {
   job?: {
     id: string;
     title: string;
+    companyName?: string | null;
+    companyLogoUrl?: string | null;
+    location?: string | null;
+    salaryMin?: number | string | null;
+    salaryMax?: number | string | null;
+    isNegotiable?: boolean;
+    status?: string | null;
+    deadline?: string | Date | null;
+    categoryName?: string | null;
+    company?: {
+      id?: string;
+      name?: string;
+      logo?: string | null;
+      website?: string | null;
+      description?: string | null;
+      companySize?: string | null;
+      address?: string | null;
+    };
+    category?: {
+      id?: string;
+      name?: string;
+      slug?: string;
+    };
+    description?: string | null;
+    requirements?: string | null;
+    benefits?: string | null;
+    jobType?: string | null;
+    jobMode?: string | null;
+    experience?: number | null;
+    quantity?: number | null;
   };
   resume?: {
     id: string;
@@ -86,6 +117,15 @@ type ApplicationListRaw = {
   candidateAvatar: string | null;
   experienceCount: string | number | null;
   jobTitle: string | null;
+  companyName: string | null;
+  companyLogoUrl: string | null;
+  jobLocation: string | null;
+  salaryMin: number | string | null;
+  salaryMax: number | string | null;
+  isNegotiable: boolean | string | null;
+  jobStatus: string | null;
+  jobDeadline: string | Date | null;
+  categoryName: string | null;
   resumeFileName: string | null;
 };
 
@@ -168,12 +208,26 @@ export class ApplicationsService {
     if (!job) {
       throw new AppError(404, "JOB_NOT_FOUND", "Công việc không tồn tại");
     }
-    if (job.status !== JOB_STATUS.APPROVED) {
+    if (job.status !== JOB_STATUS.OPEN && job.status !== JOB_STATUS.APPROVED) {
       throw new AppError(
         400,
         "JOB_CLOSED",
         "Công việc không còn nhận hồ sơ ứng tuyển",
       );
+    }
+
+    if (job.deadline) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadlineDate = new Date(job.deadline);
+      deadlineDate.setHours(0, 0, 0, 0);
+      if (deadlineDate < today) {
+        throw new AppError(
+          400,
+          "JOB_CLOSED",
+          "Công việc đã hết hạn nhận hồ sơ ứng tuyển",
+        );
+      }
     }
 
     let resume: ResumeEntity | null = null;
@@ -633,6 +687,7 @@ export class ApplicationsService {
       where: {
         candidateId: candidate.id,
       },
+      relations: ["job", "job.company", "job.category", "job.jobSkills", "job.jobSkills.skill"],
       order: {
         createdAt: "DESC",
       },
@@ -643,6 +698,8 @@ export class ApplicationsService {
     return this.applicationRepo
       .createQueryBuilder("application")
       .innerJoin(Job, "job", "job.id = application.job_id")
+      .leftJoin(Company, "company", "company.id = job.company_id")
+      .leftJoin(JobCategory, "category", "category.id = job.category_id")
       .leftJoin(CandidateProfileEntity, "candidate", "candidate.id = application.candidate_id")
       .leftJoin(UserEntity, "candidateUser", "candidateUser.id = candidate.user_id")
       .leftJoin(ResumeEntity, "resume", "resume.id = application.resume_id")
@@ -665,6 +722,15 @@ export class ApplicationsService {
       .addSelect("candidateUser.phone", "candidatePhone")
       .addSelect("candidateUser.avatar", "candidateAvatar")
       .addSelect("job.title", "jobTitle")
+      .addSelect("company.name", "companyName")
+      .addSelect("company.logo", "companyLogoUrl")
+      .addSelect("job.address", "jobLocation")
+      .addSelect("job.salary_min", "salaryMin")
+      .addSelect("job.salary_max", "salaryMax")
+      .addSelect("job.is_negotiable", "isNegotiable")
+      .addSelect("job.status", "jobStatus")
+      .addSelect("job.deadline", "jobDeadline")
+      .addSelect("category.name", "categoryName")
       .addSelect("resume.file_name", "resumeFileName")
       .addSelect("COUNT(workExperience.id)", "experienceCount")
       .groupBy("application.id")
@@ -681,6 +747,15 @@ export class ApplicationsService {
       .addGroupBy("candidateUser.phone")
       .addGroupBy("candidateUser.avatar")
       .addGroupBy("job.title")
+      .addGroupBy("company.name")
+      .addGroupBy("company.logo")
+      .addGroupBy("job.address")
+      .addGroupBy("job.salary_min")
+      .addGroupBy("job.salary_max")
+      .addGroupBy("job.is_negotiable")
+      .addGroupBy("job.status")
+      .addGroupBy("job.deadline")
+      .addGroupBy("category.name")
       .addGroupBy("resume.file_name");
   }
 
@@ -722,6 +797,15 @@ export class ApplicationsService {
         ? {
             id: String(row.jobId),
             title: row.jobTitle,
+            companyName: row.companyName,
+            companyLogoUrl: row.companyLogoUrl,
+            location: row.jobLocation,
+            salaryMin: row.salaryMin,
+            salaryMax: row.salaryMax,
+            isNegotiable: row.isNegotiable === true || String(row.isNegotiable) === "true",
+            status: row.jobStatus,
+            deadline: row.jobDeadline,
+            categoryName: row.categoryName,
           }
         : undefined,
       resume: row.resumeId && row.resumeFileName
@@ -742,7 +826,10 @@ export class ApplicationsService {
           where: { id: application.candidateId },
           relations: { user: true },
         }),
-        this.jobRepo.findOne({ where: { id: application.jobId } }),
+        this.jobRepo.findOne({
+          where: { id: application.jobId },
+          relations: ["company", "category", "jobSkills", "jobSkills.skill"],
+        }),
         application.resumeId
           ? this.resumeRepo.findOne({ where: { id: application.resumeId } })
           : Promise.resolve(null),
@@ -766,9 +853,9 @@ export class ApplicationsService {
     const certificates: CandidateSkillEntity[] = [];
 
     for (const item of candidateSkills) {
-      if (item.skill.category === "LANGUAGE") {
+      if (item.skill?.category === "LANGUAGE") {
         languages.push(item);
-      } else if (item.skill.category === "CERTIFICATE") {
+      } else if (item.skill?.category === "CERTIFICATE") {
         certificates.push(item);
       } else {
         skills.push(item);
@@ -799,6 +886,40 @@ export class ApplicationsService {
         ? {
             id: job.id,
             title: job.title,
+            companyName: job.company?.name,
+            companyLogoUrl: job.company?.logo,
+            company: job.company
+              ? {
+                  id: job.company.id,
+                  name: job.company.name,
+                  logo: job.company.logo,
+                  website: job.company.website,
+                  description: job.company.description,
+                  companySize: job.company.companySize,
+                  address: job.company.address,
+                }
+              : undefined,
+            category: job.category
+              ? {
+                  id: job.category.id,
+                  name: job.category.name,
+                  slug: job.category.slug,
+                }
+              : undefined,
+            categoryName: job.category?.name,
+            location: job.address,
+            salaryMin: job.salaryMin,
+            salaryMax: job.salaryMax,
+            isNegotiable: job.isNegotiable,
+            status: job.status,
+            deadline: job.deadline,
+            description: job.description,
+            requirements: job.requirements,
+            benefits: job.benefits,
+            jobType: job.jobType,
+            jobMode: job.jobMode,
+            experience: job.experience,
+            quantity: job.quantity,
           }
         : undefined,
       resume: resume

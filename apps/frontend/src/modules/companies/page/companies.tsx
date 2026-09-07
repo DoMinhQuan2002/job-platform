@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { resolveStorageUrl } from "@/lib/utils";
 import { companiesApi1 } from "../api";
 import { COMPANY_JOBS_SECTION_ID } from "../components/company-detail-ui";
 import type { Company, CompanySort } from "../types";
@@ -47,10 +48,7 @@ function getCompanyMeta(company: Company) {
 
 function normalizeLogo(logo?: string | null) {
   if (!logo) return "";
-  if (logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("/")) {
-    return logo;
-  }
-  return "";
+  return resolveStorageUrl(logo) || "";
 }
 
 function getCompanyHref(company: Company) {

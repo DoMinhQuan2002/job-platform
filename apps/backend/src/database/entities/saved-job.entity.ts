@@ -8,6 +8,7 @@ import {
   Unique,
 } from "typeorm";
 import { CandidateProfileEntity } from "./candidate-profile.entity";
+import { Job } from "./job.entity";
 
 @Entity({ name: "saved_jobs" })
 @Unique(["candidateId", "jobId"])
@@ -28,4 +29,8 @@ export class SavedJobEntity {
   @ManyToOne(() => CandidateProfileEntity, { onDelete: "CASCADE" })
   @JoinColumn({ name: "candidate_id" })
   candidate!: CandidateProfileEntity;
+
+  @ManyToOne(() => Job, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "job_id" })
+  job!: Job;
 }

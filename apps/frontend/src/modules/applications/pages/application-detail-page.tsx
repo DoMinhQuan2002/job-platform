@@ -83,12 +83,14 @@ export function ApplicationDetailPage() {
     setError(null);
     try {
       const res = await applicationsApi.getById(appId);
-      let jobRaw: unknown;
-      try {
-        const jobRes = await applicationsApi.getJobDetail(res.data.jobId);
-        jobRaw = jobRes.data;
-      } catch {
-        jobRaw = undefined;
+      let jobRaw: unknown = res.data.job;
+      if (!jobRaw) {
+        try {
+          const jobRes = await applicationsApi.getJobDetail(res.data.jobId);
+          jobRaw = jobRes.data;
+        } catch {
+          jobRaw = undefined;
+        }
       }
       setApplication(toDetailed(res.data, jobRaw));
     } catch (err) {

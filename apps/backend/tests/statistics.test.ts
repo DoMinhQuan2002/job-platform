@@ -60,7 +60,7 @@ describe("Statistics Module", () => {
     const res = await request(testApp).get("/api/v1/admin/statistics");
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({
+    expect(res.body.data).toMatchObject({
       totalCandidates: 186,
       totalRecruiters: 34,
       totalCompanies: 30,

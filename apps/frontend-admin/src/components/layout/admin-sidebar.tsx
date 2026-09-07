@@ -16,6 +16,7 @@ import {
   NotificationsNavIcon,
   SettingsNavIcon,
 } from "@/components/icons/admin-nav-icons";
+import Image from "next/image";
 
 const menuItems = [
   {
@@ -97,7 +98,12 @@ export function AdminSidebar({
         <div className="flex h-[72px] items-center justify-between border-b border-slate-100 px-5">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center text-[#00288E]">
-              <BrandLogoIcon className="size-6" />
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={32}
+                height={32}
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-base font-extrabold tracking-wide text-[#00288E] uppercase">

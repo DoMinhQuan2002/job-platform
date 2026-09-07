@@ -9,6 +9,15 @@ export type ServerSession = {
   expiresAt: number;
 };
 
+/**
+ * "expired" khác "none": còn cookie nhưng access token quá hạn.
+ * Trường hợp đó client vẫn còn cơ hội refresh -> đừng đá ra login vội.
+ */
+export type SessionState =
+  | { status: "valid"; session: ServerSession }
+  | { status: "expired" }
+  | { status: "none" };
+
 type AccessTokenPayload = {
   sub?: string | number;
   email?: string;
@@ -32,31 +41,16 @@ const decodePayload = (token: string): AccessTokenPayload | null => {
   }
 };
 
-export async function getServerSession(): Promise<ServerSession | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!token) return null;
-
-  const payload = decodePayload(token);
-  if (
-    !payload?.sub ||
-    !payload.email ||
-    !payload.role ||
-    !validRoles.has(payload.role) ||
-    !payload.exp ||
-    payload.exp * 1000 <= Date.now()
-  ) {
-    return null;
-  }
-
-  const apiOrigin = (
+const apiOrigin = () =>
+  (
     process.env.INTERNAL_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     "http://localhost:4000"
   ).replace(/\/$/, "");
 
+const fetchMe = async (token: string) => {
   try {
-    const response = await fetch(`${apiOrigin}/api/v1/users/me`, {
+    const response = await fetch(`${apiOrigin()}/api/v1/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -65,24 +59,60 @@ export async function getServerSession(): Promise<ServerSession | null> {
     const body = (await response.json()) as {
       data?: { id?: string | number; email?: string; role?: AuthRole };
     };
-    const user = body.data;
-    if (
-      !user?.id ||
-      !user.email ||
-      !user.role ||
-      !validRoles.has(user.role) ||
-      user.role !== payload.role
-    ) {
-      return null;
-    }
+    return body.data ?? null;
+  } catch {
+    return null;
+  }
+};
 
-    return {
+export async function getSessionState(): Promise<SessionState> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value;
+
+  if (!token) return { status: "none" };
+
+  const payload = decodePayload(token);
+
+  if (
+    !payload?.sub ||
+    !payload.email ||
+    !payload.role ||
+    !validRoles.has(payload.role) ||
+    !payload.exp
+  ) {
+    return { status: "none" };
+  }
+
+  // Chỉ hết hạn thôi -> để client thử refresh.
+  if (payload.exp * 1000 <= Date.now()) {
+    return { status: "expired" };
+  }
+
+  const user = await fetchMe(token);
+
+  if (
+    !user?.id ||
+    !user.email ||
+    !user.role ||
+    !validRoles.has(user.role) ||
+    user.role !== payload.role
+  ) {
+    return { status: "none" };
+  }
+
+  return {
+    status: "valid",
+    session: {
       userId: String(user.id),
       email: user.email,
       role: user.role,
       expiresAt: payload.exp * 1000,
-    };
-  } catch {
-    return null;
-  }
+    },
+  };
+}
+
+/** Giữ nguyên chữ ký cũ cho code đang dùng. */
+export async function getServerSession(): Promise<ServerSession | null> {
+  const state = await getSessionState();
+  return state.status === "valid" ? state.session : null;
 }
