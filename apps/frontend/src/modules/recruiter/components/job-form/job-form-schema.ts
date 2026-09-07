@@ -17,7 +17,17 @@ export const jobFormSchema = z
     salaryMin: optionalMoney,
     salaryMax: optionalMoney,
     isNegotiable: z.boolean(),
-    deadline: z.string().min(1, "Vui lòng chọn hạn nộp"),
+    deadline: z
+      .string()
+      .min(1, "Vui lòng chọn hạn nộp")
+      .refine((val) => {
+        if (!val) return false;
+        const selected = new Date(val);
+        selected.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selected > today;
+      }, "Hạn nộp hồ sơ phải sau ngày hôm nay"),
     description: z.string().trim().min(1, "Vui lòng nhập mô tả công việc").max(5000, "Tối đa 5000 ký tự"),
     requirements: z.string().trim().min(1, "Vui lòng nhập yêu cầu ứng viên").max(5000, "Tối đa 5000 ký tự"),
     benefits: z.string().trim().max(3000, "Tối đa 3000 ký tự"),
