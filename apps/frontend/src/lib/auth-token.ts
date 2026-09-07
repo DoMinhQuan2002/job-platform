@@ -13,6 +13,11 @@ export type StoredUser = {
   avatar?: string | null;
 };
 
+type AccessTokenPayload = {
+  role?: string;
+  exp?: number;
+}
+
 const notifyAuthChange = () => {
   window.dispatchEvent(new Event("jp-auth-change"));
 };
@@ -34,42 +39,79 @@ const getCookie = (name: string) => {
   }
 };
 
+/**
+ * SameSite=Lax (KHÔNG phải Strict).
+ * Với Strict, khi user mở web từ link ngoài (email, Google, Zalo...) trình duyệt
+ * không gửi cookie trong lần điều hướng đầu tiên -> server Next đọc ra "chưa đăng nhập"
+ * và đá về trang login. Lax vẫn chặn CSRF cho POST nhưng cho phép mở link bình thường.
+ */
 const setCookie = (name: string, value: string, maxAgeSeconds?: number) => {
   if (typeof document === "undefined") return;
 
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
   const maxAge = maxAgeSeconds ? `; Max-Age=${maxAgeSeconds}` : "";
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${maxAge}${secure}`;
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Path=/; SameSite=Lax${maxAge}${secure}`;
 };
 
 const deleteCookie = (name: string) => {
   if (typeof document === "undefined") return;
 
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${encodeURIComponent(name)}=; Path=/; Max-Age=0; SameSite=Strict${secure}`;
+  document.cookie = `${encodeURIComponent(name)}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
 };
 
 export const getAccessToken = (): string | null => {
   return getCookie(ACCESS_TOKEN_COOKIE);
 };
 
-export const getAccessTokenRole = (): AuthRole | null => {
-  const token = getAccessToken();
-  if (!token) return null;
-
+/** Đọc phần payload của JWT. Không xác minh chữ ký — chỉ để hiển thị UI. */
+const decodeTokenPayload = (token: string): AccessTokenPayload | null => {
   try {
     const encoded = token.split(".")[1];
     if (!encoded) return null;
     const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-    const payload = JSON.parse(atob(padded)) as { role?: string; exp?: number };
-    if (payload.exp && payload.exp * 1000 <= Date.now()) return null;
-    return payload.role === "CANDIDATE" || payload.role === "RECRUITER" || payload.role === "ADMIN"
-      ? payload.role
-      : null;
+
+    // atob gives one char per byte; convert those bytes back to UTF-8 text
+    const bytes = Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+
+    const payload = JSON.parse(json) as AccessTokenPayload;
+
+    // JSON.parse can return a string, number, or null — make sure it is an object
+    if (typeof payload !== "object" || payload === null) return null;
+    return payload;
   } catch {
     return null;
   }
+};
+
+/** Thời điểm access token hết hạn (ms epoch). null = không có token. */
+export const getAccessTokenExpiry = (): number | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const payload = decodeTokenPayload(token);
+  return payload?.exp ? payload.exp * 1000 : null;
+};
+
+/** true = còn cookie nhưng đã quá hạn -> vẫn có thể cứu bằng refresh. */
+export const isAccessTokenExpired = (): boolean => {
+  const expiresAt = getAccessTokenExpiry();
+  return expiresAt !== null && expiresAt <= Date.now();
+}
+
+export const getAccessTokenRole = (): AuthRole | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const payload = decodeTokenPayload(token);
+  if (!payload) return null;
+  if (payload.exp && payload.exp * 1000 <= Date.now()) return null;
+
+  return payload.role === "CANDIDATE" || payload.role === "RECRUITER" || payload.role === "ADMIN"
+    ? payload.role
+    : null;
 };
 
 const getAuthCookieMaxAge = () =>
