@@ -40,32 +40,18 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
     <div className="relative rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs hover:border-slate-300 hover:shadow-2xs transition-all">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left: Logo & Job Details */}
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-4 min-w-0 flex-1">
           {/* Logo */}
           <CompanyLogo name={job.companyName} src={job.companyLogoUrl} />
 
           {/* Job details */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 min-w-0 flex-1">
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/jobs/${job.jobId}`}>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 hover:text-primary transition line-clamp-1">
-                    {job.title}
-                  </h3>
-                </Link>
-                {job.statusBadge ? (
-                  <span
-                    className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold border ${job.statusBadge.variant === "closed"
-                        ? "bg-rose-50 text-rose-700 border-rose-200"
-                        : job.statusBadge.variant === "expired"
-                          ? "bg-slate-100 text-slate-600 border-slate-200"
-                          : "bg-rose-50 text-rose-700 border-rose-200"
-                      }`}
-                  >
-                    {job.statusBadge.text}
-                  </span>
-                ) : null}
-              </div>
+              <Link href={`/jobs/${job.jobId}`}>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 hover:text-primary transition line-clamp-1">
+                  {job.title}
+                </h3>
+              </Link>
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
                 {job.companyName}
               </p>
@@ -89,17 +75,30 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
               </span>
             </div>
 
-            {/* Category tag */}
-            <div className="pt-0.5">
+            {/* Category tag & Status badge */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
               <span className="inline-block rounded-lg bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                 {job.category}
               </span>
+              {job.statusBadge ? (
+                <span
+                  className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold border ${
+                    job.statusBadge.variant === "closed"
+                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                      : job.statusBadge.variant === "expired"
+                        ? "bg-slate-100 text-slate-600 border-slate-200"
+                        : "bg-rose-50 text-rose-700 border-rose-200"
+                  }`}
+                >
+                  {job.statusBadge.text}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
 
         {/* Right: Saved Date & Action Buttons */}
-        <div className="flex flex-col sm:items-end justify-between self-stretch pt-2 sm:pt-0 gap-4">
+        <div className="flex flex-col sm:items-end justify-between self-stretch pt-2 sm:pt-0 gap-4 shrink-0">
           <span className="text-xs text-slate-400 font-medium self-start sm:self-auto">
             Lưu ngày {job.savedDate}
           </span>
@@ -109,7 +108,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
             <Link href={`/jobs/${job.jobId}`}>
               <Button
                 variant="outline"
-                className="rounded-xl border-primary/40 px-4 py-2 text-xs font-semibold text-primary hover:bg-blue-50"
+                className="w-28 rounded-xl border-primary/40 px-3 py-2 text-xs font-semibold text-primary hover:bg-blue-50 text-center justify-center"
               >
                 Xem chi tiết
               </Button>
@@ -119,7 +118,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
             {job.hasApplied ? (
               <Button
                 disabled
-                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed border border-slate-200 shadow-none hover:bg-slate-100 opacity-60"
+                className="w-32 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed border border-slate-200 shadow-none hover:bg-slate-100 opacity-60 text-center justify-center"
                 title="Việc làm đã được ứng tuyển"
                 aria-label="Việc làm đã được ứng tuyển"
               >
@@ -128,7 +127,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
             ) : job.isApplyDisabled ? (
               <Button
                 disabled
-                className="rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed border border-slate-200 shadow-none hover:bg-slate-100"
+                className="w-32 rounded-xl bg-slate-100 px-2 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed border border-slate-200 shadow-none hover:bg-slate-100 text-center justify-center whitespace-nowrap"
                 title={job.statusBadge?.text || "Ngừng nhận hồ sơ"}
               >
                 {job.statusBadge?.text || "Ngừng nhận hồ sơ"}
@@ -136,7 +135,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
             ) : (
               <Button
                 onClick={() => onApply(job)}
-                className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-xs"
+                className="w-32 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-hover shadow-xs text-center justify-center"
               >
                 Ứng tuyển
               </Button>
@@ -147,7 +146,7 @@ export function SavedJobCard({ job, onApply, onUnsave }: SavedJobCardProps) {
               <button
                 type="button"
                 onClick={() => setShowMenu(!showMenu)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition shrink-0"
                 title="Tùy chọn khác"
               >
                 <MoreHorizontal className="h-4 w-4" />
