@@ -30,7 +30,13 @@ const listQuerySchema = z.object({
   status: z.enum(STATUSES, { error: "Giá trị status không hợp lệ" }).optional(),
   companyId: z.string().regex(/^\d+$/, "companyId phải là số nguyên dương").optional(),
   categoryId: z.string().regex(/^\d+$/, "categoryId phải là số nguyên dương").optional(),
-});
+  startDate: z.iso.date({ error: "startDate phải là ngày hợp lệ (YYYY-MM-DD)" }).optional(),
+  endDate: z.iso.date({ error: "endDate phải là ngày hợp lệ (YYYY-MM-DD)" }).optional(),
+})
+  .refine((data) => !(data.startDate && data.endDate && data.startDate > data.endDate), {
+    error: "endDate phải lớn hơn hoặc bằng startDate",
+    path: ["endDate"],
+  });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 

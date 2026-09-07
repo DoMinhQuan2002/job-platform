@@ -356,8 +356,9 @@ export default function AdminCompaniesPage() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [status, setStatus] = useState<CompanyStatus | "ALL">("ALL");
   const [appliedStatus, setAppliedStatus] = useState<CompanyStatus | "ALL">("ALL");
+  const today = new Date().toISOString().slice(0, 10);
   const [createdFrom, setCreatedFrom] = useState("");
-  const [createdTo, setCreatedTo] = useState("");
+  const [createdTo, setCreatedTo] = useState(today);
   const [appliedCreatedFrom, setAppliedCreatedFrom] = useState("");
   const [appliedCreatedTo, setAppliedCreatedTo] = useState("");
   const [page, setPage] = useState(1);
@@ -513,9 +514,9 @@ export default function AdminCompaniesPage() {
     setStatus("ALL");
     setAppliedStatus("ALL");
     setCreatedFrom("");
-    setCreatedTo("");
+    setCreatedTo(today);
     setAppliedCreatedFrom("");
-    setAppliedCreatedTo("");
+    setAppliedCreatedTo(today);
     setPage(1);
   };
 
@@ -690,6 +691,7 @@ export default function AdminCompaniesPage() {
               <input
                 type="date"
                 value={createdFrom}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setCreatedFrom(event.target.value)}
                 placeholder="Chọn khoảng ngày"
                 className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
@@ -704,6 +706,7 @@ export default function AdminCompaniesPage() {
               <input
                 type="date"
                 value={createdTo}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setCreatedTo(event.target.value)}
                 className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
               />

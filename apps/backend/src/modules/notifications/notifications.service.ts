@@ -72,8 +72,12 @@ export type PaginatedNotifications = {
 };
 
 export const notificationsService = {
-  async list(userId: string, query: ListQuery): Promise<PaginatedNotifications> {
-    const where: Record<string, unknown> = { userId };
+  async list(
+    userId: string,
+    query: ListQuery,
+    isAdmin = false
+  ): Promise<PaginatedNotifications> {
+    const where: Record<string, unknown> = isAdmin ? {} : { userId };
     if (query.isRead !== undefined) where.isRead = query.isRead;
     if (query.type !== undefined) where.type = In(query.type);
 
@@ -103,8 +107,13 @@ export const notificationsService = {
     };
   },
 
-  async getDetail(userId: string, id: string): Promise<NotificationDetail> {
-    const notification = await repo().findOneBy({ id, userId });
+  async getDetail(
+    userId: string,
+    id: string,
+    isAdmin = false
+  ): Promise<NotificationDetail> {
+    const where = isAdmin ? { id } : { id, userId };
+    const notification = await repo().findOneBy(where);
     if (!notification) {
       throw new AppError(404, "NOT_FOUND", "Không tìm thấy thông báo");
     }
@@ -113,12 +122,18 @@ export const notificationsService = {
     return { ...notification, job };
   },
 
-  async unreadCount(userId: string): Promise<number> {
-    return repo().count({ where: { userId, isRead: false } });
+  async unreadCount(userId: string, isAdmin = false): Promise<number> {
+    const where: Record<string, unknown> = isAdmin ? { isRead: false } : { userId, isRead: false };
+    return repo().count({ where });
   },
 
-  async markRead(userId: string, id: string): Promise<NotificationEntity> {
-    const notification = await repo().findOneBy({ id, userId });
+  async markRead(
+    userId: string,
+    id: string,
+    isAdmin = false
+  ): Promise<NotificationEntity> {
+    const where = isAdmin ? { id } : { id, userId };
+    const notification = await repo().findOneBy(where);
     if (!notification) {
       throw new AppError(404, "NOT_FOUND", "Không tìm thấy thông báo");
     }
@@ -132,16 +147,21 @@ export const notificationsService = {
     return notification;
   },
 
-  async markAllRead(userId: string): Promise<number> {
+  async markAllRead(userId: string, isAdmin = false): Promise<number> {
+    const where: Record<string, unknown> = isAdmin
+      ? { isRead: false }
+      : { userId, isRead: false };
+
     const result = await repo().update(
-      { userId, isRead: false },
+      where,
       { isRead: true, readAt: new Date() },
     );
     return result.affected ?? 0;
   },
 
-  async remove(userId: string, id: string): Promise<void> {
-    const notification = await repo().findOneBy({ id, userId });
+  async remove(userId: string, id: string, isAdmin = false): Promise<void> {
+    const where = isAdmin ? { id } : { id, userId };
+    const notification = await repo().findOneBy(where);
     if (!notification) {
       throw new AppError(404, "NOT_FOUND", "Không tìm thấy thông báo");
     }

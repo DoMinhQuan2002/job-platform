@@ -59,12 +59,6 @@ function LoginForm() {
   const [submitError, setSubmitError] = useState("");
   const [reasonDialogOpen, setReasonDialogOpen] = useState(Boolean(reasonMessage));
 
-  useEffect(() => {
-    if (reasonMessage) {
-      setReasonDialogOpen(true);
-    }
-  }, [reasonMessage]);
-
   // Nếu đã đăng nhập thành công là ADMIN, tự động chuyển hướng vào Dashboard
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
