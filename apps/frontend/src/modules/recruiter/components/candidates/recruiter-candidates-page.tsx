@@ -20,6 +20,7 @@ import {
   UserRoundX,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -95,6 +96,39 @@ function statusBadge(status: RecruiterApplicationStatus) {
   return (
     <span className={`inline-flex min-w-[86px] justify-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusStyles[status]}`}>
       {statusLabels[status]}
+    </span>
+  );
+}
+
+function CandidateAvatar({
+  avatar,
+  name,
+  className = "size-10 text-xs",
+}: {
+  avatar?: string | null;
+  name: string;
+  className?: string;
+}) {
+  const commonClassName = `${className} shrink-0 overflow-hidden rounded-full border border-border bg-white`;
+
+  if (avatar) {
+    return (
+      <span className={`relative ${commonClassName}`}>
+        <Image
+          src={avatar}
+          alt={name}
+          fill
+          sizes="40px"
+          className="object-contain"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className={`${commonClassName} grid place-items-center bg-primary/10 font-bold text-primary`}>
+      {getInitials(name)}
     </span>
   );
 }
@@ -406,9 +440,7 @@ export function RecruiterCandidatesPage() {
                     <td className="px-5 py-4">{firstItem + index}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                          {getInitials(candidateName)}
-                        </span>
+                        <CandidateAvatar avatar={item.candidate?.avatar} name={candidateName} />
                         <div className="min-w-0">
                           <p className="font-semibold text-text">{candidateName}</p>
                           <p className="mt-1 text-[11px] text-muted">
@@ -466,15 +498,15 @@ export function RecruiterCandidatesPage() {
                         <Link href={`${ROUTES.recruiter.candidates}/${item.id}`} title="Xem thông tin ứng viên" aria-label="Xem thông tin ứng viên" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
                           <Users className="size-3.5" />
                         </Link>
-                        <button type="button" title="Nhắn tin" aria-label="Nhắn tin" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
+                        {/* <button type="button" title="Nhắn tin" aria-label="Nhắn tin" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
                           <MessageSquare className="size-3.5" />
-                        </button>
-                        <button type="button" title="Tin ứng tuyển" aria-label="Tin ứng tuyển" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
+                        </button> */}
+                        {/* <button type="button" title="Tin ứng tuyển" aria-label="Tin ứng tuyển" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
                           <BriefcaseBusiness className="size-3.5" />
-                        </button>
-                        <button type="button" title="Thao tác khác" aria-label="Thao tác khác" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
+                        </button> */}
+                        {/* <button type="button" title="Thao tác khác" aria-label="Thao tác khác" className="grid size-8 place-items-center rounded-full border border-border text-muted transition hover:bg-background hover:text-primary">
                           <MoreHorizontal className="size-3.5" />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

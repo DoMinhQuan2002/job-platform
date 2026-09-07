@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   AlertCircle,
@@ -17,7 +18,6 @@ import {
   RefreshCw,
   Send,
   User,
-  UserRoundX,
 } from "lucide-react";
 import {
   recruiterApplicationsApi,
@@ -73,12 +73,12 @@ const formatDateTime = (value?: string | null) => {
   return Number.isNaN(date.getTime())
     ? value
     : date.toLocaleString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
 };
 
 const getAge = (dateOfBirth?: string | null) => {
@@ -98,10 +98,50 @@ const monthLabel = (start?: string | null, end?: string | null, isCurrent?: bool
   return `${from} - ${to}`;
 };
 
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase() || "UV";
+
 function StatusBadge({ status }: { status: RecruiterApplicationStatus }) {
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${statusStyles[status]}`}>
       {statusLabels[status]}
+    </span>
+  );
+}
+
+function CandidateAvatar({
+  avatar,
+  name,
+}: {
+  avatar?: string | null;
+  name: string;
+}) {
+  const className = "size-24 shrink-0 overflow-hidden rounded-full border border-border bg-white";
+
+  if (avatar) {
+    return (
+      <span className={`relative ${className}`}>
+        <Image
+          src={avatar}
+          alt={name}
+          fill
+          sizes="96px"
+          className="object-contain"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className={`${className} grid place-items-center bg-primary/10 text-2xl font-bold text-primary`}>
+      {getInitials(name)}
     </span>
   );
 }
@@ -158,6 +198,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
   const candidate = application?.candidateProfile;
   const fallbackCandidate = application?.candidate;
   const candidateName = candidate?.fullName ?? fallbackCandidate?.fullName ?? "Ứng viên";
+  const candidateAvatar = candidate?.avatar ?? fallbackCandidate?.avatar;
   const age = getAge(candidate?.dateOfBirth);
 
   const timeline = useMemo(() => {
@@ -293,15 +334,7 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
         <div className="min-w-0 space-y-4">
           <section className="rounded-lg border border-border bg-surface p-5 shadow-sm">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <span className="grid size-24 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
-                {candidateName
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(-2)
-                  .map((word) => word[0])
-                  .join("")
-                  .toUpperCase()}
-              </span>
+              <CandidateAvatar avatar={candidateAvatar} name={candidateName} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h1 className="text-2xl font-bold text-text">{candidateName}</h1>
@@ -322,11 +355,10 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
                   key={tab.value}
                   type="button"
                   onClick={() => setActiveTab(tab.value)}
-                  className={`shrink-0 border-b-2 px-4 py-2 text-xs font-semibold transition ${
-                    activeTab === tab.value
+                  className={`shrink-0 border-b-2 px-4 py-2 text-xs font-semibold transition ${activeTab === tab.value
                       ? "border-primary text-primary"
                       : "border-transparent text-muted hover:text-text"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -532,9 +564,9 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
               <button type="button" onClick={downloadResume} disabled={!application.resumeSnapshotUrl} className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text hover:bg-background disabled:opacity-50">
                 <Download className="size-3.5" /> Tải CV về máy
               </button>
-              <button type="button" disabled className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text opacity-60">
+              {/* <button type="button" disabled className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-text opacity-60">
                 <Send className="size-3.5" /> Gửi tin nhắn
-              </button>
+              </button> */}
               {/* <button type="button" disabled={updating || application.status === "REJECTED" || application.status === "WITHDRAWN"} onClick={() => void updateStatus("REJECTED")} className="flex w-full items-center justify-center gap-2 rounded-lg border border-danger/20 px-3 py-2 text-xs font-semibold text-danger hover:bg-danger/5 disabled:opacity-50">
                 <UserRoundX className="size-3.5" /> Loại ứng viên
               </button> */}
