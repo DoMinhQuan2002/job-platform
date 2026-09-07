@@ -79,27 +79,28 @@ export default function LoginPage() {
 
   return (
     <>
-      <div className="container mx-auto grid w-full grid-cols-1 items-start gap-8 px-4 py-8 md:px-6 lg:grid-cols-2 lg:gap-16 lg:py-12">
-        <section className="hidden flex-col pb-8 pt-8 lg:flex" aria-labelledby="login-introduction">
-          <h1 id="login-introduction" className="mb-6 text-4xl font-bold leading-tight tracking-tight text-text xl:text-5xl">
-            Kết nối đúng cơ hội,<br />bứt phá <span className="text-primary">sự nghiệp</span>
-          </h1>
-          <p className="mb-10 max-w-md leading-relaxed text-muted">
-            Hàng ngàn việc làm từ các công ty uy tín đang chờ ứng viên như bạn.
-          </p>
-          <ul className="space-y-7">
-            {features.map(({ icon: Icon, title, description }) => (
-              <li key={title} className="flex items-start gap-4">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Icon className="size-6" aria-hidden="true" />
-                </span>
-                <div><h2 className="text-lg font-semibold text-text">{title}</h2><p className="mt-0.5 text-sm text-muted">{description}</p></div>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <div className="flex min-h-[calc(100vh-120px)] w-full items-center justify-center p-4 sm:p-6 lg:p-10">
+        <div className="container mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <section className="hidden flex-col justify-center pb-8 pt-8 lg:flex" aria-labelledby="login-introduction">
+            <h1 id="login-introduction" className="mb-6 text-4xl font-bold leading-tight tracking-tight text-text xl:text-5xl">
+              Kết nối đúng cơ hội,<br />bứt phá <span className="text-primary">sự nghiệp</span>
+            </h1>
+            <p className="mb-10 max-w-md leading-relaxed text-muted">
+              Hàng ngàn việc làm từ các công ty uy tín đang chờ ứng viên như bạn.
+            </p>
+            <ul className="space-y-7">
+              {features.map(({ icon: Icon, title, description }) => (
+                <li key={title} className="flex items-start gap-4">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Icon className="size-6" aria-hidden="true" />
+                  </span>
+                  <div><h2 className="text-lg font-semibold text-text">{title}</h2><p className="mt-0.5 text-sm text-muted">{description}</p></div>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-        <section className="justify-self-end w-full max-w-126 rounded-2xl border border-border/70 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-12" aria-labelledby="login-title">
+          <section className="w-full max-w-126 justify-self-center lg:justify-self-end rounded-2xl border border-border/70 bg-white px-6 py-10 shadow-sm sm:px-12 sm:py-12" aria-labelledby="login-title">
           <header className="mb-8 text-center">
             <h1 id="login-title" className="text-3xl font-bold tracking-tight text-text">Đăng nhập</h1>
             <p className="mt-2 text-base text-muted">Chào mừng bạn quay trở lại!</p>
@@ -206,6 +207,7 @@ export default function LoginPage() {
           </p>
         </section>
       </div>
+    </div>
 
       <AppAlertDialog
         open={Boolean(submitError)}
