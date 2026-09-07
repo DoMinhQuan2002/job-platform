@@ -19,30 +19,28 @@ import { summarizeJob } from "../lib/job-summary";
 import { STATUS_FILTERS, STATUS_LABEL, formatDateTime } from "../lib/status";
 import type { Application, ApplicationListItem, ApplicationStatus } from "../types";
 
-async function enrichApplications(items: Application[]): Promise<ApplicationListItem[]> {
-  return Promise.all(
-    items.map(async (item) => {
-      try {
-        const jobRes = await applicationsApi.getJobDetail(item.jobId);
-        const summary = summarizeJob(jobRes.data);
-        return {
-          ...item,
-          jobTitle: summary.title,
-          companyName: summary.companyName,
-          location: summary.location,
-          salary: summary.salary,
-        };
-      } catch {
-        return {
-          ...item,
-          jobTitle: `Job #${item.jobId}`,
-          companyName: "Nhà tuyển dụng",
-          location: "—",
-          salary: "—",
-        };
-      }
-    }),
-  );
+function enrichApplications(items: Application[]): ApplicationListItem[] {
+  return items.map((item) => {
+    if (item.job) {
+      const summary = summarizeJob(item.job);
+      return {
+        ...item,
+        jobTitle: summary.title,
+        companyName: summary.companyName,
+        location: summary.location,
+        salary: summary.salary,
+        statusBadge: summary.statusBadge,
+      };
+    }
+    return {
+      ...item,
+      jobTitle: `Job #${item.jobId}`,
+      companyName: "Nhà tuyển dụng",
+      location: "—",
+      salary: "—",
+      statusBadge: { text: "Ngừng nhận hồ sơ", variant: "hidden" },
+    };
+  });
 }
 
 function statusBadgeClass(status: ApplicationStatus): string {
@@ -208,9 +206,22 @@ export function ApplicationsPage() {
                       <Send className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="truncate text-sm font-bold text-slate-900">
-                        {item.jobTitle}
-                      </h4>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="truncate text-sm font-bold text-slate-900">
+                          {item.jobTitle}
+                        </h4>
+                        {item.statusBadge && (
+                          <span
+                            className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold border ${
+                              item.statusBadge.variant === "closed" || item.statusBadge.variant === "hidden"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {item.statusBadge.text}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 text-xs text-slate-500">{item.companyName}</p>
                       {item.location && item.location !== "—" ? (
                         <p className="text-xs text-slate-500">{item.location}</p>

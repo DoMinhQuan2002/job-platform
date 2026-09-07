@@ -14,20 +14,48 @@ const isSecure = () =>
     ? process.env.COOKIE_SECURE === "true"
     : process.env.NODE_ENV === "production";
 
-const getSameSite = (): "strict" | "lax" | "none" => {
-  const envVal = (process.env.COOKIE_SAME_SITE || "").toLowerCase();
-  if (envVal === "lax" || envVal === "none" || envVal === "strict") {
-    return envVal;
+/**
+ * Local: FE localhost:3000 va BE localhost:4000 cung mot "site" -> Strict van chay.
+ * Production ma FE/BE khac domain (vd. Vercel + Render) thi trinh duyet coi la
+ * cross-site: Strict chan cookie refresh_token => moi user bi logout sau 15 phut.
+ * Truong hop do phai dat COOKIE_SAMESITE=none va COOKIE_SECURE=true.
+ */
+const resolveSameSite = (): "strict" | "lax" | "none" => {
+  const value = process.env.COOKIE_SAMESITE?.trim().toLowerCase();
+
+  if (!value) {
+    return "strict";
   }
-  return "strict";
+
+  // Go sai chinh ta (vd "nono") -> bao loi ngay. Neu am tham roi ve "strict" thi
+  // tren production cookie bi chan, user logout sau 15 phut ma khong ai biet tai sao.
+  if (value !== "none" && value !== "lax" && value !== "strict") {
+    throw new Error(
+      `COOKIE_SAMESITE khong hop le: "${value}". Chi nhan strict | lax | none.`,
+    );
+  }
+
+  return value;
 };
 
-const baseOptions = (): CookieOptions => ({
-  httpOnly: true,
-  secure: isSecure(),
-  sameSite: getSameSite(),
-  path: COOKIE_PATH,
-});
+const baseOptions = (): CookieOptions => {
+  const secure = isSecure();
+  const sameSite = resolveSameSite();
+
+  // SameSite=None bat buoc di kem Secure, khong thi trinh duyet vut cookie im lang.
+  if (sameSite === "none" && !secure) {
+    throw new Error(
+      "COOKIE_SAMESITE=none yeu cau COOKIE_SECURE=true (chi hoat dong tren https).",
+    );
+  }
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite,
+    path: COOKIE_PATH,
+  };
+};
 
 export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {

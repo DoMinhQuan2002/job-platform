@@ -264,9 +264,18 @@ describe("Admin Jobs Module", () => {
     });
 
     describe("DELETE /api/v1/admin/jobs/:id", () => {
-      it("returns 400 when reason missing", async () => {
+      it("allows delete when reason is omitted", async () => {
+        mockJobRepo.findOne.mockResolvedValue(buildJob({ status: JOB_STATUS.PENDING }));
         const res = await request(testApp).delete("/api/v1/admin/jobs/10").send({});
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(200);
+        expect(mockJobRepo.softDelete).toHaveBeenCalledWith("10");
+        expect(logService.write).toHaveBeenCalledWith(
+          expect.objectContaining({
+            action: "DELETE_JOB",
+            description: "Đã xóa bởi quản trị viên",
+          }),
+          expect.anything(),
+        );
       });
 
       it("returns 404 when job not found", async () => {

@@ -177,14 +177,26 @@ export const adminUsersService = {
         manager,
       );
 
-      await notificationService.create(
-        {
-          userId: user.id,
-          type: isLocking ? "ACCOUNT_LOCKED" : "ACCOUNT_UNLOCKED",
-          target: { type: "USER", id: user.id },
-        },
-        manager,
-      );
+      if (isLocking) {
+        await notificationService.create(
+          {
+            userId: user.id,
+            type: "ACCOUNT_LOCKED",
+            target: { type: "USER", id: user.id },
+            params: { reason: body.reason ?? "Không có lý do cụ thể" },
+          },
+          manager,
+        );
+      } else {
+        await notificationService.create(
+          {
+            userId: user.id,
+            type: "ACCOUNT_UNLOCKED",
+            target: { type: "USER", id: user.id },
+          },
+          manager,
+        );
+      }
 
       return {
         id: user.id,

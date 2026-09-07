@@ -1,7 +1,7 @@
 // Handler HTTP cho 5 API quản lý tin tuyển dụng: validate input, gọi service, trả JSON.
 import { Request, Response } from "express";
 import { AppError } from "@/common/errors/app-error";
-import { validateIdParam, validateListQuery, validateReasonBody } from "./jobs.validation";
+import { validateIdParam, validateListQuery, validateReasonBody, validateDeleteReasonBody } from "./jobs.validation";
 import { adminJobsService } from "./jobs.service";
 
 /** `requireAdmin` đã chạy trước, nhưng TypeScript không biết điều đó qua ranh giới middleware. */
@@ -47,7 +47,7 @@ export const jobsController = {
   remove: async (req: Request, res: Response) => {
     const adminId = getAdminId(req);
     const id = validateIdParam(req.params);
-    const reason = validateReasonBody(req.body);
+    const reason = validateDeleteReasonBody(req.body);
     await adminJobsService.remove(adminId, id, reason);
 
     res.status(200).json({ success: true, message: "Đã xóa tin tuyển dụng", data: null });

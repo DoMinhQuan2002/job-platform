@@ -27,6 +27,7 @@ export const ROUTES = {
   recruiter: {
     root: "/recruiter",
     candidates: "/recruiter/candidates",
+    notifications: "/recruiter/notifications",
     account: "/recruiter/account",
   },
 } as const;

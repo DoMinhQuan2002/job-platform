@@ -7,9 +7,16 @@ import {
   setAccessToken,
 } from "@/lib/auth-token";
 
-const API_ORIGIN = (
+const rawBase = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-).replace(/\/$/, "");
+).trim().replace(/\/+$/, "");
+
+const API_ORIGIN = rawBase.endsWith("/api/v1")
+  ? rawBase.slice(0, -7)
+  : rawBase.endsWith("/api")
+  ? rawBase.slice(0, -4)
+  : rawBase;
+
 const API_PREFIX = "/api/v1";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";

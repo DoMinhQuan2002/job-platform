@@ -113,6 +113,7 @@ export default function AccountSettingPage() {
       email: user.email,
       fullName: user.fullName,
       role: stored?.role ?? "CANDIDATE",
+      avatar: user.avatar,
     });
   };
 

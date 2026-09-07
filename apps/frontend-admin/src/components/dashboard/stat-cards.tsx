@@ -15,12 +15,15 @@ type StatCardsProps = {
 };
 
 export function StatCards({ data, loading }: StatCardsProps) {
+  const totalUsersFallback =
+    (data?.totalCandidates ?? 0) + (data?.totalRecruiters ?? 0);
+
   const cardsConfig = [
     {
       id: "users",
       title: "Người dùng",
       subtitle: "Tổng số người dùng",
-      value: data?.cards?.users?.total ?? 0,
+      value: data?.cards?.users?.total ?? totalUsersFallback,
       growthRate: data?.cards?.users?.growthRate ?? 0,
       icon: Users,
       iconColor: "text-blue-600",
@@ -30,7 +33,7 @@ export function StatCards({ data, loading }: StatCardsProps) {
       id: "companies",
       title: "Công ty",
       subtitle: "Công ty hoạt động",
-      value: data?.cards?.companies?.total ?? 0,
+      value: data?.cards?.companies?.total ?? (data?.totalCompanies ?? 0),
       growthRate: data?.cards?.companies?.growthRate ?? 0,
       icon: Building2,
       iconColor: "text-emerald-600",
@@ -40,7 +43,7 @@ export function StatCards({ data, loading }: StatCardsProps) {
       id: "jobs",
       title: "Tin tuyển dụng",
       subtitle: "Tổng số tin",
-      value: data?.cards?.jobs?.total ?? 0,
+      value: data?.cards?.jobs?.total ?? (data?.totalJobs ?? 0),
       growthRate: data?.cards?.jobs?.growthRate ?? 0,
       icon: Briefcase,
       iconColor: "text-purple-600",
