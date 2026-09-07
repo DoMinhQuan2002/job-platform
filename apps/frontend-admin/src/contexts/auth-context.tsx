@@ -22,7 +22,7 @@ import {
   setAccessToken,
   setStoredUser,
 } from "@/lib/auth-token";
-import { refreshAccessToken } from "@/services/http";
+import { refreshAccessToken, scheduleTokenRefresh } from "@/lib/token-refresh";
 
 interface AuthContextType {
   currentUser: CurrentUser | null;
@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Kiểm tra nếu đã có token hợp lệ sẵn trong Cookie -> render ngay
     const isValid = syncFromToken();
     if (isValid) {
+      scheduleTokenRefresh();
       setIsLoading(false);
       // Nạp thông tin mới nhất từ API chạy nền
       authApi
@@ -180,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fullName: payload.email.split("@")[0],
           });
         }
+        scheduleTokenRefresh();
         setIsLoading(false);
 
         authApi
