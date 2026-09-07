@@ -383,6 +383,7 @@ export function RecruiterCandidatesPage() {
             <input
               type="date"
               value={fromDate}
+              max={new Date().toISOString().slice(0, 10)}
               onChange={(event) => {
                 setFromDate(event.target.value);
                 setPage(1);

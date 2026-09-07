@@ -264,7 +264,7 @@ const toLocalDateString = (d: Date): string => {
               <input
                 type="date"
                 value={tempFromDate}
-                max={tempToDate || undefined}
+                max={tempToDate && tempToDate < new Date().toISOString().slice(0, 10) ? tempToDate : new Date().toISOString().slice(0, 10)}
                 onChange={(e) => {
                   setTempFromDate(e.target.value);
                   setSelectedPreset("custom");
@@ -284,6 +284,7 @@ const toLocalDateString = (d: Date): string => {
                 type="date"
                 value={tempToDate}
                 min={tempFromDate || undefined}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => {
                   setTempToDate(e.target.value);
                   setSelectedPreset("custom");

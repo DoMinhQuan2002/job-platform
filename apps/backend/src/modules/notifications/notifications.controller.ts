@@ -11,41 +11,50 @@ const getUserId = (req: Request): string => {
   return req.user.id;
 };
 
+const getIsAdmin = (req: Request): boolean => {
+  return req.user?.role === "ADMIN";
+};
+
 export const notificationsController = {
   list: async (req: Request, res: Response) => {
     const userId = getUserId(req);
+    const isAdmin = getIsAdmin(req);
     const query = validateListQuery(req.query as Record<string, unknown>);
-    const result = await notificationsService.list(userId, query);
+    const result = await notificationsService.list(userId, query, isAdmin);
 
     res.status(200).json({ success: true, message: "Thành công", data: result });
   },
 
   detail: async (req: Request, res: Response) => {
     const userId = getUserId(req);
+    const isAdmin = getIsAdmin(req);
     const id = validateIdParam(req.params);
-    const notification = await notificationsService.getDetail(userId, id);
+    const notification = await notificationsService.getDetail(userId, id, isAdmin);
 
     res.status(200).json({ success: true, message: "Thành công", data: notification });
   },
 
   unreadCount: async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const unreadCount = await notificationsService.unreadCount(userId);
+    const isAdmin = getIsAdmin(req);
+    const unreadCount = await notificationsService.unreadCount(userId, isAdmin);
 
     res.status(200).json({ success: true, message: "Thành công", data: { unreadCount } });
   },
 
   markRead: async (req: Request, res: Response) => {
     const userId = getUserId(req);
+    const isAdmin = getIsAdmin(req);
     const id = validateIdParam(req.params);
-    const notification = await notificationsService.markRead(userId, id);
+    const notification = await notificationsService.markRead(userId, id, isAdmin);
 
     res.status(200).json({ success: true, message: "Thành công", data: notification });
   },
 
   markAllRead: async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const updatedCount = await notificationsService.markAllRead(userId);
+    const isAdmin = getIsAdmin(req);
+    const updatedCount = await notificationsService.markAllRead(userId, isAdmin);
 
     res.status(200).json({
       success: true,
@@ -56,8 +65,9 @@ export const notificationsController = {
 
   remove: async (req: Request, res: Response) => {
     const userId = getUserId(req);
+    const isAdmin = getIsAdmin(req);
     const id = validateIdParam(req.params);
-    await notificationsService.remove(userId, id);
+    await notificationsService.remove(userId, id, isAdmin);
 
     res.status(200).json({ success: true, message: "Đã xóa thông báo", data: null });
   },

@@ -49,36 +49,43 @@ const toAuthUser = (user: StoredUser, fallbackId: string | number = ""): Current
   avatar: user.avatar,
 });
 
+function getInitialUser(): CurrentUser | null {
+  if (typeof window === "undefined") return null;
+  const token = getAccessToken();
+  if (!token || isTokenExpired(token)) return null;
+
+  const payload = decodeJwtPayload(token);
+  if (payload?.role !== "ADMIN") return null;
+
+  const storedUser = getStoredUser();
+  if (storedUser && storedUser.role === "ADMIN") {
+    return toAuthUser(storedUser, payload.sub || "");
+  } else if (payload.sub && payload.email) {
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      fullName: payload.email.split("@")[0],
+    };
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => getInitialUser());
+  const [isLoading, setIsLoading] = useState(() => (typeof window !== "undefined" ? !getInitialUser() : true));
 
   // Đồng bộ user từ Access Token / Cookie hiện có nếu còn hạn
   const syncFromToken = useCallback((): boolean => {
-    const token = getAccessToken();
-    if (!token || isTokenExpired(token)) {
+    const user = getInitialUser();
+    if (!user) {
+      const token = getAccessToken();
+      const payload = token ? decodeJwtPayload(token) : null;
+      if (payload?.role !== "ADMIN") {
+        clearAccessToken();
+      }
       return false;
     }
-
-    const payload = decodeJwtPayload(token);
-    if (payload?.role !== "ADMIN") {
-      clearAccessToken();
-      setCurrentUser(null);
-      return false;
-    }
-
-    const storedUser = getStoredUser();
-    if (storedUser && storedUser.role === "ADMIN") {
-      setCurrentUser(toAuthUser(storedUser, payload.sub || ""));
-    } else if (payload.sub && payload.email) {
-      setCurrentUser({
-        id: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        fullName: payload.email.split("@")[0],
-      });
-    }
-
     return true;
   }, []);
 
@@ -135,10 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     // 1. Kiểm tra nếu đã có token hợp lệ sẵn trong Cookie -> render ngay
-    const isValid = syncFromToken();
-    if (isValid) {
+    const initialUser = getInitialUser();
+    if (initialUser) {
       scheduleTokenRefresh();
-      setIsLoading(false);
       // Nạp thông tin mới nhất từ API chạy nền
       authApi
         .getMe()

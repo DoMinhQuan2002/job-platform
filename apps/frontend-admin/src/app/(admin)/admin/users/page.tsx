@@ -104,10 +104,11 @@ export default function AdminUsersPage() {
   const [activeSearch, setActiveSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const todayStr = new Date().toISOString().slice(0, 10);
   const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [toDate, setToDate] = useState(todayStr);
   const [activeFromDate, setActiveFromDate] = useState("");
-  const [activeToDate, setActiveToDate] = useState("");
+  const [activeToDate, setActiveToDate] = useState(todayStr);
   const [selectedPreset, setSelectedPreset] = useState<
     "today" | "7days" | "30days" | "thisMonth" | null
   >(null);
@@ -385,9 +386,9 @@ export default function AdminUsersPage() {
     setRoleFilter("ALL");
     setStatusFilter("ALL");
     setFromDate("");
-    setToDate("");
+    setToDate(todayStr);
     setActiveFromDate("");
-    setActiveToDate("");
+    setActiveToDate(todayStr);
     setSelectedPreset(null);
     setIsDateOpen(false);
     setCurrentPage(1);
@@ -830,7 +831,7 @@ export default function AdminUsersPage() {
                           <input
                             type="date"
                             value={fromDate}
-                            max={toDate || undefined}
+                            max={toDate && toDate < new Date().toISOString().slice(0, 10) ? toDate : new Date().toISOString().slice(0, 10)}
                             onChange={(e) => {
                               setFromDate(e.target.value);
                               setSelectedPreset(null);
@@ -850,6 +851,7 @@ export default function AdminUsersPage() {
                             type="date"
                             value={toDate}
                             min={fromDate || undefined}
+                            max={new Date().toISOString().slice(0, 10)}
                             onChange={(e) => {
                               setToDate(e.target.value);
                               setSelectedPreset(null);
