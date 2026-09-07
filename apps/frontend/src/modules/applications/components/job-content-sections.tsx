@@ -43,42 +43,42 @@ export function JobContentSections({ job }: JobContentSectionsProps) {
         {activeTab === "description" && (
           <section className="space-y-3">
             <h3 className="text-base font-semibold text-foreground">Mô tả công việc</h3>
-            <ul className="space-y-2.5 text-sm leading-relaxed text-muted">
-              {job.description.map((item, index) => (
-                <li key={index} className="flex items-start gap-2.5">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            {job.description ? (
+              <div
+                className="prose prose-sm max-w-none text-sm leading-relaxed text-muted [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2.5 [&_ul>li]:my-1.5 [&_ul>li]:leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2.5 [&_ol>li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-foreground [&_u]:underline [&_em]:italic"
+                dangerouslySetInnerHTML={{ __html: job.description }}
+              />
+            ) : (
+              <p className="text-sm text-muted">Chưa có mô tả chi tiết.</p>
+            )}
           </section>
         )}
 
         {activeTab === "requirements" && (
           <section className="space-y-3">
             <h3 className="text-base font-semibold text-foreground">Yêu cầu ứng viên</h3>
-            <ul className="space-y-2.5 text-sm leading-relaxed text-muted">
-              {job.requirements.map((item, index) => (
-                <li key={index} className="flex items-start gap-2.5">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            {job.requirements ? (
+              <div
+                className="prose prose-sm max-w-none text-sm leading-relaxed text-muted [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2.5 [&_ul>li]:my-1.5 [&_ul>li]:leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2.5 [&_ol>li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-foreground [&_u]:underline [&_em]:italic"
+                dangerouslySetInnerHTML={{ __html: job.requirements }}
+              />
+            ) : (
+              <p className="text-sm text-muted">Chưa có yêu cầu chi tiết.</p>
+            )}
           </section>
         )}
 
         {activeTab === "benefits" && (
           <section className="space-y-3">
             <h3 className="text-base font-semibold text-foreground">Quyền lợi / Phúc lợi</h3>
-            <div className="grid grid-cols-1 gap-2.5 text-sm text-muted sm:grid-cols-2">
-              {job.benefits.map((item, index) => (
-                <div key={index} className="flex items-start gap-2.5">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+            {job.benefits ? (
+              <div
+                className="prose prose-sm max-w-none text-sm leading-relaxed text-muted [&_p]:my-2 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2.5 [&_ul>li]:my-1.5 [&_ul>li]:leading-relaxed [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2.5 [&_ol>li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-foreground [&_u]:underline [&_em]:italic"
+                dangerouslySetInnerHTML={{ __html: job.benefits }}
+              />
+            ) : (
+              <p className="text-sm text-muted">Thỏa thuận khi phỏng vấn.</p>
+            )}
           </section>
         )}
 

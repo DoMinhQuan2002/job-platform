@@ -48,15 +48,30 @@ function experienceLabel(value: unknown): string {
   return String(value);
 }
 
-function splitTextBlocks(value: unknown): string[] {
+export function toHtmlContent(value: unknown): string {
+  if (!value) return "";
   if (Array.isArray(value)) {
-    return value.map(String).map((s) => s.trim()).filter(Boolean);
+    return value
+      .map(String)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => `<p>${s}</p>`)
+      .join("");
   }
-  if (typeof value !== "string" || !value.trim()) return [];
-  return value
-    .split(/\r?\n|•|;/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const str = String(value).trim();
+  if (!str) return "";
+  // If plain text (not HTML), wrap paragraphs
+  if (!/<[a-z][\s\S]*>/i.test(str)) {
+    return str
+      .split(/\r?\n\r?\n/)
+      .map((block) => `<p>${block.replace(/\r?\n/g, "<br/>")}</p>`)
+      .join("");
+  }
+  return str;
+}
+
+export function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export type JobSummary = {
@@ -77,9 +92,9 @@ export type JobSummary = {
   deadline: string;
   postedDate: string;
   quantity: string;
-  description: string[];
-  requirements: string[];
-  benefits: string[];
+  description: string;
+  requirements: string;
+  benefits: string;
   tags: string[];
   isSaved: boolean;
   rawStatus?: string;
@@ -164,9 +179,9 @@ export function summarizeJob(raw: unknown): JobSummary {
       job.quantity != null && job.quantity !== ""
         ? `${job.quantity} người`
         : "—",
-    description: splitTextBlocks(job.description),
-    requirements: splitTextBlocks(job.requirements),
-    benefits: splitTextBlocks(job.benefits),
+    description: toHtmlContent(job.description),
+    requirements: toHtmlContent(job.requirements),
+    benefits: toHtmlContent(job.benefits),
     tags: skillNames,
     isSaved: job.isSaved === true,
     rawStatus: statusStr || undefined,
