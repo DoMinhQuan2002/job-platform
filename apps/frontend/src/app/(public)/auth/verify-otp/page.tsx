@@ -175,29 +175,26 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
   const resendKey = getOtpStorageKey("resend", email);
 
   // Target timestamps cố định
-  const expireTargetRef = useRef<number>(
-    getOrSetTargetTimestamp(expKey, initialExpiresIn),
-  );
-  const resendTargetRef = useRef<number>(
-    getOrSetTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS),
-  );
+  const expireTargetRef = useRef<number>(0);
+  const resendTargetRef = useRef<number>(0);
 
   const calculateRemaining = (targetTime: number) =>
     Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
 
-  const [expiresIn, setExpiresIn] = useState(() =>
-    calculateRemaining(expireTargetRef.current),
-  );
-  const [resendCooldown, setResendCooldown] = useState(() =>
-    calculateRemaining(resendTargetRef.current),
-  );
+  // Khởi tạo state bằng initialExpiresIn để Server SSR và Client lần đầu render khớp 100%
+  const [expiresIn, setExpiresIn] = useState(initialExpiresIn);
+  const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    // Cập nhật lại ngay khi mount để đảm bảo chính xác theo đồng hồ máy
+    // Sau khi mount trên browser, đọc mốc thời gian từ sessionStorage hoặc thiết lập mới
+    expireTargetRef.current = getOrSetTargetTimestamp(expKey, initialExpiresIn);
+    resendTargetRef.current = getOrSetTargetTimestamp(resendKey, RESEND_COOLDOWN_SECONDS);
+
+    // Cập nhật lại ngay theo timestamp thực tế
     setExpiresIn(calculateRemaining(expireTargetRef.current));
     setResendCooldown(calculateRemaining(resendTargetRef.current));
 
@@ -207,7 +204,7 @@ function VerifyOtpForm({ email, initialExpiresIn }: VerifyOtpFormProps) {
     }, 1_000);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [email, expKey, resendKey, initialExpiresIn]);
 
   const updateDigits = (startIndex: number, value: string) => {
     const numbers = value.replace(/\D/g, "").slice(0, OTP_LENGTH - startIndex);
