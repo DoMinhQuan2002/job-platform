@@ -214,7 +214,7 @@ function RecruiterAvatar({
         <img
           src={logoUrl}
           alt={companyName ?? "Công ty"}
-          className="size-full object-contain p-0.5"
+          className="size-full object-cover"
           loading="lazy"
           onError={() => setFailed(true)}
         />

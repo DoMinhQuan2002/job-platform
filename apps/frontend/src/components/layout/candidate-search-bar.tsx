@@ -89,12 +89,12 @@ function CompanyLogo({ name, src }: { name?: string; src?: string | null }) {
 
   if (logoSrc && !failed) {
     return (
-      <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-white p-0.5">
+      <span className="relative size-9 shrink-0 overflow-hidden rounded-md border border-border bg-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logoSrc}
           alt={`Logo ${name || "Company"}`}
-          className="h-full w-full object-contain"
+          className="absolute inset-0 size-full object-cover"
           loading="lazy"
           onError={() => setFailed(true)}
         />

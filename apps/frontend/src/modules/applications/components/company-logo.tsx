@@ -34,9 +34,9 @@ interface CompanyLogoProps {
 export function CompanyLogo({
   name,
   src,
-  className = "size-14 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-2xs",
+  className = "size-14 rounded-2xl border border-slate-100 bg-white shadow-2xs",
   fallbackClassName = "bg-blue-50 font-bold text-primary text-xs sm:text-sm",
-  imageClassName = "size-full object-contain",
+  imageClassName = "absolute inset-0 size-full object-cover",
 }: CompanyLogoProps) {
   const [failed, setFailed] = useState(false);
   const logoSrc = resolveStorageUrl(src);
@@ -44,7 +44,7 @@ export function CompanyLogo({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden",
+        "relative flex shrink-0 items-center justify-center overflow-hidden",
         className,
       )}
     >

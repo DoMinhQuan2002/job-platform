@@ -117,7 +117,7 @@ export function RecruiterSidebar({ open, onClose }: RecruiterSidebarProps) {
               <img
                 src={resolveStorageUrl(company.logo)}
                 alt={company?.name ?? "Logo công ty"}
-                className="size-full object-contain p-1"
+                className="size-full object-cover"
               />
             ) : (
               <Building2 className="size-7" />

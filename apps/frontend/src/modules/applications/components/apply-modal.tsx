@@ -205,12 +205,12 @@ export function ApplyModal({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
               <div className="flex items-center gap-3.5">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-2xs">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-2xs">
                   {companyLogoUrl ? (
                     <img
                       src={companyLogoUrl}
                       alt={companyName}
-                      className="h-full w-full object-contain"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-primary italic">

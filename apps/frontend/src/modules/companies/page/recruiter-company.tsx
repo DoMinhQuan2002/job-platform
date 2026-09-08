@@ -393,7 +393,7 @@ function CompanySummary({
                   width={64}
                   height={64}
                   unoptimized
-                  className="h-full w-full rounded-lg object-contain p-2"
+                  className="h-full w-full rounded-lg object-cover"
                 />
               ) : (
                 company.name.slice(0, 2).toUpperCase()
@@ -560,7 +560,7 @@ function CompanyInlineForm({
                     width={88}
                     height={88}
                     unoptimized
-                    className="size-[88px] rounded-lg object-contain"
+                    className="size-[88px] rounded-lg object-cover"
                   />
                 ) : uploadingLogo ? (
                   <LoaderCircle className="size-8 animate-spin text-primary" />

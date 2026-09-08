@@ -36,14 +36,18 @@ function CompactCompanyLogo({ company }: { company: Job["company"] }) {
       <img
         src={logoSrc}
         alt={`Logo ${company.name}`}
-        className="size-full object-contain "
+        className="absolute inset-0 size-full object-cover"
         loading="lazy"
         onError={() => setFailed(true)}
       />
     );
   }
 
-  return <span aria-hidden="true">{initials(company?.name)}</span>;
+  return (
+    <span aria-hidden="true" className="flex size-full items-center justify-center">
+      {initials(company?.name)}
+    </span>
+  );
 }
 export function HomeDiscovery() {
   const router = useRouter();
@@ -146,7 +150,7 @@ export function HomeDiscovery() {
                   key={company.id}
                   className="flex min-w-[220px] flex-1 snap-start items-center gap-4 rounded-xl border border-border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded border border-border bg-slate-50 p-1 text-xs font-bold text-primary">
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded border border-border bg-slate-50 text-xs font-bold text-primary">
                     <CompactCompanyLogo company={company} />
                   </div>
                   <span className="min-w-0">
@@ -184,7 +188,7 @@ export function HomeDiscovery() {
                     Mới
                   </span>
                   <div className="mb-4 flex items-center gap-2">
-                    <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded border border-border bg-slate-50 text-[9px] font-bold text-primary">
+                    <div className="relative size-8 shrink-0 overflow-hidden rounded border border-border bg-slate-50 text-[9px] font-bold text-primary">
                       <CompactCompanyLogo company={job.company} />
                     </div>
                     <span className="max-w-[65%] truncate text-[11px] font-semibold text-muted">
