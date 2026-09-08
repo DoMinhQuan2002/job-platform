@@ -2,12 +2,14 @@
  * Upload 1 avatar chung lên Supabase rồi gán cho mọi user
  * role CANDIDATE | RECRUITER | ADMIN (chưa soft-delete).
  *
+ * Dùng path cố định + upsert, verify HTTP 200 trước khi UPDATE DB
+ * (tránh case upload “ok” nhưng object public 404 → FE hiện initials).
+ *
  * Usage (từ apps/backend):
  *   npx tsx scripts/set-all-avatars.ts
  *   npx tsx scripts/set-all-avatars.ts --dry-run
  *   npx tsx scripts/set-all-avatars.ts path/to/avatar.png
  */
-import { randomUUID } from "crypto";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -18,6 +20,8 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const ROLES = ["CANDIDATE", "RECRUITER", "ADMIN"] as const;
 const DEFAULT_IMAGE = path.resolve(__dirname, "_bulk-avatar.png");
+/** Path cố định — mỗi lần chạy ghi đè, không tạo UUID orphan. */
+const STORAGE_PATH = "avatars/bulk-shared.png";
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -30,19 +34,29 @@ const required = (key: string) => {
   return value;
 };
 
+async function assertPublicUrlOk(url: string): Promise<void> {
+  const res = await fetch(url, { method: "GET", cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(
+      `Public avatar URL not reachable (HTTP ${res.status}): ${url}${body ? ` — ${body.slice(0, 200)}` : ""}`,
+    );
+  }
+  const ctype = res.headers.get("content-type") || "";
+  if (!ctype.startsWith("image/")) {
+    throw new Error(`Public avatar URL did not return image/* (got ${ctype}): ${url}`);
+  }
+}
+
 async function main() {
   if (!existsSync(imagePath)) {
     throw new Error(`Image not found: ${imagePath}`);
   }
 
   const buffer = readFileSync(imagePath);
-  const ext = path.extname(imagePath).toLowerCase() || ".png";
-  const mime =
-    ext === ".jpg" || ext === ".jpeg"
-      ? "image/jpeg"
-      : ext === ".webp"
-        ? "image/webp"
-        : "image/png";
+  if (buffer.length < 100) {
+    throw new Error(`Image too small (${buffer.length} bytes) — refuse upload`);
+  }
 
   const supabaseUrl = required("SUPABASE_URL");
   const serviceKey = required("SUPABASE_SERVICE_ROLE_KEY");
@@ -61,6 +75,7 @@ async function main() {
   console.log("DB host:", process.env.DB_HOST);
   console.log("DB name:", process.env.DB_NAME);
   console.log("Image:", imagePath, `(${buffer.length} bytes)`);
+  console.log("Storage path:", STORAGE_PATH);
   console.log("Roles:", ROLES.join(", "));
   console.log("Dry run:", dryRun);
 
@@ -96,27 +111,33 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log(`[dry-run] Would upload to ${bucket}/avatars/* and UPDATE ${total} users.`);
+    console.log(`[dry-run] Would upsert ${bucket}/${STORAGE_PATH} and UPDATE ${total} users.`);
     await db.end();
     return;
   }
 
-  const storagePath = `avatars/bulk-${randomUUID()}${ext === ".jpeg" ? ".jpg" : ext}`;
   const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(storagePath, buffer, { contentType: mime, upsert: false });
+    .upload(STORAGE_PATH, buffer, {
+      contentType: "image/png",
+      upsert: true,
+      cacheControl: "3600",
+    });
 
   if (uploadError) {
     throw new Error(`Supabase upload failed: ${uploadError.message}`);
   }
 
-  const publicUrl = supabase.storage.from(bucket).getPublicUrl(storagePath).data.publicUrl;
-  console.log("Uploaded:", storagePath);
+  const publicUrl = supabase.storage.from(bucket).getPublicUrl(STORAGE_PATH).data.publicUrl;
+  console.log("Uploaded:", STORAGE_PATH);
   console.log("Public URL:", publicUrl);
+
+  await assertPublicUrlOk(publicUrl);
+  console.log("Public URL verified OK");
 
   const updateRes = await db.query(
     `UPDATE users u
@@ -125,10 +146,10 @@ async function main() {
      WHERE u.role_id = r.id
        AND u.deleted_at IS NULL
        AND r.name = ANY($2::text[])`,
-    [storagePath, ROLES as unknown as string[]],
+    [STORAGE_PATH, ROLES as unknown as string[]],
   );
 
-  console.log(`Updated ${updateRes.rowCount ?? 0} users.avatar → ${storagePath}`);
+  console.log(`Updated ${updateRes.rowCount ?? 0} users.avatar → ${STORAGE_PATH}`);
   await db.end();
 }
 
