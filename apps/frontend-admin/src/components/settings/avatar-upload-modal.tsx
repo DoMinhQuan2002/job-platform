@@ -124,7 +124,10 @@ export function AvatarUploadModal({ open, onOpenChange, onConfirm }: AvatarUploa
               <UploadCloud className="size-10 text-primary" strokeWidth={1.5} />
             )}
 
-            <p className="text-sm font-semibold text-slate-700">
+            <p
+              className="w-full max-w-[320px] truncate px-2 text-sm font-semibold text-slate-700"
+              title={file ? file.name : undefined}
+            >
               {file ? file.name : "Kéo thả ảnh vào đây"}
             </p>
             {!file && <p className="text-xs text-slate-400">hoặc</p>}

@@ -43,10 +43,10 @@ export function ApplicationDetailSidebar({
         <h3 className="text-base font-bold text-slate-900">Thông tin tin tuyển dụng</h3>
 
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-2xs">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-white shadow-2xs">
             {company.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={company.logoUrl} alt={company.name} className="h-full w-full object-contain" />
+              <img src={company.logoUrl} alt={company.name} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center rounded-lg bg-blue-50 text-sm font-bold italic text-primary">
                 {companyInitial}

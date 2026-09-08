@@ -74,10 +74,10 @@ function CompanyLogo({ company, variant = "list" }: { company: Company; variant?
   const logo = normalizeLogo(company.logo);
   const sizeClass = variant === "featured" ? "h-12 w-24 text-sm" : "h-12 w-16 text-xs";
   const alignClass = variant === "featured" ? "mx-auto" : "";
-  const imageClass = variant === "featured" ? "h-full w-full bg-white object-cover" : "h-full w-full bg-white object-contain p-1";
+  const imageClass = "absolute inset-0 size-full bg-white object-cover";
 
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 font-bold text-primary ${sizeClass} ${alignClass}`}>
+    <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 font-bold text-primary ${sizeClass} ${alignClass}`}>
       {logo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={logo} alt={company.name} className={imageClass} />
