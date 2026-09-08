@@ -80,7 +80,7 @@ export function Footer() {
               JobPlatform là nền tảng tuyển dụng kết nối ứng viên và doanh
               nghiệp một cách nhanh chóng và hiệu quả.
             </p>
-            <div className="mt-6 flex gap-3">
+            {/* <div className="mt-6 flex gap-3">
               {[
                 {
                   label: "Facebook",
@@ -99,7 +99,7 @@ export function Footer() {
                   {social.icon}
                 </a>
               ))}
-            </div>
+            </div> */}
           </section>
 
           <FooterLinks title="Dành cho ứng viên" links={candidateLinks} />
@@ -113,7 +113,7 @@ export function Footer() {
             <ul className="space-y-4 text-xs leading-5 text-slate-600">
               <li className="flex gap-3">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-                <span>Tòa nhà FPT, Cầu Giấy, Hà Nội, Việt Nam</span>
+                <span>Tòa nhà An Phú, Lê Trọng Tấn, Dương Nội, Hà Nội, Việt Nam</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="size-4 shrink-0 text-primary" />

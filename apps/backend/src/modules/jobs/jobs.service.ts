@@ -20,6 +20,7 @@ import { ApplicationEntity } from "../../database/entities/application.entity";
 import { SkillEntity } from "../../database/entities/skill.entity";
 import { CandidateProfileEntity } from "../../database/entities/candidate-profile.entity";
 import { SavedJobEntity } from "../../database/entities/saved-job.entity";
+import { expandSearchKeywords } from "./job-synonyms";
 import type {
   CreateJobInput,
   CurrentUser,
@@ -370,12 +371,29 @@ export const jobService = {
       .andWhere("job.deadline >= CURRENT_DATE");
 
     if (query.keyword?.trim()) {
+      const searchTerms = expandSearchKeywords(query.keyword);
       qb.andWhere(
         new Brackets((sub) => {
-          sub
-            .where("job.title ILIKE :keyword", { keyword: `%${query.keyword!.trim()}%` })
-            .orWhere("company.name ILIKE :keyword", { keyword: `%${query.keyword!.trim()}%` })
-            .orWhere("job.description ILIKE :keyword", { keyword: `%${query.keyword!.trim()}%` });
+          searchTerms.forEach((term, index) => {
+            const paramKey = `kw_${index}`;
+            const pattern = `%${term}%`;
+            const condition = `job.title ILIKE :${paramKey}
+              OR company.name ILIKE :${paramKey}
+              OR job.description ILIKE :${paramKey}
+              OR job.address ILIKE :${paramKey}
+              OR EXISTS (
+                SELECT 1 FROM job_skills k_js_${index}
+                INNER JOIN skills k_s_${index} ON k_s_${index}.id = k_js_${index}.skill_id
+                WHERE k_js_${index}.job_id = job.id
+                  AND k_s_${index}.name ILIKE :${paramKey}
+              )`;
+
+            if (index === 0) {
+              sub.where(condition, { [paramKey]: pattern });
+            } else {
+              sub.orWhere(condition, { [paramKey]: pattern });
+            }
+          });
         }),
       );
     }
@@ -598,13 +616,30 @@ export const jobService = {
       )
       .where("job.companyId = :companyId", { companyId: company.id });
 
-    if (query.keyword) {
+    if (query.keyword?.trim()) {
+      const searchTerms = expandSearchKeywords(query.keyword);
       queryBuilder.andWhere(
         new Brackets((sub) => {
-          sub
-            .where("job.title ILIKE :keyword", { keyword: `%${query.keyword}%` })
-            .orWhere("job.description ILIKE :keyword", { keyword: `%${query.keyword}%` })
-            .orWhere("job.requirements ILIKE :keyword", { keyword: `%${query.keyword}%` });
+          searchTerms.forEach((term, index) => {
+            const paramKey = `r_kw_${index}`;
+            const pattern = `%${term}%`;
+            const condition = `job.title ILIKE :${paramKey}
+              OR job.description ILIKE :${paramKey}
+              OR job.requirements ILIKE :${paramKey}
+              OR job.address ILIKE :${paramKey}
+              OR EXISTS (
+                SELECT 1 FROM job_skills r_js_${index}
+                INNER JOIN skills r_s_${index} ON r_s_${index}.id = r_js_${index}.skill_id
+                WHERE r_js_${index}.job_id = job.id
+                  AND r_s_${index}.name ILIKE :${paramKey}
+              )`;
+
+            if (index === 0) {
+              sub.where(condition, { [paramKey]: pattern });
+            } else {
+              sub.orWhere(condition, { [paramKey]: pattern });
+            }
+          });
         }),
       );
     }

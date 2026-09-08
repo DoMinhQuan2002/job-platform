@@ -1,8 +1,8 @@
 "use client";
 
 import { Filter } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { JobsFilterPanel } from "@/components/jobs/jobs-filter-panel";
 import { JobsResults } from "@/components/jobs/jobs-results";
@@ -38,9 +38,33 @@ const initialFilters: JobFilters = {
 };
 
 export default function JobsPage() {
+  return (
+    <Suspense fallback={null}>
+      <JobsPageContent />
+    </Suspense>
+  );
+}
+
+function JobsPageContent() {
   const router = useRouter();
-  const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState(() =>
+    filtersFromUrl(new URLSearchParams(searchParams.toString())),
+  );
+  const currentParamsString = searchParams.toString();
+  const [prevParamsString, setPrevParamsString] = useState(currentParamsString);
+
+  const appliedFilters = useMemo(
+    () => filtersFromUrl(new URLSearchParams(currentParamsString)),
+    [currentParamsString],
+  );
+
+  // Sync draft filters when URL search params change (e.g. Header search bar, browser navigation)
+  if (currentParamsString !== prevParamsString) {
+    setPrevParamsString(currentParamsString);
+    setFilters(appliedFilters);
+  }
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [categories, setCategories] = useState<JobCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -54,7 +78,6 @@ export default function JobsPage() {
   const [error, setError] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [requestVersion, setRequestVersion] = useState(0);
-  const [filtersReady, setFiltersReady] = useState(false);
   const [savingJobIds, setSavingJobIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -65,17 +88,6 @@ export default function JobsPage() {
     syncRole();
     window.addEventListener("jp-auth-change", syncRole);
     return () => window.removeEventListener("jp-auth-change", syncRole);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const next = filtersFromUrl(new URLSearchParams(window.location.search));
-      setFilters(next);
-      setAppliedFilters(next);
-      setFiltersReady(true);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -93,7 +105,6 @@ export default function JobsPage() {
   }, []);
 
   useEffect(() => {
-    if (!filtersReady) return;
     const controller = new AbortController();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
@@ -116,7 +127,7 @@ export default function JobsPage() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [appliedFilters, requestVersion, filtersReady]);
+  }, [appliedFilters, requestVersion]);
 
   const changeFilter = useCallback(
     (field: keyof JobFilters | string, value: string | number) =>
@@ -125,29 +136,26 @@ export default function JobsPage() {
   );
   const applyFilters = () => {
     const next = { ...filters, page: 1 };
-    setFilters(next);
-    setAppliedFilters(next);
     setFilterOpen(false);
-    syncUrl(next);
+    setRequestVersion((value) => value + 1);
+    syncUrl(next, router);
   };
   const clearFilters = () => {
     setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
     setFilterOpen(false);
-    syncUrl(initialFilters);
+    setRequestVersion((value) => value + 1);
+    syncUrl(initialFilters, router);
   };
   const changePage = (page: number) => {
     const next = { ...appliedFilters, page };
     setFilters((current) => ({ ...current, page }));
-    setAppliedFilters(next);
-    syncUrl(next);
+    syncUrl(next, router);
     window.scrollTo({ top: 300, behavior: "smooth" });
   };
   const changeSort = (sort: JobSort) => {
     const next = { ...appliedFilters, sort, page: 1 };
     setFilters((current) => ({ ...current, sort, page: 1 }));
-    setAppliedFilters(next);
-    syncUrl(next);
+    syncUrl(next, router);
   };
 
   const handleSaveJob = useCallback(
@@ -273,7 +281,7 @@ export default function JobsPage() {
   );
 }
 
-function syncUrl(filters: JobFilters) {
+function syncUrl(filters: JobFilters, router?: ReturnType<typeof useRouter>) {
   const query = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
     if (
@@ -284,11 +292,12 @@ function syncUrl(filters: JobFilters) {
     )
       query.set(key, String(value));
   });
-  window.history.replaceState(
-    null,
-    "",
-    `/jobs${query.size ? `?${query}` : ""}`,
-  );
+  const url = `/jobs${query.size ? `?${query}` : ""}`;
+  if (router) {
+    router.replace(url, { scroll: false });
+  } else {
+    window.history.replaceState(null, "", url);
+  }
 }
 
 function filtersFromUrl(query: URLSearchParams): JobFilters {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   BriefcaseBusiness,
@@ -122,12 +122,33 @@ interface CandidateSearchBarProps {
   inputClassName?: string;
 }
 
-export function CandidateSearchBar({
+export function CandidateSearchBar(props: CandidateSearchBarProps) {
+  return (
+    <Suspense fallback={null}>
+      <CandidateSearchBarInner {...props} />
+    </Suspense>
+  );
+}
+
+function CandidateSearchBarInner({
   className,
   inputClassName,
 }: CandidateSearchBarProps) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlKeyword =
+    pathname === ROUTES.jobs ? (searchParams.get("keyword") ?? "") : null;
+  const [prevKeyword, setPrevKeyword] = useState(urlKeyword);
+  const [query, setQuery] = useState(urlKeyword ?? "");
+
+  // Đồng bộ ô search trên header khi keyword trên URL thay đổi (theo React pattern: adjust state during rendering)
+  if (urlKeyword !== prevKeyword) {
+    setPrevKeyword(urlKeyword);
+    if (urlKeyword !== null) {
+      setQuery(urlKeyword);
+    }
+  }
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -297,12 +318,17 @@ export function CandidateSearchBar({
   // Xử lý submit tìm kiếm
   const handlePerformSearch = (keywordToSearch?: string) => {
     const text = (keywordToSearch ?? query).trim();
-    if (!text) return;
 
-    persistRecentSearch(text);
+    if (text) {
+      persistRecentSearch(text);
+    }
     setIsOpen(false);
     startTransition(() => {
-      router.push(`${ROUTES.jobs}?keyword=${encodeURIComponent(text)}`);
+      if (text) {
+        router.push(`${ROUTES.jobs}?keyword=${encodeURIComponent(text)}`);
+      } else if (pathname === ROUTES.jobs) {
+        router.push(ROUTES.jobs);
+      }
     });
   };
 
@@ -360,8 +386,8 @@ export function CandidateSearchBar({
           placeholder="Tìm việc làm, công ty..."
           autoComplete="off"
           className={cn(
-            "h-8 w-[230px] rounded-lg border border-border bg-slate-50 pl-3 pr-8 text-xs text-text outline-none placeholder:text-muted/70 transition-all duration-200",
-            "focus:w-[280px] focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10",
+            "h-8 w-[240px] rounded-lg border border-border bg-slate-50 pl-3 pr-8 text-xs text-text outline-none placeholder:text-muted/70 transition-colors",
+            "focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10",
             inputClassName,
           )}
         />
