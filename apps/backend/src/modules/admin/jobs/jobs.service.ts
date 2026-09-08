@@ -68,7 +68,12 @@ export const adminJobsService = {
     if (query.categoryId) {
       qb.andWhere("job.categoryId = :categoryId", { categoryId: query.categoryId });
     }
-
+    if (query.startDate) {
+      qb.andWhere("job.createdAt >= :startDate", { startDate: `${query.startDate}T00:00:00` });
+    }
+    if (query.endDate) {
+      qb.andWhere("job.createdAt <= :endDate", { endDate: `${query.endDate}T23:59:59` });
+    }
     qb.orderBy("job.createdAt", "DESC");
     qb.skip((query.page - 1) * query.limit).take(query.limit);
 

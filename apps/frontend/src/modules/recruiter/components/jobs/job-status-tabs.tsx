@@ -28,7 +28,7 @@ export function JobStatusTabs({ value, onChange, counts }: JobStatusTabsProps) {
           role="tab"
           aria-selected={value === tab.value}
           onClick={() => onChange(tab.value)}
-          className={`border-b-2 px-3 py-2.5 text-xs font-medium transition ${
+          className={`cursor-pointer border-b-2 px-3 py-2.5 text-xs font-medium transition ${
             value === tab.value
               ? "border-primary text-primary"
               : "border-transparent text-muted hover:text-text"

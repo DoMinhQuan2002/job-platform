@@ -352,13 +352,13 @@ export default function CompanyDetailPage() {
                                                 <ExternalLink className="h-3.5 w-3.5" />
                                             </a>
                                         ) : null}
-                                        <button
+                                        {/* <button
                                             type="button"
                                             className="inline-flex h-9 items-center justify-center gap-1.5 rounded border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 sm:text-sm"
                                         >
                                             <Heart className="h-3.5 w-3.5" />
                                             Lưu công ty
-                                        </button>
+                                        </button> */}
                                     </div>
                                 </div>
                             </div>

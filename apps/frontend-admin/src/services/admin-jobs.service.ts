@@ -93,6 +93,8 @@ export const adminJobsApi = {
     if (query.status) params.set("status", query.status);
     if (query.companyId) params.set("companyId", query.companyId);
     if (query.categoryId) params.set("categoryId", query.categoryId);
+    if (query.startDate) params.set("startDate", query.startDate);
+    if (query.endDate) params.set("endDate", query.endDate);
 
     const queryString = params.toString();
     const endpoint = queryString ? `/admin/jobs?${queryString}` : "/admin/jobs";

@@ -1,11 +1,6 @@
 import { ApiError, toApiError, toApiErrorFromResponse } from "@/lib/api-error";
-import {
-  clearAccessToken,
-  getAccessToken,
-  isTokenExpired,
-  logoutAndRedirectToLogin,
-  setAccessToken,
-} from "@/lib/auth-token";
+import { clearAccessToken, getAccessToken } from "@/lib/auth-token";
+import { refreshAccessToken, scheduleTokenRefresh } from "@/lib/token-refresh";
 
 const rawBase = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
@@ -25,10 +20,11 @@ type HttpOptions = {
   method?: HttpMethod;
   body?: unknown;
   headers?: Record<string, string>;
+  /** Bỏ Authorization (vd. login) */
   skipAuth?: boolean;
+  /** Absolute path bắt đầu bằng /api/... — mặc định tự nối /api/v1 */
   absolute?: boolean;
   signal?: AbortSignal;
-  _isRetry?: boolean;
 };
 
 const resolveUrl = (path: string, absolute?: boolean) => {
@@ -40,48 +36,6 @@ const resolveUrl = (path: string, absolute?: boolean) => {
   }
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${API_ORIGIN}${API_PREFIX}${normalized}`;
-};
-
-let refreshPromise: Promise<string | null> | null = null;
-
-export const refreshAccessToken = async (): Promise<string | null> => {
-  if (refreshPromise) {
-    return refreshPromise;
-  }
-
-  refreshPromise = (async () => {
-    try {
-      const res = await fetch(`${API_ORIGIN}${API_PREFIX}/refresh-token`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        setAccessToken(null);
-        return null;
-      }
-
-      const json = await res.json();
-      if (json?.success && json?.data?.accessToken) {
-        const newToken = json.data.accessToken as string;
-        setAccessToken(newToken);
-        return newToken;
-      }
-
-      setAccessToken(null);
-      return null;
-    } catch {
-      setAccessToken(null);
-      return null;
-    } finally {
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
 };
 
 const sendRequest = (
@@ -116,10 +70,7 @@ export const http = async <T>(
     }
 
     if (!options.skipAuth) {
-      let token = getAccessToken();
-      if (!token || isTokenExpired(token)) {
-        token = await refreshAccessToken();
-      }
+      const token = getAccessToken();
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -128,26 +79,17 @@ export const http = async <T>(
     const url = resolveUrl(path, options.absolute);
     let response = await sendRequest(url, options, headers);
 
-    if (response.status === 401 && !options.skipAuth && !options._isRetry) {
-      const isLogoutRequest = path === "/logout" || path.endsWith("/logout");
-      if (isLogoutRequest) {
-        clearAccessToken();
-        return undefined as T;
-      }
+    if (response.status === 401 && !options.skipAuth) {
+      const accessToken = await refreshAccessToken();
 
-      try {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          headers.Authorization = `Bearer ${newToken}`;
-          response = await sendRequest(url, { ...options, _isRetry: true }, headers);
-        }
-      } catch {
-        clearAccessToken();
+      if (accessToken) {
+        scheduleTokenRefresh();
+        headers.Authorization = `Bearer ${accessToken}`;
+        response = await sendRequest(url, options, headers);
       }
 
       if (response.status === 401) {
-        logoutAndRedirectToLogin("session_expired");
-        throw await toApiErrorFromResponse(response);
+        clearAccessToken();
       }
     }
 
@@ -166,3 +108,4 @@ export const http = async <T>(
 };
 
 export { ApiError, toApiError, API_ORIGIN, API_PREFIX };
+

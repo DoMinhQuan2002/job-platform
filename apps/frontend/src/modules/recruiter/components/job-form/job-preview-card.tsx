@@ -40,7 +40,13 @@ export function JobPreviewCard({ values, companyName, categories, skills }: JobP
             <p className="flex items-center gap-2"><MapPin className="size-3.5" />{values.address || "Địa điểm"}</p>
             <div className="flex flex-wrap gap-3"><p className="flex items-center gap-2"><BriefcaseBusiness className="size-3.5" />{jobTypeLabels[values.jobType]}</p><p className="flex items-center gap-2"><Tag className="size-3.5" />{jobModeLabels[values.jobMode]}</p></div>
           </div>
-          <div className="my-4 border-t border-border pt-3"><p className="mb-1 text-xs font-semibold text-text">Mô tả ngắn</p><p className="line-clamp-3 text-[11px] leading-relaxed text-muted">{values.description || "Mô tả công việc sẽ hiển thị tại đây sau khi bạn nhập thông tin."}</p></div>
+          <div className="my-4 border-t border-border pt-3">
+            <p className="mb-1 text-xs font-semibold text-text">Mô tả ngắn</p>
+            <p className="line-clamp-3 text-[11px] leading-relaxed text-muted">
+              {values.description?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() ||
+                "Mô tả công việc sẽ hiển thị tại đây sau khi bạn nhập thông tin."}
+            </p>
+          </div>
           <div className="mb-4 flex flex-wrap gap-1.5">{selectedSkills.slice(0, 3).map((skill) => <span key={skill.id} className="rounded bg-primary/10 px-2 py-1 text-[9px] text-primary">{skill.name}</span>)}{selectedSkills.length > 3 && <span className="rounded bg-background px-2 py-1 text-[9px] text-muted">+{selectedSkills.length - 3}</span>}</div>
           <div className="space-y-1 border-t border-border pt-3 text-[10px] text-muted"><p>Ngành nghề: {category?.name ?? "Chưa chọn"}</p><div className="flex justify-between gap-2"><span>Hạn nộp: {values.deadline || "dd/mm/yyyy"}</span><strong className="text-text">Lương: {salary}</strong></div></div>
         </div>

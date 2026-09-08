@@ -1,5 +1,7 @@
 "use client";
 
+import { ApiError } from "@/lib/api-error";
+
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -12,23 +14,38 @@ import {
   FileClock,
   ArrowUpDown,
   AlertCircle,
+  X,
 } from "lucide-react";
 import {
   adminSystemLogsApi,
   type SystemLogItem,
   type PaginationMeta,
+  type LogActionType,
 } from "@/services/admin-system-logs.service";
 import {
   formatLogDateTime,
   formatOperationName,
   formatTargetTypeName,
-  getActionCategory,
+  getActionBadge,
   getUserDisplayName,
-  type ActivityCategory,
+  SYSTEM_LOG_ACTIONS,
+  SYSTEM_LOG_TARGET_TYPES,
+  type TargetType,
 } from "./system-log-helpers";
 import { SystemLogDrawer } from "./system-log-drawer";
+import { Select } from "@/components/ui/select";
+
+function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export function AdminSystemLogsView() {
+  const today = useMemo(() => getTodayDateString(), []);
+
   // Data States
   const [logs, setLogs] = useState<SystemLogItem[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
@@ -44,9 +61,10 @@ export function AdminSystemLogsView() {
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<ActivityCategory>("ALL");
+  const [actionFilter, setActionFilter] = useState<string>("ALL");
+  const [targetTypeFilter, setTargetTypeFilter] = useState<string>("ALL");
   const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [toDate, setToDate] = useState(today);
 
   // Sort State (desc or asc)
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
@@ -64,6 +82,8 @@ export function AdminSystemLogsView() {
         {
           page: pagination.page,
           limit: pagination.limit,
+          action: actionFilter !== "ALL" ? actionFilter : undefined,
+          targetType: targetTypeFilter !== "ALL" ? targetTypeFilter : undefined,
           fromDate: fromDate || undefined,
           toDate: toDate || undefined,
         },
@@ -78,6 +98,8 @@ export function AdminSystemLogsView() {
       })
       .catch((err: unknown) => {
         if (!isIgnored && !controller.signal.aborted) {
+          // 401 is handled by http layer (redirect to login), don't show error
+          if (err instanceof ApiError && err.statusCode === 401) return;
           setError(
             err instanceof Error
               ? err.message
@@ -95,19 +117,19 @@ export function AdminSystemLogsView() {
       isIgnored = true;
       controller.abort();
     };
-  }, [pagination.page, pagination.limit, fromDate, toDate, reloadKey]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    actionFilter,
+    targetTypeFilter,
+    fromDate,
+    toDate,
+    reloadKey,
+  ]);
 
-  // Client-side filtering & sorting on the current page logs
+  // Client-side search & sorting on the fetched page logs
   const filteredAndSortedLogs = useMemo(() => {
     let result = [...logs];
-
-    // Filter by Activity Category (THÊM, SỬA, XÓA, ĐĂNG NHẬP, ĐĂNG XUẤT)
-    if (categoryFilter !== "ALL") {
-      result = result.filter((log) => {
-        const cat = getActionCategory(log.action);
-        return cat.key === categoryFilter;
-      });
-    }
 
     // Filter by Search Term (Nội dung, người thực hiện, đối tượng, action)
     if (searchTerm.trim()) {
@@ -141,10 +163,27 @@ export function AdminSystemLogsView() {
     });
 
     return result;
-  }, [logs, categoryFilter, searchTerm, sortOrder]);
+  }, [logs, searchTerm, sortOrder]);
 
   // Handlers
   const handleApplyFilter = () => {
+    // Validate date constraints (never in future)
+    let validFrom = fromDate;
+    let validTo = toDate;
+
+    if (validFrom && validFrom > today) {
+      validFrom = today;
+      setFromDate(today);
+    }
+    if (validTo && validTo > today) {
+      validTo = today;
+      setToDate(today);
+    }
+    if (validFrom && validTo && validFrom > validTo) {
+      validTo = validFrom;
+      setToDate(validFrom);
+    }
+
     setIsLoading(true);
     setPagination((prev) => ({ ...prev, page: 1 }));
     setReloadKey((k) => k + 1);
@@ -153,10 +192,12 @@ export function AdminSystemLogsView() {
   const handleRefresh = () => {
     setIsLoading(true);
     setSearchTerm("");
-    setCategoryFilter("ALL");
+    setActionFilter("ALL");
+    setTargetTypeFilter("ALL");
     setFromDate("");
-    setToDate("");
+    setToDate(today);
     setSortOrder("desc");
+    setSelectedLog(null);
     setPagination((prev) => ({ ...prev, page: 1 }));
     setReloadKey((k) => k + 1);
   };
@@ -225,9 +266,9 @@ export function AdminSystemLogsView() {
         className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs"
         data-purpose="filter-bar"
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
           {/* Search Input */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Tìm kiếm
             </label>
@@ -236,25 +277,39 @@ export function AdminSystemLogsView() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm theo người thực hiện, nội dung, hành động..."
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Tìm người, nội dung, IP..."
+                className="w-full text-xs bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-2 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
-              <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                <Search className="w-4 h-4" />
-              </span>
+              {searchTerm ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                  <Search className="w-3.5 h-3.5" />
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Date Range Inputs */}
-          <div className="md:col-span-4">
+          {/* Date Range Inputs (Restricted up to Today) */}
+          <div className="md:col-span-3">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Thời gian (Từ ngày → Đến ngày)
+              Thời gian (tối đa đến hôm nay)
             </label>
             <div className="relative flex items-center border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
               <input
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
+                max={toDate || today}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFromDate(val > today ? today : val);
+                }}
                 className="w-full p-0 text-xs border-0 focus:ring-0 text-slate-700 font-medium bg-transparent cursor-pointer"
                 title="Từ ngày"
               />
@@ -262,46 +317,72 @@ export function AdminSystemLogsView() {
               <input
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                min={fromDate || undefined}
+                max={today}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setToDate(val > today ? today : val);
+                }}
                 className="w-full p-0 text-xs border-0 focus:ring-0 text-slate-700 font-medium bg-transparent cursor-pointer"
-                title="Đến ngày"
+                title="Đến ngày (tối đa hôm nay)"
               />
               <span className="text-slate-400 ml-1 shrink-0 pointer-events-none">
-                <Calendar className="w-4 h-4" />
+                <Calendar className="w-3.5 h-3.5" />
               </span>
             </div>
           </div>
 
-          {/* Activity Type Selector */}
+          {/* Target Type Selector (Theo đúng enum trong DB) */}
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Loại hoạt động
+              Đối tượng
             </label>
-            <div className="relative">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as ActivityCategory)}
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 pr-8 text-slate-700 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium"
-              >
-                <option value="ALL">Tất cả</option>
-                <option value="CREATE">THÊM</option>
-                <option value="UPDATE">SỬA</option>
-                <option value="DELETE">XÓA</option>
-                <option value="LOGIN">ĐĂNG NHẬP</option>
-                <option value="LOGOUT">ĐĂNG XUẤT</option>
-              </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400">
-                <ChevronDown className="w-3.5 h-3.5" />
-              </span>
-            </div>
+            <Select
+              value={targetTypeFilter}
+              onChange={(e) => {
+                setTargetTypeFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              size="md"
+            >
+              <option value="ALL">Tất cả đối tượng</option>
+              {SYSTEM_LOG_TARGET_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Action Selector (Theo đúng enum LogAction trong DB) */}
+          <div className="md:col-span-3">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Hành động
+            </label>
+            <Select
+              value={actionFilter}
+              onChange={(e) => {
+                setActionFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              size="md"
+            >
+              <option value="ALL">Tất cả hành động</option>
+              {SYSTEM_LOG_ACTIONS.map((a) => (
+                <option key={a.key} value={a.key}>
+                  {a.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Filter Submit Button */}
-          <div className="md:col-span-2 flex justify-end">
+          <div className="md:col-span-1 flex justify-end">
             <button
               type="button"
               onClick={handleApplyFilter}
-              className="w-full md:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              title="Áp dụng bộ lọc"
             >
               <Filter className="w-3.5 h-3.5" />
               <span>Lọc</span>
@@ -377,7 +458,7 @@ export function AdminSystemLogsView() {
                       Người thực hiện
                     </th>
                     <th className="py-3 px-4 whitespace-nowrap" scope="col">
-                      Loại
+                      Hành động
                     </th>
                     <th className="py-3 px-4" scope="col">
                       Nội dung
@@ -409,7 +490,7 @@ export function AdminSystemLogsView() {
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="h-4 w-12 bg-slate-200 rounded" />
+                          <div className="h-4 w-20 bg-slate-200 rounded" />
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="h-3 w-48 bg-slate-200 rounded" />
@@ -432,7 +513,7 @@ export function AdminSystemLogsView() {
                             Không tìm thấy bản ghi nhật ký nào
                           </span>
                           <p className="text-xs text-slate-400 max-w-sm">
-                            Thử điều chỉnh từ khóa tìm kiếm, khoảng thời gian hoặc loại hoạt động.
+                            Thử điều chỉnh từ khóa tìm kiếm, khoảng thời gian hoặc hành động lọc.
                           </p>
                         </div>
                       </td>
@@ -441,7 +522,7 @@ export function AdminSystemLogsView() {
                     // Log rows
                     filteredAndSortedLogs.map((log, idx) => {
                       const stt = (pagination.page - 1) * pagination.limit + idx + 1;
-                      const category = getActionCategory(log.action);
+                      const actionBadge = getActionBadge(log.action);
                       const userDisplay = getUserDisplayName(log);
                       const targetName = formatTargetTypeName(log.targetType, log.targetLabel);
                       const formattedTime = formatLogDateTime(log.createdAt);
@@ -475,9 +556,9 @@ export function AdminSystemLogsView() {
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold border ${category.badgeClass}`}
+                              className={`px-2 py-0.5 rounded text-[10.5px] font-semibold border ${actionBadge.badgeClass}`}
                             >
-                              {category.label}
+                              {actionBadge.label}
                             </span>
                           </td>
                           <td className="py-3.5 px-4 max-w-xs truncate text-slate-700" title={log.description || ""}>
@@ -543,9 +624,9 @@ export function AdminSystemLogsView() {
               {/* Page size selector */}
               <div className="flex items-center gap-1.5">
                 <span>Số dòng mỗi trang</span>
-                <div className="relative inline-block">
-                  <select
-                    value={pagination.limit}
+                <div className="w-20">
+                  <Select
+                    value={String(pagination.limit)}
                     onChange={(e) => {
                       setIsLoading(true);
                       setPagination((prev) => ({
@@ -554,13 +635,13 @@ export function AdminSystemLogsView() {
                         page: 1,
                       }));
                     }}
-                    className="text-xs bg-white border border-slate-200 rounded px-2.5 py-1 pr-6 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                    size="sm"
                   >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </Select>
                 </div>
               </div>
 

@@ -46,37 +46,40 @@ const Sk = ({ className }: { className: string }) => (
 
 function RecentJobsSkeleton() {
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+    <section className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       <h2 className="border-b border-border p-5 font-bold">Tin đăng gần đây</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-left text-sm">
+      <div className="flex-1">
+        <table className="w-full text-left text-sm">
           <thead className="bg-background text-xs uppercase text-muted">
             <tr>
-              <th className="p-4">Vị trí tuyển dụng</th>
-              <th>Trạng thái</th>
-              <th>Ứng viên</th>
-              <th>Hạn nộp</th>
+              <th className="py-3.5 pl-5 pr-2">Vị trí tuyển dụng</th>
+              <th className="px-2 py-3.5 whitespace-nowrap">Trạng thái</th>
+              <th className="px-2 py-3.5 text-center whitespace-nowrap">Ứng viên</th>
+              <th className="py-3.5 pl-2 pr-5 text-right whitespace-nowrap">Hạn nộp</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="px-4 py-3">
-                <td className="p-4">
-                  <Sk className="h-4 w-48" />
+                <td className="py-3 pl-5 pr-2">
+                  <Sk className="h-4 w-3/4 max-w-[200px]" />
                 </td>
-                <td>
-                  <Sk className="h-6 w-20 rounded-full" />
+                <td className="px-2 py-3 whitespace-nowrap">
+                  <Sk className="h-5 w-16 rounded-full" />
                 </td>
-                <td>
-                  <Sk className="h-4 w-6" />
+                <td className="px-2 py-3 text-center whitespace-nowrap">
+                  <Sk className="mx-auto h-4 w-5" />
                 </td>
-                <td>
-                  <Sk className="h-4 w-24" />
+                <td className="py-3 pl-2 pr-5 text-right whitespace-nowrap">
+                  <Sk className="ml-auto h-4 w-16" />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="border-t border-border p-4">
+        <Sk className="h-4 w-32" />
       </div>
     </section>
   );
@@ -146,15 +149,14 @@ export function RecentJobs() {
         </div>
       )}
 
-      {/* thêm flex-1 + overflow-y-auto ở đây */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto">
-        <table className="w-full min-w-[620px] text-left text-sm">
+      <div className="flex-1">
+        <table className="w-full text-left text-sm">
           <thead className="bg-background text-xs uppercase text-muted">
             <tr>
-              <th className="p-4">Vị trí tuyển dụng</th>
-              <th>Trạng thái</th>
-              <th>Ứng viên</th>
-              <th>Hạn nộp</th>
+              <th className="py-3.5 pl-5 pr-2 font-semibold">Vị trí tuyển dụng</th>
+              <th className="px-2 py-3.5 font-semibold whitespace-nowrap">Trạng thái</th>
+              <th className="px-2 py-3.5 text-center font-semibold whitespace-nowrap">Ứng viên</th>
+              <th className="py-3.5 pl-2 pr-5 text-right font-semibold whitespace-nowrap">Hạn nộp</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -173,16 +175,28 @@ export function RecentJobs() {
                   };
                 return (
                   <tr key={job.id} className="hover:bg-background/70">
-                    <td className="p-4 font-medium">{job.title}</td>
-                    <td>
+                    <td className="py-3 pl-5 pr-2">
+                      <Link
+                        href={`/recruiter/jobs/${job.id}`}
+                        title={job.title}
+                        className="block max-w-[130px] truncate font-medium text-text transition-colors hover:text-primary sm:max-w-[200px] md:max-w-[240px] xl:max-w-[320px]"
+                      >
+                        {job.title}
+                      </Link>
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusInfo.color}`}
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusInfo.color}`}
                       >
                         {statusInfo.label}
                       </span>
                     </td>
-                    <td>{job.applicantCount}</td>
-                    <td className="text-muted">{formatDeadline(job.deadline)}</td>
+                    <td className="px-2 py-3 text-center text-xs font-semibold text-text whitespace-nowrap">
+                      {job.applicantCount}
+                    </td>
+                    <td className="py-3 pl-2 pr-5 text-right text-xs text-muted whitespace-nowrap">
+                      {formatDeadline(job.deadline)}
+                    </td>
                   </tr>
                 );
               })

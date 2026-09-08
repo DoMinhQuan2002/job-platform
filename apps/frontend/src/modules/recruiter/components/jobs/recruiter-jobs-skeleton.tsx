@@ -4,7 +4,7 @@ const Skeleton = ({ className }: { className: string }) => (
 
 export function RecruiterJobsSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl space-y-5" aria-label="Đang tải danh sách tin tuyển dụng" aria-busy="true">
+    <div className="w-full space-y-6" aria-label="Đang tải danh sách tin tuyển dụng" aria-busy="true">
       <header className="space-y-2">
         <Skeleton className="h-6 w-56" />
         <Skeleton className="h-3 w-80 max-w-full" />

@@ -266,7 +266,7 @@ export default function RecruiterCompanyPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 text-slate-950">
+    <div className="w-full space-y-6 text-slate-950">
       <section>
             <p className="text-xs font-semibold text-primary">Thông tin công ty</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Quản lý công ty</h1>

@@ -7,6 +7,7 @@ import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ResultModal } from "@/components/ui/result-modal";
 import { AvatarUploadModal } from "@/components/settings/avatar-upload-modal";
+import { Select } from "@/components/ui/select";
 import { getAvatarUrl } from "@/lib/media";
 import { setStoredUser, getStoredUser } from "@/lib/auth-token";
 import { locationsApi } from "@/modules/locations/api";
@@ -329,13 +330,13 @@ export default function AdminSettingsPage() {
               />
             </Field>
             <Field label="Tỉnh/Thành phố">
-              <select
-                className={fieldClass}
+              <Select
                 value={form.provinceCode}
                 disabled={locationsLoading}
                 onChange={(e) =>
                   setForm((v) => ({ ...v, provinceCode: e.target.value, wardCode: "" }))
                 }
+                size="md"
               >
                 <option value="">{locationsLoading ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
                 {provinces.map((p) => (
@@ -343,14 +344,14 @@ export default function AdminSettingsPage() {
                     {p.fullName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field label="Phường/Xã">
-              <select
-                className={fieldClass}
+              <Select
                 value={form.wardCode}
                 disabled={!form.provinceCode || wardsLoading}
                 onChange={(e) => setForm((v) => ({ ...v, wardCode: e.target.value }))}
+                size="md"
               >
                 <option value="">{wardsLoading ? "Đang tải..." : "Chọn phường/xã"}</option>
                 {wards.map((w) => (
@@ -358,7 +359,7 @@ export default function AdminSettingsPage() {
                     {w.fullName}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field label="Trạng thái tài khoản" className="sm:col-span-2">
               <div className="flex h-11 items-center rounded-lg bg-emerald-50 px-3 text-sm font-semibold text-emerald-700">

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Select } from "@/components/ui/select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -278,38 +279,21 @@ export function AdminJobCategoriesView() {
             />
           </div>
 
-          {/* Trạng thái select box with floating-like label */}
-          <div className="relative">
-            <div className="relative min-w-[130px]">
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setIsLoading(true);
-                  setStatusFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                className="appearance-none w-full bg-white border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-              >
-                <option value="ALL">Tất cả</option>
-                <option value="ACTIVE">Hoạt động</option>
-                <option value="INACTIVE">Không hoạt động</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M19 9l-7 7-7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            </div>
+                  {/* Trạng thái select box */}
+          <div className="w-40">
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setIsLoading(true);
+                setStatusFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              size="md"
+            >
+              <option value="ALL">Tất cả</option>
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="INACTIVE">Không hoạt động</option>
+            </Select>
           </div>
         </div>
 
@@ -538,9 +522,9 @@ export function AdminJobCategoriesView() {
           {/* Rows per page selector */}
           <div className="flex items-center gap-2 text-slate-500">
             <span>Hiển thị</span>
-            <div className="relative">
-              <select
-                value={pagination.limit}
+            <div className="w-20">
+              <Select
+                value={String(pagination.limit)}
                 onChange={(e) => {
                   setIsLoading(true);
                   setPagination((prev) => ({
@@ -549,27 +533,12 @@ export function AdminJobCategoriesView() {
                     page: 1,
                   }));
                 }}
-                className="appearance-none bg-white border border-slate-200 rounded-lg pl-3 pr-7 py-1 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                size="sm"
               >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-500">
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M19 9l-7 7-7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </Select>
             </div>
             <span>trên mỗi trang</span>
           </div>

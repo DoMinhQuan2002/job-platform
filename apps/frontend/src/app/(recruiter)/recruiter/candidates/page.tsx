@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { RecruiterCandidatesPage } from "@/modules/recruiter/components/candidates/recruiter-candidates-page";
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function RecruiterCandidatesRoute() {
-  return <RecruiterCandidatesPage />;
+  return (
+    <Suspense fallback={null}>
+      <RecruiterCandidatesPage />
+    </Suspense>
+  );
 }

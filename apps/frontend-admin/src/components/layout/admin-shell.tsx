@@ -8,12 +8,12 @@ import { AdminSidebar } from "./admin-sidebar";
 import { LogoutModal } from "./logout-modal";
 import { ADMIN_ROUTES } from "@/constants/routes";
 import { useAuth } from "@/contexts/auth-context";
+import { clearAccessToken, isAccessTokenExpired } from "@/lib/auth-token";
 import {
-  clearAccessToken,
-  getAccessToken,
-  isTokenExpired,
-} from "@/lib/auth-token";
-import { refreshAccessToken } from "@/services/http";
+  cancelTokenRefresh,
+  refreshAccessToken,
+  scheduleTokenRefresh,
+} from "@/lib/token-refresh";
 
 interface AdminShellProps {
   children: ReactNode;
@@ -41,7 +41,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
   const role = currentUser?.role;
 
-  // Kiểm tra quyền và tự động làm mới token định kỳ khi đang duyệt trang
+  // Kiểm tra quyền và quản lý vòng đời refresh token khi xem trang
   useEffect(() => {
     if (isLoading || isLoggingOut) return;
 
@@ -51,34 +51,29 @@ export function AdminShell({ children }: AdminShellProps) {
       return;
     }
 
-    const checkAndRefreshToken = async () => {
+    scheduleTokenRefresh();
+
+    const onFocus = () => {
       if (isLoggingOut) return;
-      const token = getAccessToken();
-      if (!token || isTokenExpired(token)) {
-        const refreshed = await refreshAccessToken();
-        if (!refreshed && !isLoggingOut) {
+      if (!isAccessTokenExpired()) return;
+
+      void refreshAccessToken().then((token) => {
+        if (token) {
+          scheduleTokenRefresh();
+        } else if (!isLoggingOut) {
           clearAccessToken();
           router.replace(ADMIN_ROUTES.login + "?reason=session_expired");
         }
-      }
+      });
     };
 
-    // Kiểm tra mỗi 10 giây
-    const interval = setInterval(() => {
-      checkAndRefreshToken();
-    }, 10000);
-
-    // Kiểm tra ngay khi người dùng mở lại tab trình duyệt
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        checkAndRefreshToken();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("jp-admin-auth-change", scheduleTokenRefresh);
+    window.addEventListener("focus", onFocus);
 
     return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("jp-admin-auth-change", scheduleTokenRefresh);
+      window.removeEventListener("focus", onFocus);
+      cancelTokenRefresh();
     };
   }, [isLoading, isAuthenticated, role, router, isLoggingOut]);
 
@@ -104,7 +99,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
   // 3. Đã xác thực thành công -> Render Dashboard
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-[#f8fafc] text-slate-900">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-slate-900">
       {/* Left Sidebar: 260px */}
       <AdminSidebar
         open={sidebarOpen}
@@ -121,7 +116,7 @@ export function AdminShell({ children }: AdminShellProps) {
         />
 
         {/* Scrollable Page Body */}
-        <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-background p-6 lg:p-8">
           {children}
         </main>
       </div>

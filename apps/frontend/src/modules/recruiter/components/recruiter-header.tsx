@@ -91,58 +91,62 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
   return (
     <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200 bg-white">
       <nav
-        className="flex h-[68px] w-full items-center px-4 sm:px-6"
+        className="flex h-[68px] w-full items-center"
         aria-label="Điều hướng chính"
       >
-        {/* Mobile: nút mở recruiter sidebar, ẩn từ breakpoint lg. */}
-        <button
-          type="button"
-          onClick={onOpenMenu}
-          className="mr-2 rounded-md p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
-          aria-label="Mở menu quản trị"
-          aria-controls="recruiter-mobile-navigation"
-          aria-expanded={menuOpen}
-        >
-          <Menu className="size-5" />
-        </button>
+        {/* Khối bên trái: Logo JobPlatform gióng thẳng với Sidebar (w-64 trên lg) */}
+        <div className="flex h-full shrink-0 items-center px-4 sm:px-6 lg:w-64 lg:border-r lg:border-slate-200">
+          {/* Mobile: nút mở recruiter sidebar, ẩn từ breakpoint lg. */}
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            className="mr-2 rounded-md p-2 text-slate-700 hover:bg-slate-100 lg:hidden"
+            aria-label="Mở menu quản trị"
+            aria-controls="recruiter-mobile-navigation"
+            aria-expanded={menuOpen}
+          >
+            <Menu className="size-5" />
+          </button>
 
-        <Link
-          href={ROUTES.recruiter.root}
-          className="flex shrink-0 items-center gap-2"
-          aria-label="JobPlatform - Tổng quan tuyển dụng"
-        >
-          <Image src="/logo.png" alt="JobPlatform" width={40} height={40} priority />
-          <span className="text-[18px] font-bold tracking-[-0.03em] text-slate-950">
-            JobPlatform
-          </span>
-        </Link>
-
-        {/* Desktop/tablet: menu điều hướng chính, ẩn trên mobile. */}
-        <div className="mx-auto hidden h-full items-center gap-10 md:flex lg:gap-16">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative flex h-full items-center text-sm font-medium text-slate-700 transition-colors hover:text-primary"
-            >
-              {item.label}
-            </Link>
-          ))}
+          <Link
+            href={ROUTES.recruiter.root}
+            className="flex shrink-0 items-center gap-2"
+            aria-label="JobPlatform - Tổng quan tuyển dụng"
+          >
+            <Image src="/logo.png" alt="JobPlatform" width={40} height={40} priority />
+            <span className="text-[18px] font-bold tracking-[-0.03em] text-blue-900">
+              Job Platform
+            </span>
+          </Link>
         </div>
 
-        {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
-        <div className="ml-auto flex items-center gap-3">
-          {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
-          <CandidateSearchBar className="hidden xl:block" />
+        {/* Khối bên phải: Khớp 1:1 với chiều rộng của layout nội dung */}
+        <div className="flex h-full min-w-0 flex-1 items-center justify-between px-4 md:px-5 lg:px-6">
+          {/* Desktop/tablet: menu điều hướng bắt đầu thẳng hàng với lề trái của layout */}
+          <div className="hidden h-full items-center gap-8 md:flex lg:gap-10">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative flex h-full items-center text-sm font-medium text-slate-700 transition-colors hover:text-primary"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
-        
-          <NotificationDropdown
-            baseHref={ROUTES.recruiter.notifications}
-            unreadCount={unreadCount}
-          />
+          {/* Các thao tác bên phải dùng chung cho desktop và mobile. */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Desktop lớn: ô tìm kiếm, ẩn dưới breakpoint xl. */}
+            <CandidateSearchBar className="hidden xl:block" />
 
-          {/* Mobile chỉ hiện avatar; từ sm trở lên hiện thêm tên và mũi tên. */}
-          <div className="relative ml-1">
+            <NotificationDropdown
+              baseHref={ROUTES.recruiter.notifications}
+              unreadCount={unreadCount}
+            />
+
+            {/* Mobile chỉ hiện avatar; từ sm trở lên hiện thêm tên và mũi tên. */}
+            <div className="relative ml-1">
             <button
               type="button"
               onClick={() => setAccountOpen((open) => !open)}
@@ -185,6 +189,7 @@ export function RecruiterHeader({ menuOpen, onOpenMenu }: RecruiterHeaderProps) 
             )}
           </div>
         </div>
+      </div>
       </nav>
     </header>
   );

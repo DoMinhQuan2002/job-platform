@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ChevronDown, Calendar, Filter, RotateCcw } from "lucide-react";
+import { Select } from "@/components/ui/select";
+import { Search, Calendar, Filter, RotateCcw } from "lucide-react";
 import type {
   AdminJobStatus,
   CompanyOption,
@@ -53,7 +54,7 @@ export function JobFilterCard({
       status: "",
       categoryId: "",
       startDate: "",
-      endDate: "",
+      endDate: new Date().toISOString().slice(0, 10),
     };
     setFormValues(emptyValues);
     onReset();
@@ -89,21 +90,18 @@ export function JobFilterCard({
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             Công ty
           </label>
-          <div className="relative">
-            <select
-              value={formValues.companyId}
-              onChange={(e) => handleChange("companyId", e.target.value)}
-              className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 appearance-none outline-none transition-colors"
-            >
-              <option value="">Tất cả công ty</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-          </div>
+          <Select
+            value={formValues.companyId}
+            onChange={(e) => handleChange("companyId", e.target.value)}
+            size="md"
+          >
+            <option value="">Tất cả công ty</option>
+            {companies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Status Filter */}
@@ -111,22 +109,19 @@ export function JobFilterCard({
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             Trạng thái
           </label>
-          <div className="relative">
-            <select
-              value={formValues.status}
-              onChange={(e) =>
-                handleChange("status", e.target.value as "" | AdminJobStatus)
-              }
-              className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 appearance-none outline-none transition-colors"
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ duyệt</option>
-              <option value="APPROVED">Đã duyệt</option>
-              <option value="REJECTED">Từ chối</option>
-              <option value="CLOSED">Hết hạn</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-          </div>
+          <Select
+            value={formValues.status}
+            onChange={(e) =>
+              handleChange("status", e.target.value as "" | AdminJobStatus)
+            }
+            size="md"
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ duyệt</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Từ chối</option>
+            <option value="CLOSED">Hết hạn</option>
+          </Select>
         </div>
 
         {/* Category Filter */}
@@ -134,21 +129,18 @@ export function JobFilterCard({
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             Ngành nghề
           </label>
-          <div className="relative">
-            <select
-              value={formValues.categoryId}
-              onChange={(e) => handleChange("categoryId", e.target.value)}
-              className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 appearance-none outline-none transition-colors"
-            >
-              <option value="">Tất cả ngành nghề</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
-          </div>
+          <Select
+            value={formValues.categoryId}
+            onChange={(e) => handleChange("categoryId", e.target.value)}
+            size="md"
+          >
+            <option value="">Tất cả ngành nghề</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -164,8 +156,9 @@ export function JobFilterCard({
               <input
                 type="date"
                 value={formValues.startDate}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => handleChange("startDate", e.target.value)}
-                className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors"
+                className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
             </div>
@@ -180,8 +173,9 @@ export function JobFilterCard({
               <input
                 type="date"
                 value={formValues.endDate}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => handleChange("endDate", e.target.value)}
-                className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors"
+                className="w-full h-10 px-3 pr-8 text-xs rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-slate-400 bg-white outline-none transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
             </div>

@@ -192,6 +192,7 @@ export default function RegisterPage() {
           <Field label="Họ và tên" htmlFor="fullName" error={errors.fullName?.message}>
             <InputIcon icon={UserRound} />
             <input
+              maxLength={100}
               id="fullName"
               type="text"
               autoComplete="name"
@@ -205,6 +206,7 @@ export default function RegisterPage() {
           <Field label="Email" htmlFor="email" error={errors.email?.message}>
             <InputIcon icon={Mail} />
             <input
+              maxLength={254}
               id="email"
               type="email"
               autoComplete="email"
@@ -218,6 +220,7 @@ export default function RegisterPage() {
           <Field label="Mật khẩu" htmlFor="password" error={errors.password?.message}>
             <InputIcon icon={LockKeyhole} />
             <input
+              maxLength={64}
               id="password"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
@@ -239,6 +242,7 @@ export default function RegisterPage() {
           >
             <InputIcon icon={LockKeyhole} />
             <input
+              maxLength={64}
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               autoComplete="new-password"

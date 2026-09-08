@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Bold, Eye, Italic, List, LoaderCircle, Plus, RefreshCw, Underline, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Eye, LoaderCircle, Plus, RefreshCw, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
@@ -28,78 +28,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 
-// ─── RichTextEditor ───────────────────────────────────────────────────────────
-type RichTextEditorProps = {
-  label: string;
-  required?: boolean;
-  placeholder?: string;
-  value: string;
-  onChange: (html: string) => void;
-  error?: string;
-};
-
-function RichTextEditor({ label, required, placeholder, value, onChange, error }: RichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const lastHtml = useRef(value);
-
-  // Sync initial / reset value into contentEditable (only when value changes from outside)
-  const handleInput = () => {
-    const html = editorRef.current?.innerHTML ?? "";
-    lastHtml.current = html;
-    onChange(html);
-  };
-
-  const exec = (cmd: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false);
-    handleInput();
-  };
-
-  return (
-    <div>
-      <label className={labelClass}>
-        {label} {required && <span className="text-danger">*</span>}
-      </label>
-      <div className="overflow-hidden rounded-lg border border-border bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
-        {/* Toolbar */}
-        <div className="flex h-9 items-center gap-0.5 border-b border-border bg-background px-2">
-          {([
-            { cmd: "bold",                icon: Bold,      title: "In đậm"                  },
-            { cmd: "italic",              icon: Italic,    title: "In nghiêng"               },
-            { cmd: "underline",           icon: Underline, title: "Gạch chân"                },
-            { cmd: "insertUnorderedList", icon: List,      title: "Danh sách gạch đầu dòng"  },
-          ] as const).map(({ cmd, icon: Icon, title }) => (
-            <button
-              key={cmd}
-              type="button"
-              title={title}
-              onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
-              className="grid size-7 place-items-center rounded text-muted transition hover:bg-primary/8 hover:text-primary active:scale-90"
-            >
-              <Icon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-
-        {/* Editable area */}
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          onInput={handleInput}
-          dangerouslySetInnerHTML={{ __html: value }}
-          data-placeholder={placeholder}
-          className={[
-            "prose prose-xs min-h-[8rem] max-w-none p-3 text-xs leading-relaxed text-text outline-none",
-            "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5",
-            "empty:before:pointer-events-none empty:before:text-muted/60 empty:before:content-[attr(data-placeholder)]",
-          ].join(" ")}
-        />
-      </div>
-      <FieldError message={error} />
-    </div>
-  );
-}
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 
 export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
@@ -207,7 +136,7 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   });
 
   if (loading || companyLoading) return <JobFormSkeleton />;
-  if (loadError || companyError || !company) return <div className="mx-auto grid min-h-[400px] max-w-6xl place-items-center"><div className="rounded-lg border border-danger/20 bg-surface p-8 text-center"><p className="text-sm text-danger">{loadError ?? companyError ?? "Không tìm thấy hồ sơ công ty."}</p><button type="button" onClick={() => { setLoading(true); setLoadError(null); setReloadKey((key) => key + 1); reloadCompany(); }} className="mx-auto mt-4 flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div>;
+  if (loadError || companyError || !company) return <div className="flex min-h-[400px] w-full items-center justify-center"><div className="rounded-lg border border-danger/20 bg-surface p-8 text-center"><p className="text-sm text-danger">{loadError ?? companyError ?? "Không tìm thấy hồ sơ công ty."}</p><button type="button" onClick={() => { setLoading(true); setLoadError(null); setReloadKey((key) => key + 1); reloadCompany(); }} className="mx-auto mt-4 flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-medium text-white"><RefreshCw className="size-4" />Thử lại</button></div></div>;
 
   const addSkill = (skillId: string) => {
     if (!skillId || selectedSkills.some((skill) => skill.skillId === skillId)) return;
@@ -217,8 +146,8 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
   const cancelHref = mode === "edit" && jobId ? `/recruiter/jobs/${jobId}` : "/recruiter/jobs";
 
   return (
-    <div className="-m-4 min-h-[calc(100%+2rem)] bg-white p-4 md:-m-5 md:min-h-[calc(100%+2.5rem)] md:p-5 lg:-m-6 lg:min-h-[calc(100%+3rem)] lg:p-6">
-    <form onSubmit={submit} className="mx-auto max-w-6xl pb-20">
+    <div className="w-full">
+    <form onSubmit={submit} className="w-full pb-20">
       <Link href={cancelHref} className="mb-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"><ArrowLeft className="size-3.5" />Quay lại</Link>
       <div className="mb-6"><h1 className="text-xl font-bold text-text">{mode === "create" ? "Đăng tin tuyển dụng" : "Chỉnh sửa tin tuyển dụng"}</h1><p className="mt-1 text-xs text-muted">Vui lòng nhập đầy đủ thông tin để tin tuyển dụng được duyệt nhanh chóng.</p></div>
 
@@ -233,7 +162,17 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
           <div><label className={labelClass}>Số lượng tuyển <span className="text-danger">*</span></label><div className="flex items-center gap-2"><input type="number" min={1} {...register("quantity", { valueAsNumber: true })} className={`${inputClass} w-24`} /><span className="text-xs text-muted">người</span></div><FieldError message={errors.quantity?.message} /></div>
 
           <div className="sm:col-span-2"><div className="mb-1.5 flex items-center justify-between"><label className="text-xs font-semibold text-text">Mức lương (VND)</label><label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" {...register("isNegotiable")} className="size-4 accent-primary" />Lương thỏa thuận</label></div><div className="flex items-center gap-3"><input {...register("salaryMin")} inputMode="numeric" readOnly={values.isNegotiable} placeholder="Tối thiểu" className={`${inputClass} ${values.isNegotiable ? "bg-background opacity-50" : ""}`} /><span className="text-muted">–</span><input {...register("salaryMax")} inputMode="numeric" readOnly={values.isNegotiable} placeholder="Tối đa" className={`${inputClass} ${values.isNegotiable ? "bg-background opacity-50" : ""}`} /></div><FieldError message={errors.salaryMin?.message || errors.salaryMax?.message} /></div>
-          <div><label className={labelClass}>Hạn nộp hồ sơ <span className="text-danger">*</span></label><input type="date" {...register("deadline")} className={inputClass} /><FieldError message={errors.deadline?.message} /><p className="mt-1 text-[10px] text-muted">Hạn nộp phải sau ngày hôm nay</p></div>
+          <div>
+            <label className={labelClass}>Hạn nộp hồ sơ <span className="text-danger">*</span></label>
+            <input
+              type="date"
+              min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+              {...register("deadline")}
+              className={inputClass}
+            />
+            <FieldError message={errors.deadline?.message} />
+            <p className="mt-1 text-[10px] text-muted">Hạn nộp phải sau ngày hôm nay</p>
+          </div>
 
           <div className="sm:col-span-2"><label className={labelClass}>Kỹ năng yêu cầu</label><div className="mb-2 flex flex-wrap gap-2">{selectedSkills.map((selected) => { const skill = skills.find((item) => item.id === selected.skillId); if (!skill) return null; return <span key={selected.skillId} className="inline-flex items-center gap-2 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-[10px] text-text">{skill.name}<label className="flex items-center gap-1 border-l border-border pl-2 text-primary"><input type="checkbox" checked={selected.isRequired} onChange={(event) => setValue("skills", selectedSkills.map((item) => item.skillId === selected.skillId ? { ...item, isRequired: event.target.checked } : item), { shouldDirty: true })} className="size-3 accent-primary" />Bắt buộc</label><button type="button" onClick={() => setValue("skills", selectedSkills.filter((item) => item.skillId !== selected.skillId), { shouldDirty: true })} className="rounded-full p-1 text-muted hover:bg-border/50"><X className="size-3" /></button></span>; })}</div><div className="relative inline-flex"><Plus className="pointer-events-none absolute left-2 top-2 size-3.5 text-primary" /><select value="" onChange={(event) => addSkill(event.target.value)} className="h-8 rounded-full border border-dashed border-primary bg-surface pl-7 pr-3 text-[10px] font-medium text-primary outline-none"><option value="">Thêm kỹ năng</option>{skills.filter((skill) => !selectedSkills.some((selected) => selected.skillId === skill.id)).map((skill) => <option key={skill.id} value={skill.id}>{skill.name}</option>)}</select></div></div>
 
@@ -285,7 +224,11 @@ export function RecruiterJobForm({ mode, jobId }: RecruiterJobFormProps) {
         <JobPreviewCard values={values} companyName={company.name} categories={categories} skills={skills} />
       </div>
 
-      <div className="fixed bottom-0 right-0 z-30 flex w-full justify-end gap-3 border-t border-border bg-surface/95 px-6 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] backdrop-blur lg:w-[calc(100%-16rem)]"><Link href={cancelHref} className="rounded-lg border border-border px-5 py-2 text-xs font-medium text-text hover:bg-background">Hủy</Link><button type="button" onClick={() => document.getElementById("job-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2 text-xs font-medium text-primary hover:bg-primary/5"><Eye className="size-4" />Xem trước</button><button type="submit" disabled={isSubmitting} className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2 text-xs font-medium text-white hover:bg-primary-hover disabled:opacity-60">{isSubmitting && <LoaderCircle className="size-4 animate-spin" />}{mode === "create" ? "Gửi duyệt" : "Lưu thay đổi"}</button></div>
+      <div className="fixed bottom-0 right-0 z-30 flex w-full items-center justify-end gap-3 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] backdrop-blur sm:px-6 lg:w-[calc(100%-16rem)] lg:px-8">
+        <Link href={cancelHref} className="rounded-lg border border-border px-5 py-2 text-xs font-medium text-text hover:bg-background">Hủy</Link>
+        <button type="button" onClick={() => document.getElementById("job-preview")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2 text-xs font-medium text-primary hover:bg-primary/5"><Eye className="size-4" />Xem trước</button>
+        <button type="submit" disabled={isSubmitting} className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2 text-xs font-medium text-white hover:bg-primary-hover disabled:opacity-60">{isSubmitting && <LoaderCircle className="size-4 animate-spin" />}{mode === "create" ? "Gửi duyệt" : "Lưu thay đổi"}</button>
+      </div>
     </form>
     </div>
   );

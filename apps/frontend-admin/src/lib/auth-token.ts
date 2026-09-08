@@ -89,6 +89,19 @@ export const decodeJwtPayload = (token: string): JwtPayload | null => {
   }
 };
 
+export const getAccessTokenExpiry = (): number | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  const payload = decodeJwtPayload(token);
+  return payload?.exp ? payload.exp * 1000 : null;
+};
+
+export const isAccessTokenExpired = (): boolean => {
+  const expiresAt = getAccessTokenExpiry();
+  return expiresAt !== null && expiresAt <= Date.now();
+};
+
 export const isTokenExpired = (token: string | null): boolean => {
   if (!token) return true;
   const payload = decodeJwtPayload(token);
@@ -137,11 +150,17 @@ export const setAuthPersistence = (remember: boolean) => {
 
 export const setAccessToken = (token: string | null) => {
   if (typeof window === "undefined") return;
+  const currentToken = getAccessToken();
+
   if (!token) {
+    let hadCookie = currentToken !== null;
     for (const name of CANDIDATE_COOKIE_NAMES) {
+      if (getCookie(name)) hadCookie = true;
       deleteCookie(name);
     }
-    notifyAuthChange();
+    if (hadCookie) {
+      notifyAuthChange();
+    }
     return;
   }
 
@@ -153,8 +172,10 @@ export const setAccessToken = (token: string | null) => {
     cleaned = cleaned.slice(7).trim();
   }
 
-  setCookie(ACCESS_TOKEN_COOKIE, cleaned, getAuthCookieMaxAge());
-  notifyAuthChange();
+  if (cleaned !== currentToken) {
+    setCookie(ACCESS_TOKEN_COOKIE, cleaned, getAuthCookieMaxAge());
+    notifyAuthChange();
+  }
 };
 
 export const getStoredUser = (): StoredUser | null => {
@@ -167,22 +188,37 @@ export const getStoredUser = (): StoredUser | null => {
 
 export const setStoredUser = (user: StoredUser | null) => {
   if (typeof window === "undefined") return;
-  if (user) setCookie(USER_COOKIE, JSON.stringify(user), getAuthCookieMaxAge());
-  else deleteCookie(USER_COOKIE);
-  notifyAuthChange();
+  const currentUserJson = getCookie(USER_COOKIE);
+  const newUserJson = user ? JSON.stringify(user) : null;
+
+  if (newUserJson !== currentUserJson) {
+    if (user) setCookie(USER_COOKIE, newUserJson!, getAuthCookieMaxAge());
+    else deleteCookie(USER_COOKIE);
+    notifyAuthChange();
+  }
 };
 
 export const clearAccessToken = () => {
-  setAccessToken(null);
-  setStoredUser(null);
+  if (typeof window === "undefined") return;
+
+  const hadToken = getAccessToken() !== null;
+  const hadUser = getStoredUser() !== null;
+
+  for (const name of CANDIDATE_COOKIE_NAMES) {
+    deleteCookie(name);
+  }
+  deleteCookie(USER_COOKIE);
   setAuthPersistence(false);
-  if (typeof window !== "undefined") {
-    for (const key of CANDIDATE_COOKIE_NAMES) {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
-    }
-    localStorage.removeItem("admin_user");
-    sessionStorage.removeItem("admin_user");
+
+  for (const key of CANDIDATE_COOKIE_NAMES) {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
+  localStorage.removeItem("admin_user");
+  sessionStorage.removeItem("admin_user");
+
+  if (hadToken || hadUser) {
+    notifyAuthChange();
   }
 };
 
