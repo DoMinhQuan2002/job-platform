@@ -22,7 +22,7 @@ export type Application = {
 
 export type SavedJobStatusBadge = {
   text: string;
-  variant: "closed" | "expired" | "hidden";
+  variant: "closed" | "expired" | "hidden" | "deleted";
 };
 
 /** Shape từ GET /saved-jobs (BE đã join job) */
@@ -152,6 +152,7 @@ export type DetailedApplication = {
     postedDate: string;
     deadline: string;
   };
+  statusBadge?: SavedJobStatusBadge | null;
   timeline: ApplicationTimelineStep[];
 };
 

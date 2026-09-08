@@ -54,6 +54,8 @@ export type ApplicationListItemDto = {
     status?: string | null;
     deadline?: string | Date | null;
     categoryName?: string | null;
+    deletedAt?: Date | string | null;
+    isDeleted?: boolean;
     company?: {
       id?: string;
       name?: string;
@@ -123,6 +125,7 @@ type ApplicationListRaw = {
   candidateAvatar: string | null;
   experienceCount: string | number | null;
   jobTitle: string | null;
+  jobDeletedAt: Date | string | null;
   companyName: string | null;
   companyLogoUrl: string | null;
   jobLocation: string | null;
@@ -464,6 +467,7 @@ export class ApplicationsService {
 
       const job = await this.jobRepo.findOne({
         where: { id: application.jobId },
+        withDeleted: true,
       });
       if (!job || job.companyId !== company.id) {
         throw new AppError(
@@ -516,6 +520,7 @@ export class ApplicationsService {
 
     const job = await this.jobRepo.findOne({
       where: { id: application.jobId },
+      withDeleted: true,
     });
 
     if (user.role === "RECRUITER") {
@@ -689,15 +694,19 @@ export class ApplicationsService {
       return [];
     }
 
-    const savedJobs = await this.savedJobRepo.find({
-      where: {
+    const savedJobs = await this.savedJobRepo
+      .createQueryBuilder("savedJob")
+      .withDeleted()
+      .leftJoinAndSelect("savedJob.job", "job")
+      .leftJoinAndSelect("job.company", "company")
+      .leftJoinAndSelect("job.category", "category")
+      .leftJoinAndSelect("job.jobSkills", "jobSkills")
+      .leftJoinAndSelect("jobSkills.skill", "skill")
+      .where("savedJob.candidate_id = :candidateId", {
         candidateId: candidate.id,
-      },
-      relations: ["job", "job.company", "job.category", "job.jobSkills", "job.jobSkills.skill"],
-      order: {
-        createdAt: "DESC",
-      },
-    });
+      })
+      .orderBy("savedJob.created_at", "DESC")
+      .getMany();
 
     if (savedJobs.length === 0) {
       return [];
@@ -726,7 +735,8 @@ export class ApplicationsService {
   private createApplicationListQuery() {
     return this.applicationRepo
       .createQueryBuilder("application")
-      .innerJoin(Job, "job", "job.id = application.job_id")
+      .withDeleted()
+      .leftJoin(Job, "job", "job.id = application.job_id")
       .leftJoin(Company, "company", "company.id = job.company_id")
       .leftJoin(JobCategory, "category", "category.id = job.category_id")
       .leftJoin(CandidateProfileEntity, "candidate", "candidate.id = application.candidate_id")
@@ -751,6 +761,7 @@ export class ApplicationsService {
       .addSelect("candidateUser.phone", "candidatePhone")
       .addSelect("candidateUser.avatar", "candidateAvatar")
       .addSelect("job.title", "jobTitle")
+      .addSelect("job.deleted_at", "jobDeletedAt")
       .addSelect("company.name", "companyName")
       .addSelect("company.logo", "companyLogoUrl")
       .addSelect("job.address", "jobLocation")
@@ -776,6 +787,7 @@ export class ApplicationsService {
       .addGroupBy("candidateUser.phone")
       .addGroupBy("candidateUser.avatar")
       .addGroupBy("job.title")
+      .addGroupBy("job.deleted_at")
       .addGroupBy("company.name")
       .addGroupBy("company.logo")
       .addGroupBy("job.address")
@@ -835,6 +847,8 @@ export class ApplicationsService {
             status: row.jobStatus,
             deadline: row.jobDeadline,
             categoryName: row.categoryName,
+            deletedAt: row.jobDeletedAt,
+            isDeleted: Boolean(row.jobDeletedAt),
           }
         : undefined,
       resume: row.resumeId && row.resumeFileName
@@ -858,6 +872,7 @@ export class ApplicationsService {
         this.jobRepo.findOne({
           where: { id: application.jobId },
           relations: ["company", "category", "jobSkills", "jobSkills.skill"],
+          withDeleted: true,
         }),
         application.resumeId
           ? this.resumeRepo.findOne({ where: { id: application.resumeId } })
@@ -949,6 +964,8 @@ export class ApplicationsService {
             jobMode: job.jobMode,
             experience: job.experience,
             quantity: job.quantity,
+            deletedAt: job.deletedAt,
+            isDeleted: Boolean(job.deletedAt),
           }
         : undefined,
       resume: resume

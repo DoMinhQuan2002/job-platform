@@ -38,7 +38,7 @@ function enrichApplications(items: Application[]): ApplicationListItem[] {
       companyName: "Nhà tuyển dụng",
       location: "—",
       salary: "—",
-      statusBadge: { text: "Ngừng nhận hồ sơ", variant: "hidden" },
+      statusBadge: { text: "Đã bị xóa", variant: "deleted" },
     };
   });
 }
@@ -213,7 +213,9 @@ export function ApplicationsPage() {
                         {item.statusBadge && (
                           <span
                             className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold border ${
-                              item.statusBadge.variant === "closed" || item.statusBadge.variant === "hidden"
+                              item.statusBadge.variant === "deleted" ||
+                              item.statusBadge.variant === "closed" ||
+                              item.statusBadge.variant === "hidden"
                                 ? "bg-rose-50 text-rose-700 border-rose-200"
                                 : "bg-slate-100 text-slate-600 border-slate-200"
                             }`}

@@ -100,7 +100,7 @@ export type JobSummary = {
   rawStatus?: string;
   statusBadge?: {
     text: string;
-    variant: "closed" | "expired" | "hidden";
+    variant: "closed" | "expired" | "hidden" | "deleted";
   } | null;
   isApplyDisabled: boolean;
 };
@@ -135,10 +135,21 @@ export function summarizeJob(raw: unknown): JobSummary {
   }
 
   const statusStr = String(job.status || "").toUpperCase();
-  let statusBadge: { text: string; variant: "closed" | "expired" | "hidden" } | null = null;
+  const isDeleted = Boolean(
+    job.deletedAt ||
+    job.jobDeletedAt ||
+    job.deleted_at ||
+    job.isDeleted === true ||
+    statusStr === "DELETED"
+  );
+
+  let statusBadge: { text: string; variant: "closed" | "expired" | "hidden" | "deleted" } | null = null;
   let isApplyDisabled = false;
 
-  if (statusStr === "CLOSED") {
+  if (isDeleted) {
+    statusBadge = { text: "Đã bị xóa", variant: "deleted" };
+    isApplyDisabled = true;
+  } else if (statusStr === "CLOSED") {
     statusBadge = { text: "Đã đóng", variant: "closed" };
     isApplyDisabled = true;
   } else if (statusStr === "HIDDEN") {
