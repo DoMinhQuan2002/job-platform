@@ -29,13 +29,13 @@ const employerLinks = [
   ["Bảng giá dịch vụ", "/pricing"],
 ];
 
-const companyLinks = [
-  ["Giới thiệu công ty", "/about"],
-  ["Tin tức", "/news"],
-  ["Sự kiện", "/events"],
-  ["Tuyển dụng nội bộ", "/careers"],
-  ["Liên hệ", "#footer-contact"],
-];
+// const companyLinks = [
+//   ["Giới thiệu công ty", "/about"],
+//   ["Tin tức", "/news"],
+//   ["Sự kiện", "/events"],
+//   ["Tuyển dụng nội bộ", "/careers"],
+//   ["Liên hệ", "#footer-contact"],
+// ];
 
 function FooterLinks({ title, links }: { title: string; links: string[][] }) {
   return (
@@ -58,7 +58,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-[#f7f8ff] text-slate-700">
       <div className="mx-auto w-full container px-4 py-14 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1.1fr_1fr_1.2fr] lg:gap-12">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.15fr_1fr_1.1fr_1.15fr] lg:gap-12">
           <section>
             <Link
               href={ROUTES.home}
@@ -104,7 +104,7 @@ export function Footer() {
 
           <FooterLinks title="Dành cho ứng viên" links={candidateLinks} />
           <FooterLinks title="Dành cho doanh nghiệp" links={employerLinks} />
-          <FooterLinks title="Về JobPlatform" links={companyLinks} />
+          {/* <FooterLinks title="Về JobPlatform" links={companyLinks} /> */}
 
           <section id="footer-contact" className="scroll-mt-24">
             <h2 className="mb-6 text-sm font-bold text-slate-900">

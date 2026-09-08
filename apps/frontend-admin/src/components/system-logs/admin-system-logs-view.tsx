@@ -33,6 +33,7 @@ import {
   type TargetType,
 } from "./system-log-helpers";
 import { SystemLogDrawer } from "./system-log-drawer";
+import { Select } from "@/components/ui/select";
 
 function getTodayDateString(): string {
   const now = new Date();
@@ -336,26 +337,21 @@ export function AdminSystemLogsView() {
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Đối tượng
             </label>
-            <div className="relative">
-              <select
-                value={targetTypeFilter}
-                onChange={(e) => {
-                  setTargetTypeFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 pr-7 text-slate-700 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium"
-              >
-                <option value="ALL">Tất cả đối tượng</option>
-                {SYSTEM_LOG_TARGET_TYPES.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-400">
-                <ChevronDown className="w-3.5 h-3.5" />
-              </span>
-            </div>
+            <Select
+              value={targetTypeFilter}
+              onChange={(e) => {
+                setTargetTypeFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              size="md"
+            >
+              <option value="ALL">Tất cả đối tượng</option>
+              {SYSTEM_LOG_TARGET_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Action Selector (Theo đúng enum LogAction trong DB) */}
@@ -363,26 +359,21 @@ export function AdminSystemLogsView() {
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Hành động
             </label>
-            <div className="relative">
-              <select
-                value={actionFilter}
-                onChange={(e) => {
-                  setActionFilter(e.target.value);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                className="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 pr-7 text-slate-700 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer font-medium truncate"
-              >
-                <option value="ALL">Tất cả hành động</option>
-                {SYSTEM_LOG_ACTIONS.map((a) => (
-                  <option key={a.key} value={a.key}>
-                    {a.label} ({a.key})
-                  </option>
-                ))}
-              </select>
-              <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-400">
-                <ChevronDown className="w-3.5 h-3.5" />
-              </span>
-            </div>
+            <Select
+              value={actionFilter}
+              onChange={(e) => {
+                setActionFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              size="md"
+            >
+              <option value="ALL">Tất cả hành động</option>
+              {SYSTEM_LOG_ACTIONS.map((a) => (
+                <option key={a.key} value={a.key}>
+                  {a.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Filter Submit Button */}
@@ -633,9 +624,9 @@ export function AdminSystemLogsView() {
               {/* Page size selector */}
               <div className="flex items-center gap-1.5">
                 <span>Số dòng mỗi trang</span>
-                <div className="relative inline-block">
-                  <select
-                    value={pagination.limit}
+                <div className="w-20">
+                  <Select
+                    value={String(pagination.limit)}
                     onChange={(e) => {
                       setIsLoading(true);
                       setPagination((prev) => ({
@@ -644,13 +635,13 @@ export function AdminSystemLogsView() {
                         page: 1,
                       }));
                     }}
-                    className="text-xs bg-white border border-slate-200 rounded px-2.5 py-1 pr-6 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                    size="sm"
                   >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </Select>
                 </div>
               </div>
 

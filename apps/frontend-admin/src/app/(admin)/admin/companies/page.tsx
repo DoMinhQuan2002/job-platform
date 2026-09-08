@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/components/layout/admin-page-header";
+import { Select } from "@/components/ui/select";
 import {
   AlertCircle,
   Building2,
@@ -650,13 +651,14 @@ export default function AdminCompaniesPage() {
       </div>
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-        <div className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[minmax(240px,1fr)_160px_150px_150px_auto_auto] lg:items-end">
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold text-slate-600">Tìm kiếm</span>
-            <span className="relative block">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <div className="flex flex-wrap lg:flex-nowrap items-end gap-3 border-b border-slate-100 p-4">
+          {/* Item 1: Search */}
+          <div className="flex flex-col gap-1.5 flex-1 min-w-[220px]">
+            <span className="text-xs font-semibold text-slate-600 block">Tìm kiếm</span>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
-                type="search"
+                type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={(event) => {
@@ -665,71 +667,77 @@ export default function AdminCompaniesPage() {
                 placeholder="Tìm theo tên công ty, MST, email..."
                 className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
               />
-            </span>
-          </label>
+            </div>
+          </div>
 
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold text-slate-600">Trạng thái</span>
-            <select
+          {/* Item 2: Status */}
+          <div className="flex flex-col gap-1.5 w-full sm:w-44 shrink-0">
+            <span className="text-xs font-semibold text-slate-600 block">Trạng thái</span>
+            <Select
               value={status}
               onChange={(event) =>
                 setStatus(event.target.value as CompanyStatus | "ALL")
               }
-              className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              size="lg"
+              className="!h-10 !rounded-lg !bg-slate-50 !border-slate-200 hover:!bg-white focus:!bg-white"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </div>
 
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold text-slate-600">Từ ngày</span>
-            <span className="relative block">
+          {/* Item 3: From Date */}
+          <div className="flex flex-col gap-1.5 w-full sm:w-40 shrink-0">
+            <span className="text-xs font-semibold text-slate-600 block">Từ ngày</span>
+            <div className="relative">
               <input
                 type="date"
                 value={createdFrom}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setCreatedFrom(event.target.value)}
-                placeholder="Chọn khoảng ngày"
-                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
-              <Calendar className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            </span>
-          </label>
+              <Calendar className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
-          <label className="space-y-1.5">
-            <span className="text-xs font-semibold text-slate-600">Đến ngày</span>
-            <span className="relative block">
+          {/* Item 4: To Date */}
+          <div className="flex flex-col gap-1.5 w-full sm:w-40 shrink-0">
+            <span className="text-xs font-semibold text-slate-600 block">Đến ngày</span>
+            <div className="relative">
               <input
                 type="date"
                 value={createdTo}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={(event) => setCreatedTo(event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 pr-9 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
-              <Calendar className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            </span>
-          </label>
+              <Calendar className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={applyFilters}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-100 px-5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-200"
-          >
-            <Filter className="size-4" />
-            Lọc
-          </button>
+          {/* Item 5: Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 h-10">
+            <button
+              type="button"
+              onClick={applyFilters}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-100 px-5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-200 cursor-pointer"
+            >
+              <Filter className="size-4" />
+              Lọc
+            </button>
 
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="h-10 rounded-lg px-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-          >
-            Xóa bộ lọc
-          </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 cursor-pointer whitespace-nowrap"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -848,18 +856,20 @@ export default function AdminCompaniesPage() {
         <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <span>Hiển thị</span>
-            <select
-              value={limit}
-              onChange={(event) => {
-                setLimit(Number(event.target.value));
-                setPage(1);
-              }}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-slate-700 outline-none focus:border-blue-500"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
+            <div className="w-20">
+              <Select
+                value={String(limit)}
+                onChange={(event) => {
+                  setLimit(Number(event.target.value));
+                  setPage(1);
+                }}
+                size="sm"
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </Select>
+            </div>
             <span>trong số {total.toLocaleString("vi-VN")}</span>
           </div>
 
