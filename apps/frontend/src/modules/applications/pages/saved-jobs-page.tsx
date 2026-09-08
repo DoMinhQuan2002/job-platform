@@ -80,7 +80,7 @@ export function SavedJobsPage() {
           category: "Tuyển dụng",
           savedDate: formatDate(item.createdAt),
           createdAt: item.createdAt,
-          statusBadge: { text: "Ngừng nhận hồ sơ", variant: "hidden" },
+          statusBadge: { text: "Đã bị xóa", variant: "deleted" },
           isApplyDisabled: true,
           hasApplied: Boolean(item.hasApplied),
         } satisfies SavedJob;
