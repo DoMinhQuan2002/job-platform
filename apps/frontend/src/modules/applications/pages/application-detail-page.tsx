@@ -51,6 +51,7 @@ function toDetailed(app: Application, jobRaw?: unknown): DetailedApplication {
       postedDate: job?.postedDate ?? "—",
       deadline: job?.deadline ?? "—",
     },
+    statusBadge: job?.statusBadge ?? null,
     timeline: buildTimeline(app.status, app.appliedAt),
   };
 }
@@ -201,10 +202,23 @@ export function ApplicationDetailPage() {
                     Thông tin đơn ứng tuyển
                   </h3>
                   <div className="divide-y divide-slate-100 text-xs sm:text-sm">
-                    <div className="flex justify-between gap-4 py-3">
+                    <div className="flex justify-between items-center gap-4 py-3">
                       <span className="text-slate-500">Vị trí ứng tuyển</span>
-                      <span className="text-right font-bold text-slate-900">
+                      <span className="text-right font-bold text-slate-900 inline-flex items-center gap-2 justify-end flex-wrap">
                         {application.jobTitle}
+                        {application.statusBadge && (
+                          <span
+                            className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] font-bold border ${
+                              application.statusBadge.variant === "deleted" ||
+                              application.statusBadge.variant === "closed" ||
+                              application.statusBadge.variant === "hidden"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {application.statusBadge.text}
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4 py-3">
