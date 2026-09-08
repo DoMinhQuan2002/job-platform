@@ -2,14 +2,17 @@
  * Upload 1 avatar chung lên Supabase rồi gán cho mọi user
  * role CANDIDATE | RECRUITER | ADMIN (chưa soft-delete).
  *
- * Dùng path cố định + upsert, verify HTTP 200 trước khi UPDATE DB
- * (tránh case upload “ok” nhưng object public 404 → FE hiện initials).
+ * Lưu FULL public URL (https://...) thay vì storage path.
+ * Lý do: users.service remove(oldAvatar) khi đổi/xóa avatar — nếu mọi
+ * user cùng path `avatars/xxx.png` thì 1 người đổi ảnh là xóa file chung
+ * → cả hệ thống mất avatar.
  *
  * Usage (từ apps/backend):
  *   npx tsx scripts/set-all-avatars.ts
  *   npx tsx scripts/set-all-avatars.ts --dry-run
  *   npx tsx scripts/set-all-avatars.ts path/to/avatar.png
  */
+import { randomUUID } from "crypto";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -20,8 +23,6 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const ROLES = ["CANDIDATE", "RECRUITER", "ADMIN"] as const;
 const DEFAULT_IMAGE = path.resolve(__dirname, "_bulk-avatar.png");
-/** Path cố định — mỗi lần chạy ghi đè, không tạo UUID orphan. */
-const STORAGE_PATH = "avatars/bulk-shared.png";
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -35,6 +36,8 @@ const required = (key: string) => {
 };
 
 async function assertPublicUrlOk(url: string): Promise<void> {
+  // Đợi storage propagate ngắn
+  await new Promise((r) => setTimeout(r, 800));
   const res = await fetch(url, { method: "GET", cache: "no-store" });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -72,10 +75,12 @@ async function main() {
     ssl: sslEnabled ? { rejectUnauthorized: false } : undefined,
   });
 
+  const storagePath = `avatars/bulk-${randomUUID()}.png`;
+
   console.log("DB host:", process.env.DB_HOST);
   console.log("DB name:", process.env.DB_NAME);
   console.log("Image:", imagePath, `(${buffer.length} bytes)`);
-  console.log("Storage path:", STORAGE_PATH);
+  console.log("Storage path:", storagePath);
   console.log("Roles:", ROLES.join(", "));
   console.log("Dry run:", dryRun);
 
@@ -111,7 +116,7 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log(`[dry-run] Would upsert ${bucket}/${STORAGE_PATH} and UPDATE ${total} users.`);
+    console.log(`[dry-run] Would upload ${bucket}/${storagePath} and UPDATE ${total} users with public URL.`);
     await db.end();
     return;
   }
@@ -122,9 +127,9 @@ async function main() {
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(STORAGE_PATH, buffer, {
+    .upload(storagePath, buffer, {
       contentType: "image/png",
-      upsert: true,
+      upsert: false,
       cacheControl: "3600",
     });
 
@@ -132,13 +137,14 @@ async function main() {
     throw new Error(`Supabase upload failed: ${uploadError.message}`);
   }
 
-  const publicUrl = supabase.storage.from(bucket).getPublicUrl(STORAGE_PATH).data.publicUrl;
-  console.log("Uploaded:", STORAGE_PATH);
+  const publicUrl = supabase.storage.from(bucket).getPublicUrl(storagePath).data.publicUrl;
+  console.log("Uploaded:", storagePath);
   console.log("Public URL:", publicUrl);
 
   await assertPublicUrlOk(publicUrl);
   console.log("Public URL verified OK");
 
+  // Lưu https URL — tránh storageService.remove(sharedPath) khi 1 user đổi avatar.
   const updateRes = await db.query(
     `UPDATE users u
      SET avatar = $1, updated_at = NOW()
@@ -146,10 +152,10 @@ async function main() {
      WHERE u.role_id = r.id
        AND u.deleted_at IS NULL
        AND r.name = ANY($2::text[])`,
-    [STORAGE_PATH, ROLES as unknown as string[]],
+    [publicUrl, ROLES as unknown as string[]],
   );
 
-  console.log(`Updated ${updateRes.rowCount ?? 0} users.avatar → ${STORAGE_PATH}`);
+  console.log(`Updated ${updateRes.rowCount ?? 0} users.avatar → ${publicUrl}`);
   await db.end();
 }
 
