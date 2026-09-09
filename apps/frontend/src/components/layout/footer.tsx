@@ -1,16 +1,19 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Clock3,
   Mail,
   MapPin,
-  Music2,
   Phone,
-  PlayCircle,
-  Share2,
   ShieldCheck,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import Image from "next/image";
+import { useAuthSession } from "@/lib/use-auth-session";
+import { AppAlertDialog } from "@/components/ui/app-alert-dialog";
 
 const candidateLinks = [
   ["Tìm việc làm", ROUTES.jobs],
@@ -26,7 +29,7 @@ const employerLinks = [
   ["Quản lý tin tuyển dụng", ROUTES.recruiter.root],
   ["Quản lý ứng viên", ROUTES.recruiter.root],
   ["Tìm hồ sơ ứng viên", ROUTES.recruiter.root],
-  ["Bảng giá dịch vụ", "/pricing"],
+  // ["Bảng giá dịch vụ", "/pricing"],
 ];
 
 // const companyLinks = [
@@ -37,14 +40,30 @@ const employerLinks = [
 //   ["Liên hệ", "#footer-contact"],
 // ];
 
-function FooterLinks({ title, links }: { title: string; links: string[][] }) {
+function FooterLinks({
+  title,
+  links,
+  onLinkClick,
+}: {
+  title: string;
+  links: string[][];
+  onLinkClick?: (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    label: string,
+    href: string,
+  ) => void;
+}) {
   return (
     <section>
       <h2 className="mb-6 text-sm font-bold text-slate-900">{title}</h2>
       <ul className="space-y-4 text-xs text-slate-600">
         {links.map(([label, href]) => (
           <li key={label}>
-            <Link className="transition-colors hover:text-primary" href={href}>
+            <Link
+              className="transition-colors hover:text-primary"
+              href={href}
+              onClick={(e) => onLinkClick?.(e, label, href)}
+            >
               {label}
             </Link>
           </li>
@@ -55,6 +74,66 @@ function FooterLinks({ title, links }: { title: string; links: string[][] }) {
 }
 
 export function Footer() {
+  const router = useRouter();
+  const { isRecruiter, isCandidate } = useAuthSession();
+  const [notice, setNotice] = useState<{
+    open: boolean;
+    title: string;
+    targetFeature: string;
+    targetRoleText: string;
+    currentRoleText: string;
+    promptText: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    targetFeature: "",
+    targetRoleText: "",
+    currentRoleText: "",
+    promptText: "",
+    confirmLabel: "",
+    onConfirm: () => {},
+  });
+
+  const handleCandidateLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    label: string,
+    href: string,
+  ) => {
+    if (isRecruiter && href !== ROUTES.jobs) {
+      e.preventDefault();
+      setNotice({
+        open: true,
+        title: "Dành cho ứng viên",
+        targetFeature: label,
+        targetRoleText: "Ứng viên (người tìm việc)",
+        currentRoleText: "Nhà tuyển dụng",
+        promptText: "Bạn có muốn chuyển đến trang quản lý Nhà tuyển dụng không?",
+        confirmLabel: "Đến trang Nhà tuyển dụng",
+        onConfirm: () => router.push(ROUTES.recruiter.root),
+      });
+    }
+  };
+
+  const handleEmployerLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    label: string,
+  ) => {
+    if (isCandidate) {
+      e.preventDefault();
+      setNotice({
+        open: true,
+        title: "Dành cho nhà tuyển dụng",
+        targetFeature: label,
+        targetRoleText: "Nhà tuyển dụng (doanh nghiệp)",
+        currentRoleText: "Ứng viên",
+        promptText: "Bạn có muốn chuyển đến trang thông tin Ứng viên không?",
+        confirmLabel: "Đến trang Ứng viên",
+        onConfirm: () => router.push(ROUTES.candidate.profile),
+      });
+    }
+  };
   return (
     <footer className="border-t border-slate-200 bg-[#f7f8ff] text-slate-700">
       <div className="mx-auto w-full container px-4 py-14 sm:px-6">
@@ -102,8 +181,16 @@ export function Footer() {
             </div> */}
           </section>
 
-          <FooterLinks title="Dành cho ứng viên" links={candidateLinks} />
-          <FooterLinks title="Dành cho doanh nghiệp" links={employerLinks} />
+          <FooterLinks
+            title="Dành cho ứng viên"
+            links={candidateLinks}
+            onLinkClick={handleCandidateLinkClick}
+          />
+          <FooterLinks
+            title="Dành cho doanh nghiệp"
+            links={employerLinks}
+            onLinkClick={handleEmployerLinkClick}
+          />
           {/* <FooterLinks title="Về JobPlatform" links={companyLinks} /> */}
 
           <section id="footer-contact" className="scroll-mt-24">
@@ -179,11 +266,11 @@ export function Footer() {
           </form>
         </section>
 
-        <div className="mt-11 grid gap-6 border-t border-slate-300 pt-8 text-[11px] text-slate-600 lg:grid-cols-[1fr_1.2fr_1fr] lg:items-center">
+        <div className="mt-11 grid gap-6 border-t border-slate-300 pt-8 text-[11px] text-slate-600 lg:grid-cols-[1fr_1fr] lg:items-center">
           <p>
             © {new Date().getFullYear()} JobPlatform. Tất cả quyền được bảo lưu.
           </p>
-          <nav
+          {/* <nav
             className="flex flex-wrap items-center justify-start gap-x-6 gap-y-3 lg:justify-center"
             aria-label="Chính sách"
           >
@@ -198,7 +285,7 @@ export function Footer() {
             <Link href="/cookies" className="hover:text-primary">
               Chính sách Cookie
             </Link>
-          </nav>
+          </nav> */}
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <ShieldCheck className="size-5" />
             <span className="mr-2  leading-4 ">
@@ -207,6 +294,34 @@ export function Footer() {
           </div>
         </div>
       </div>
+
+      <AppAlertDialog
+        open={notice.open}
+        onOpenChange={(open) => setNotice((prev) => ({ ...prev, open }))}
+        title={notice.title}
+        tone="info"
+        description={
+          <div className="space-y-2">
+            <p>
+              Tính năng{" "}
+              <strong className="font-semibold text-slate-900">
+                {notice.targetFeature ? `"${notice.targetFeature}"` : "này"}
+              </strong>{" "}
+              chỉ dành cho tài khoản {notice.targetRoleText}.
+            </p>
+            <p>
+              Bạn hiện đang đăng nhập với vai trò{" "}
+              <strong className="font-semibold text-primary">
+                {notice.currentRoleText}
+              </strong>
+              . {notice.promptText}
+            </p>
+          </div>
+        }
+        confirmLabel={notice.confirmLabel}
+        cancelLabel="Đóng"
+        onConfirm={notice.onConfirm}
+      />
     </footer>
   );
 }
