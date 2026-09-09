@@ -87,10 +87,21 @@ const TEMPLATES: { [K in NotificationType]: TemplateOf<K> } = {
     content: `${params.candidateName} vừa ứng tuyển vào tin "${params.jobTitle}".`,
   }),
   // TODO(Nhóm 2/3): xác nhận lại tham số và câu chữ mong muốn.
-  APPLICATION_STATUS_CHANGED: ({ params }) => ({
-    title: "Trạng thái hồ sơ thay đổi",
-    content: `Hồ sơ ứng tuyển của bạn cho tin "${params.jobTitle}" đã chuyển sang trạng thái ${params.status}.`,
-  }),
+  APPLICATION_STATUS_CHANGED: ({ params }) => {
+    const statusLabels: Record<string, string> = {
+      APPLIED: "Đã nộp đơn",
+      VIEWED: "Đang xem xét",
+      INTERVIEW: "Phỏng vấn",
+      ACCEPTED: "Trúng tuyển",
+      REJECTED: "Từ chối",
+      WITHDRAWN: "Đã rút đơn",
+    };
+    const statusLabel = statusLabels[params.status] ?? params.status;
+    return {
+      title: "Trạng thái hồ sơ thay đổi",
+      content: `Hồ sơ ứng tuyển của bạn cho tin "${params.jobTitle}" đã chuyển sang trạng thái ${statusLabel}.`,
+    };
+  },
 };
 
 const render = (input: CreateNotificationInput): RenderedNotification => {

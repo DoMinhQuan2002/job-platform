@@ -117,6 +117,24 @@ export class ApplicationsController {
     }
   };
 
+  /** PUT /api/v1/applications/:id/note */
+  updateNote = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = requireRecruiter(req);
+      const id = getParam(req.params.id);
+      const { note } = req.body || {};
+
+      const data = await applicationsService.updateNote(user, id, { note: note ?? "" });
+      res.status(200).json({
+        success: true,
+        message: "Đã lưu ghi chú",
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   /** POST /api/v1/applications/:id/withdraw */
   withdraw = async (req: Request, res: Response, next: NextFunction) => {
     try {

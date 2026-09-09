@@ -8,6 +8,10 @@ export interface UpdateApplicationStatusDto {
   status: ApplicationStatus;
 }
 
+export interface UpdateApplicationNoteDto {
+  note: string;
+}
+
 export interface ApplicationQueryDto {
   status?: ApplicationStatus;
   jobId?: string;

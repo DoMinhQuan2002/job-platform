@@ -45,6 +45,13 @@ export class ApplicationEntity {
   })
   appliedAt!: Date;
 
+  /** Ghi chú nội bộ của NTD — không hiển thị cho ứng viên. */
+  @Column({ name: "recruiter_note", type: "text", nullable: true })
+  recruiterNote!: string | null;
+
+  @Column({ name: "recruiter_note_updated_at", type: "timestamptz", nullable: true })
+  recruiterNoteUpdatedAt!: Date | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

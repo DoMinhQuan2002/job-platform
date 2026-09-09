@@ -12,6 +12,7 @@ applicationsRouter.use(authenticate);
 applicationsRouter.get("/", applicationsController.listApplications);
 applicationsRouter.get("/:id", applicationsController.getApplicationById);
 applicationsRouter.put("/:id/status", applicationsController.updateStatus);
+applicationsRouter.put("/:id/note", applicationsController.updateNote);
 applicationsRouter.post("/:id/withdraw", applicationsController.withdraw);
 
 /**

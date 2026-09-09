@@ -136,6 +136,9 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteSavedAt, setNoteSavedAt] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -145,6 +148,8 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
       const response = await recruiterApplicationsApi.detail(id, signal);
       if (signal?.aborted) return;
       setApplication(response.data);
+      setNoteDraft(response.data.recruiterNote ?? "");
+      setNoteSavedAt(response.data.recruiterNoteUpdatedAt ?? null);
     } catch (requestError) {
       if (signal?.aborted) return;
       setError(
@@ -186,6 +191,26 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
       current: step.status === application.status,
     }));
   }, [application]);
+
+  const saveNote = async () => {
+    if (!application) return;
+    setSavingNote(true);
+    setError(null);
+    try {
+      const response = await recruiterApplicationsApi.updateNote(application.id, noteDraft);
+      setApplication(response.data);
+      setNoteDraft(response.data.recruiterNote ?? "");
+      setNoteSavedAt(response.data.recruiterNoteUpdatedAt ?? null);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể lưu ghi chú.",
+      );
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   const openResume = async () => {
     if (!application?.resumeSnapshotUrl) return;
@@ -450,8 +475,32 @@ export function RecruiterCandidateDetailPage({ id }: { id: string }) {
 
           {activeTab === "NOTES" && (
             <Section title="Đánh giá & ghi chú">
-              <div className="rounded-lg border border-border bg-background p-4 text-sm text-muted">
-                Chức năng ghi chú nội bộ chưa có API lưu trữ. Khu vực này đã sẵn layout để nối dữ liệu khi backend bổ sung.
+              <div className="space-y-3 rounded-lg border border-border bg-background p-4">
+                <p className="text-xs text-muted">
+                  Ghi chú nội bộ chỉ nhà tuyển dụng thấy. Ứng viên không xem được nội dung này.
+                </p>
+                <textarea
+                  value={noteDraft}
+                  onChange={(event) => setNoteDraft(event.target.value)}
+                  maxLength={5000}
+                  rows={8}
+                  placeholder="Nhập đánh giá, ghi chú phỏng vấn, điểm mạnh/yếu..."
+                  className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
+                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-[11px] text-muted">
+                    {noteDraft.length}/5000
+                    {noteSavedAt ? ` · Cập nhật: ${formatDateTime(noteSavedAt)}` : ""}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void saveNote()}
+                    disabled={savingNote || noteDraft === (application.recruiterNote ?? "")}
+                    className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingNote ? "Đang lưu..." : "Lưu ghi chú"}
+                  </button>
+                </div>
               </div>
             </Section>
           )}

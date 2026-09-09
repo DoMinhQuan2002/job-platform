@@ -39,6 +39,8 @@ export type RecruiterApplication = {
 };
 
 export type RecruiterApplicationDetail = RecruiterApplication & {
+  recruiterNote?: string | null;
+  recruiterNoteUpdatedAt?: string | null;
   candidateProfile?: CandidateProfile & {
     fullName: string;
     email: string;
@@ -86,6 +88,12 @@ export const recruiterApplicationsApi = {
 
   detail: (id: string, signal?: AbortSignal) =>
     http<ApiSuccess<RecruiterApplicationDetail>>(`/applications/${id}`, { signal }),
+
+  updateNote: (id: string, note: string) =>
+    http<ApiSuccess<RecruiterApplicationDetail>>(`/applications/${id}/note`, {
+      method: "PUT",
+      body: { note },
+    }),
 
   getResumeSnapshotUrl: (storagePath: string) => {
     const qs = new URLSearchParams({

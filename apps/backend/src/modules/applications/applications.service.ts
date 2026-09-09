@@ -21,6 +21,7 @@ import {
   ALLOWED_STATUS_TRANSITIONS,
   ApplicationQueryDto,
   ApplyJobDto,
+  UpdateApplicationNoteDto,
   UpdateApplicationStatusDto,
 } from "./applications.types";
 
@@ -85,6 +86,8 @@ export type ApplicationListItemDto = {
 };
 
 export type ApplicationDetailDto = ApplicationListItemDto & {
+  recruiterNote?: string | null;
+  recruiterNoteUpdatedAt?: Date | null;
   candidateProfile?: {
     id: string;
     userId: string;
@@ -478,7 +481,7 @@ export class ApplicationsService {
       }
     }
 
-    return this.getApplicationDetailDto(application);
+    return this.getApplicationDetailDto(application, user.role);
   }
 
   /** 4. Update application status (Recruiter) */
@@ -576,6 +579,64 @@ export class ApplicationsService {
     }
 
     return saved;
+  }
+
+  /** 4b. Update recruiter internal note */
+  async updateNote(
+    user: { id: string; role: "CANDIDATE" | "RECRUITER" | "ADMIN" },
+    id: string,
+    dto: UpdateApplicationNoteDto,
+  ): Promise<ApplicationDetailDto> {
+    if (user.role !== "RECRUITER" && user.role !== "ADMIN") {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        "Chỉ nhà tuyển dụng mới có quyền cập nhật ghi chú",
+      );
+    }
+
+    const note = typeof dto.note === "string" ? dto.note.trim() : "";
+    if (note.length > 5000) {
+      throw new AppError(400, "NOTE_TOO_LONG", "Ghi chú tối đa 5000 ký tự");
+    }
+
+    const application = await this.applicationRepo.findOne({ where: { id } });
+    if (!application) {
+      throw new AppError(
+        404,
+        "APPLICATION_NOT_FOUND",
+        "Không tìm thấy đơn ứng tuyển",
+      );
+    }
+
+    if (user.role === "RECRUITER") {
+      const company = await this.getCompanyByUserId(user.id);
+      if (!company) {
+        throw new AppError(
+          403,
+          "FORBIDDEN",
+          "Bạn không có quyền cập nhật đơn ứng tuyển này",
+        );
+      }
+
+      const job = await this.jobRepo.findOne({
+        where: { id: application.jobId },
+        withDeleted: true,
+      });
+      if (!job || job.companyId !== company.id) {
+        throw new AppError(
+          403,
+          "FORBIDDEN",
+          "Bạn không có quyền cập nhật đơn ứng tuyển này",
+        );
+      }
+    }
+
+    application.recruiterNote = note.length > 0 ? note : null;
+    application.recruiterNoteUpdatedAt = new Date();
+    await this.applicationRepo.save(application);
+
+    return this.getApplicationDetailDto(application, user.role);
   }
 
   /** 5. Withdraw application (Candidate) */
@@ -862,6 +923,7 @@ export class ApplicationsService {
 
   private async getApplicationDetailDto(
     application: ApplicationEntity,
+    viewerRole?: "CANDIDATE" | "RECRUITER" | "ADMIN",
   ): Promise<ApplicationDetailDto> {
     const [candidate, job, resume, educations, workExperiences, candidateSkills] =
       await Promise.all([
@@ -916,6 +978,12 @@ export class ApplicationsService {
       appliedAt: application.appliedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
+      ...(viewerRole === "RECRUITER" || viewerRole === "ADMIN"
+        ? {
+            recruiterNote: application.recruiterNote ?? null,
+            recruiterNoteUpdatedAt: application.recruiterNoteUpdatedAt ?? null,
+          }
+        : {}),
       candidate: candidate?.user
         ? {
             id: application.candidateId,
