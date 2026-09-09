@@ -46,7 +46,13 @@ export function SessionGuard({ role, children }: SessionGuardProps) {
       setState(allowed ? "allowed" : "denied");
 
       if (!allowed) {
-        router.replace(ROUTES.auth.login);
+        if (currentRole === "RECRUITER") {
+          router.replace(ROUTES.recruiter.root);
+        } else if (currentRole === "CANDIDATE") {
+          router.replace(ROUTES.candidate.root);
+        } else {
+          router.replace(ROUTES.auth.login);
+        }
       }
     };
 

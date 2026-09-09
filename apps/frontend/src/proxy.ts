@@ -40,16 +40,40 @@ const readValidRole = (token: string): AuthRole | null => {
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!token) return NextResponse.next();
+  const role = token ? readValidRole(token) : null;
+  const pathname = request.nextUrl.pathname;
 
-  const role = readValidRole(token);
-  if (!role) return NextResponse.next();
+  if (pathname.startsWith("/auth")) {
+    if (role) {
+      return NextResponse.redirect(
+        new URL(authenticatedDestination(role), request.url),
+      );
+    }
+    return NextResponse.next();
+  }
 
-  return NextResponse.redirect(
-    new URL(authenticatedDestination(role), request.url),
-  );
+  const isCandidatePath =
+    pathname.startsWith("/candidate") ||
+    pathname.startsWith("/applications") ||
+    pathname.startsWith("/resume");
+
+  if (isCandidatePath && role === "RECRUITER") {
+    return NextResponse.redirect(new URL("/recruiter", request.url));
+  }
+
+  if (pathname.startsWith("/recruiter") && role === "CANDIDATE") {
+    return NextResponse.redirect(new URL("/candidate/profile", request.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/auth/:path*"],
+  matcher: [
+    "/auth/:path*",
+    "/candidate/:path*",
+    "/applications/:path*",
+    "/resume/:path*",
+    "/recruiter/:path*",
+  ],
 };
